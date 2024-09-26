@@ -1,0 +1,47 @@
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"FORCE_LOGOUT","description":{"accept":"*/*","accept-encoding":"gzip, deflate, br, zstd","accept-language":"th,en-US;q=0.7,en;q=0.3","apollo-require-preflight":"true","authorization":"Bearer U2FsdGVkX1+ibW60Ycnv3LUB7AGCTsrNKIeoVdrCtgFJ6uGeveiCy1ryoxHKFIiT","connection":"keep-alive","content-length":"94","content-type":"application/json","custom-authorization":"Bearer U2FsdGVkX1+ibW60Ycnv3LUB7AGCTsrNKIeoVdrCtgFJ6uGeveiCy1ryoxHKFIiT","custom-location":"{\"pathname\":\"/\",\"search\":\"\",\"hash\":\"\",\"state\":null,\"key\":\"default\"}","custom-x":"--1-- U2FsdGVkX1+ibW60Ycnv3LUB7AGCTsrNKIeoVdrCtgFJ6uGeveiCy1ryoxHKFIiT","extensions":{"code":"FORCE_LOGOUT","description":{"accept":"*/*","accept-encoding":"gzip, deflate, br, zstd","accept-language":"th,en-US;q=0.7,en;q=0.3","apollo-require-preflight":"true","authorization":"Bearer U2FsdGVkX1+ibW60Ycnv3LUB7AGCTsrNKIeoVdrCtgFJ6uGeveiCy1ryoxHKFIiT","connection":"keep-alive","content-length":"94","content-type":"application/json","custom-authorization":"Bearer U2FsdGVkX1+ibW60Ycnv3LUB7AGCTsrNKIeoVdrCtgFJ6uGeveiCy1ryoxHKFIiT","custom-location":"{\"pathname\":\"/\",\"search\":\"\",\"hash\":\"\",\"state\":null,\"key\":\"default\"}","custom-x":"--1-- U2FsdGVkX1+ibW60Ycnv3LUB7AGCTsrNKIeoVdrCtgFJ6uGeveiCy1ryoxHKFIiT","host":"localhost:4000","origin":"http://localhost","priority":"u=4","referer":"http://localhost/","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-site","user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:128.0) Gecko/20100101 Firefox/128.0"}},"host":"localhost:4000","origin":"http://localhost","priority":"u=4","referer":"http://localhost/","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-site","user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:128.0) Gecko/20100101 Firefox/128.0"}},"locations":[{"column":3,"line":2}],"message":"Expired!","path":["healthCheck"]},"level":"error","message":"Error: Expired!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"ERROR","description":{"avatar":{"encoding":"7bit","filename":"Cortez","mimetype":"image/png","url":"https://cloudflare-ipfs.com/ipfs/Qmd3W5DuhgHirLHGVixi6V76LhCkZUz6pnFt5AJBiyvHye/avatar/249.jpg"},"displayName":"Janet","email":"Brielle73@hotmail.com","password":"princess","username":"princess"}},"locations":[{"column":3,"line":2}],"message":"EXITING USERNAME","path":["test_addmember"]},"level":"error","message":"Error: EXITING USERNAME"}
+{"err":{"extensions":{"code":"BAD_USER_INPUT"},"locations":[{"column":16,"line":1}],"message":"Variable \"$id\" of required type \"ID!\" was not provided."},"level":"error","message":"Error: Variable \"$id\" of required type \"ID!\" was not provided."}

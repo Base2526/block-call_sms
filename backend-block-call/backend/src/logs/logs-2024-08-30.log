@@ -1,0 +1,220 @@
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Callback must be a function. Received undefined","path":["cal_tree"]},"level":"error","message":"Error: Callback must be a function. Received undefined"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Callback must be a function. Received undefined","path":["cal_tree"]},"level":"error","message":"Error: Callback must be a function. Received undefined"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"ERROR","description":{}},"locations":[{"column":3,"line":2}],"message":"TypeError [ERR_INVALID_CALLBACK]: Callback must be a function. Received 'utf8'","path":["cal_tree"]},"level":"error","message":"Error: TypeError [ERR_INVALID_CALLBACK]: Callback must be a function. Received 'utf8'"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"ERROR","description":{}},"locations":[{"column":3,"line":2}],"message":"TypeError [ERR_INVALID_CALLBACK]: Callback must be a function. Received 'utf8'","path":["cal_tree"]},"level":"error","message":"Error: TypeError [ERR_INVALID_CALLBACK]: Callback must be a function. Received 'utf8'"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"ERROR","description":{}},"locations":[{"column":3,"line":2}],"message":"TypeError [ERR_INVALID_CALLBACK]: Callback must be a function. Received 'utf8'","path":["cal_tree"]},"level":"error","message":"Error: TypeError [ERR_INVALID_CALLBACK]: Callback must be a function. Received 'utf8'"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"ERROR","description":{}},"locations":[{"column":3,"line":2}],"message":"Error: ENOENT: no such file or directory, open '/app/uploads/node_20240830085006387.json'","path":["cal_tree"]},"level":"error","message":"Error: Error: ENOENT: no such file or directory, open '/app/uploads/node_20240830085006387.json'"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"\"session\" is read-only","path":["cal_tree"]},"level":"error","message":"Error: \"session\" is read-only"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Unexpected token \\ in JSON at position 1","path":["test"]},"level":"error","message":"Error: Unexpected token \\ in JSON at position 1"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Unexpected token \\ in JSON at position 1","path":["test"]},"level":"error","message":"Error: Unexpected token \\ in JSON at position 1"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Unexpected token \\ in JSON at position 1","path":["test"]},"level":"error","message":"Error: Unexpected token \\ in JSON at position 1"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Unexpected token \\ in JSON at position 1","path":["test"]},"level":"error","message":"Error: Unexpected token \\ in JSON at position 1"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Unexpected token O in JSON at position 10","path":["test"]},"level":"error","message":"Error: Unexpected token O in JSON at position 10"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"member validation failed: current.idCard: ID Card Request is a required field, current.displayName: Email Request is a required field, current.tel: Email Request is a required field, current.email: Email Request is a required field, current.password: Password Request is a required field, current.username: Username Request is a required field, current.parentId: Parent ID Request is a required field","path":["test"]},"level":"error","message":"Error: member validation failed: current.idCard: ID Card Request is a required field, current.displayName: Email Request is a required field, current.tel: Email Request is a required field, current.email: Email Request is a required field, current.password: Password Request is a required field, current.username: Username Request is a required field, current.parentId: Parent ID Request is a required field"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"member validation failed: current.packages: Cast to Number failed for value \"[]\" (type Array) at path \"current.packages\", current.parentId: Parent ID Request is a required field","path":["test"]},"level":"error","message":"Error: member validation failed: current.packages: Cast to Number failed for value \"[]\" (type Array) at path \"current.packages\", current.parentId: Parent ID Request is a required field"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Unexpected token u in JSON at position 0","path":["test"]},"level":"error","message":"Error: Unexpected token u in JSON at position 0"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Unexpected token u in JSON at position 0","path":["test"]},"level":"error","message":"Error: Unexpected token u in JSON at position 0"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Unexpected token u in JSON at position 0","path":["test"]},"level":"error","message":"Error: Unexpected token u in JSON at position 0"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Unexpected token c in JSON at position 10","path":["test"]},"level":"error","message":"Error: Unexpected token c in JSON at position 10"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Unexpected token c in JSON at position 10","path":["test"]},"level":"error","message":"Error: Unexpected token c in JSON at position 10"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Unexpected token c in JSON at position 36","path":["test"]},"level":"error","message":"Error: Unexpected token c in JSON at position 36"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Unexpected token c in JSON at position 36","path":["test"]},"level":"error","message":"Error: Unexpected token c in JSON at position 36"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}

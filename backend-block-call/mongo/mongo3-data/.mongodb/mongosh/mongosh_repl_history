@@ -1,0 +1,3 @@
+exit
+db.getUsers()
+db.createUser({ user: "blockcall", pwd: "Somkid058848391", roles: [{ role: "readWrite", db: "blockcall" }] })

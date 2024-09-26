@@ -1,0 +1,53 @@
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"FORCE_LOGOUT","description":{"accept":"*/*","accept-encoding":"gzip, deflate, br, zstd","accept-language":"en,th;q=0.9","apollo-require-preflight":"true","authorization":"Bearer U2FsdGVkX1+j+DAuWR6vPemgxrTZuwdBTpyOcZR5llruFSx/m0fcKBsHRCnIqjSP","connection":"keep-alive","content-length":"82","content-type":"application/json","custom-authorization":"Bearer U2FsdGVkX1+j+DAuWR6vPemgxrTZuwdBTpyOcZR5llruFSx/m0fcKBsHRCnIqjSP","custom-location":"{\"pathname\":\"/administrator/userlist\",\"search\":\"\",\"hash\":\"\",\"state\":null,\"key\":\"iz1lv372\"}","custom-x":"--1-- U2FsdGVkX1+j+DAuWR6vPemgxrTZuwdBTpyOcZR5llruFSx/m0fcKBsHRCnIqjSP","extensions":{"code":"FORCE_LOGOUT","description":{"accept":"*/*","accept-encoding":"gzip, deflate, br, zstd","accept-language":"en,th;q=0.9","apollo-require-preflight":"true","authorization":"Bearer U2FsdGVkX1+j+DAuWR6vPemgxrTZuwdBTpyOcZR5llruFSx/m0fcKBsHRCnIqjSP","connection":"keep-alive","content-length":"82","content-type":"application/json","custom-authorization":"Bearer U2FsdGVkX1+j+DAuWR6vPemgxrTZuwdBTpyOcZR5llruFSx/m0fcKBsHRCnIqjSP","custom-location":"{\"pathname\":\"/administrator/userlist\",\"search\":\"\",\"hash\":\"\",\"state\":null,\"key\":\"iz1lv372\"}","custom-x":"--1-- U2FsdGVkX1+j+DAuWR6vPemgxrTZuwdBTpyOcZR5llruFSx/m0fcKBsHRCnIqjSP","host":"localhost:1984","origin":"http://localhost:5173","referer":"http://localhost:5173/","sec-ch-ua":"\"Not)A;Brand\";v=\"99\", \"Google Chrome\";v=\"127\", \"Chromium\";v=\"127\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"macOS\"","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-site","user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"}},"host":"localhost:1984","origin":"http://localhost:5173","referer":"http://localhost:5173/","sec-ch-ua":"\"Not)A;Brand\";v=\"99\", \"Google Chrome\";v=\"127\", \"Chromium\";v=\"127\"","sec-ch-ua-mobile":"?0","sec-ch-ua-platform":"\"macOS\"","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-site","user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"}},"locations":[{"column":3,"line":2}],"message":"Expired!","path":["members"]},"level":"error","message":"Error: Expired!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"ERROR","description":{"confirmPassword":"Somkid058848391@","email":"test@test.local","idCard":"1234567890123","packages":7,"parentId":"66ccbcdd18e9a405269bf51c","password":"Somkid058848391@","tel":"0988268000","username":"test4"}},"locations":[{"column":3,"line":2}],"message":"EXITING EMAIL","path":["register"]},"level":"error","message":"Error: EXITING EMAIL"}
+{"err":{"extensions":{"code":"ERROR","description":{"confirmPassword":"Somkid058848391@","email":"test4est@test.local","idCard":"1234567890124","packages":7,"parentId":"66ccbcdd18e9a405269bf51c","password":"Somkid058848391@","tel":"0988268005","username":"test4"}},"locations":[{"column":3,"line":2}],"message":"EXITING ID CARD","path":["register"]},"level":"error","message":"Error: EXITING ID CARD"}
+{"err":{"extensions":{"code":"ERROR","description":{}},"locations":[{"column":3,"line":2}],"message":"Node find failed, returned undefined.","path":["register"]},"level":"error","message":"Error: Node find failed, returned undefined."}
+{"err":{"extensions":{"code":"ERROR","description":{}},"locations":[{"column":3,"line":2}],"message":"TypeError: Cannot read properties of undefined (reading '0')","path":["register"]},"level":"error","message":"Error: TypeError: Cannot read properties of undefined (reading '0')"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"ERROR","description":{}},"locations":[{"column":3,"line":2}],"message":"TypeError: Cannot read properties of undefined (reading '0')","path":["register"]},"level":"error","message":"Error: TypeError: Cannot read properties of undefined (reading '0')"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"ERROR","description":{}},"locations":[{"column":3,"line":2}],"message":"Error: No space available to add a new child. @@@@1","path":["register"]},"level":"error","message":"Error: Error: No space available to add a new child. @@@@1"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"ERROR","description":{}},"locations":[{"column":3,"line":2}],"message":"Error: No space available to add a new child. @@@@1","path":["register"]},"level":"error","message":"Error: Error: No space available to add a new child. @@@@1"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"ERROR","description":{}},"locations":[{"column":3,"line":2}],"message":"Error: No space available to add a new child. @@@@1","path":["register"]},"level":"error","message":"Error: Error: No space available to add a new child. @@@@1"}
+{"err":{"extensions":{"code":"ERROR","description":{}},"locations":[{"column":3,"line":2}],"message":"Error: No space available to add a new child. @@@@1","path":["register"]},"level":"error","message":"Error: Error: No space available to add a new child. @@@@1"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"locations":[{"column":3,"line":2}],"message":"Cannot read properties of undefined (reading '_id')","path":["test_fetch_node"]},"level":"error","message":"Error: Cannot read properties of undefined (reading '_id')"}

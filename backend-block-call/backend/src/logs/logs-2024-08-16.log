@@ -1,0 +1,5 @@
+{"level":"error","message":"Error : Connection to database :"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"ERROR","description":{"avatar":{"encoding":"7bit","filename":"Lenore","mimetype":"image/png","url":"https://cloudflare-ipfs.com/ipfs/Qmd3W5DuhgHirLHGVixi6V76LhCkZUz6pnFt5AJBiyvHye/avatar/278.jpg"},"displayName":"Ashlee","email":"Cierra66@hotmail.com","password":"dominic","username":"dominic"}},"locations":[{"column":3,"line":2}],"message":"EXITING USERNAME","path":["test_addmember"]},"level":"error","message":"Error: EXITING USERNAME"}

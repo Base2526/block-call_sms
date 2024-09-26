@@ -1,0 +1,13 @@
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"err":{"extensions":{"code":"USER_NOT_FOUND","description":{}},"locations":[{"column":3,"line":2}],"message":"USER NOT FOUND","path":["login"]},"level":"error","message":"Error: USER NOT FOUND"}
+{"err":{"extensions":{"code":"USER_NOT_FOUND","description":{}},"locations":[{"column":3,"line":2}],"message":"USER NOT FOUND","path":["login"]},"level":"error","message":"Error: USER NOT FOUND"}
+{"err":{"extensions":{"code":"BAD_USER_INPUT"},"locations":[{"column":12,"line":1}],"message":"Variable \"$id\" of required type \"ID!\" was not provided."},"level":"error","message":"Error: Variable \"$id\" of required type \"ID!\" was not provided."}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}
+{"level":"info","message":"Successfully : Connected to database!"}

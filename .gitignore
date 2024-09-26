@@ -1,0 +1,85 @@
+backend/package-lock.json
+backend/node_modules
+backend/uploads
+backend/src/logs
+
+mongo/data1
+mongo/data2
+mongo/data3
+mongo/mongo1-data
+mongo/mongo2-data
+mongo/mongo3-data
+mongo/backups
+uploads
+
+env
+.env
+.git
+
+.VSCodeCounter
+
+
+# OSX
+#
+react-native-block-call/.DS_Store
+
+# Xcode
+#
+react-native-block-call/build/
+react-native-block-call/*.pbxuser
+react-native-block-call/!default.pbxuser
+react-native-block-call/*.mode1v3
+react-native-block-call/!default.mode1v3
+react-native-block-call/*.mode2v3
+react-native-block-call/!default.mode2v3
+react-native-block-call/*.perspectivev3
+react-native-block-call/!default.perspectivev3
+react-native-block-call/xcuserdata
+react-native-block-call/*.xccheckout
+react-native-block-call/*.moved-aside
+react-native-block-call/DerivedData
+react-native-block-call/*.hmap
+react-native-block-call/*.ipa
+react-native-block-call/*.xcuserstate
+react-native-block-call/ios/.xcode.env.local
+
+# Android/IntelliJ
+#
+react-native-block-call/build/
+react-native-block-call/.idea
+react-native-block-call/.gradle
+react-native-block-call/local.properties
+react-native-block-call/*.iml
+react-native-block-call/*.hprof
+react-native-block-call/.cxx/
+
+# node.js
+#
+react-native-block-call/node_modules/
+react-native-block-call/npm-debug.log
+react-native-block-call/yarn-error.log
+
+# BUCK
+react-native-block-call/buck-out/
+react-native-block-call/\.buckd/
+react-native-block-call/*.keystore
+react-native-block-call/!debug.keystore
+
+# fastlane
+#
+# It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the
+# screenshots whenever they are needed.
+# For more information about the recommended setup visit:
+# https://docs.fastlane.tools/best-practices/source-control/
+
+**/fastlane/report.xml
+**/fastlane/Preview.html
+**/fastlane/screenshots
+**/fastlane/test_output
+
+# Bundle artifact
+react-native-block-call/*.jsbundle
+
+# Ruby / CocoaPods
+react-native-block-call/ios/Pods/
+react-native-block-call/vendor/bundle/
