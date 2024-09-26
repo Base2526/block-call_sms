@@ -1,22 +1,22 @@
-backend/package-lock.json
-backend/node_modules
-backend/uploads
-backend/src/logs
+backend-block-call/backend/package-lock.json
+backend-block-call/backend/node_modules
+backend-block-call/backend/uploads
+backend-block-call/backend/src/logs
 
-mongo/data1
-mongo/data2
-mongo/data3
-mongo/mongo1-data
-mongo/mongo2-data
-mongo/mongo3-data
-mongo/backups
-uploads
+backend-block-call/mongo/data1
+backend-block-call/mongo/data2
+backend-block-call/mongo/data3
+backend-block-call/mongo/mongo1-data
+backend-block-call/mongo/mongo2-data
+backend-block-call/mongo/mongo3-data
+backend-block-call/mongo/backups
+backend-block-call/uploads
 
-env
-.env
-.git
+backend-block-call/env
+backend-block-call/.env
+backend-block-call/.git
 
-.VSCodeCounter
+backend-block-call/.VSCodeCounter
 
 
 # OSX
