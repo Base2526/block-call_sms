@@ -1,69 +1,72 @@
-backend-block-call/backend/package-lock.json
-backend-block-call/backend/node_modules
-backend-block-call/backend/uploads
-backend-block-call/backend/src/logs
+web-block-call/backend/package-lock.json
+web-block-call/backend/node_modules
+web-block-call/backend/uploads
+web-block-call/backend/src/logs
 
-backend-block-call/mongo/data1
-backend-block-call/mongo/data2
-backend-block-call/mongo/data3
-backend-block-call/mongo/mongo1-data
-backend-block-call/mongo/mongo2-data
-backend-block-call/mongo/mongo3-data
-backend-block-call/mongo/backups
-backend-block-call/uploads
+web-block-call/frontend/node_modules
 
-backend-block-call/env
-backend-block-call/.env
-backend-block-call/.git
+web-block-call/mongo/data1
+web-block-call/mongo/data2
+web-block-call/mongo/data3
+web-block-call/mongo/mongo1-data
+web-block-call/mongo/mongo2-data
+web-block-call/mongo/mongo3-data
+web-block-call/mongo/backups
+web-block-call/uploads
 
-backend-block-call/.VSCodeCounter
+web-block-call/env
+web-block-call/.env
+web-block-call/.git
+
+web-block-call/.VSCodeCounter
 
 
 # OSX
 #
-react-native-block-call/.DS_Store
+app-block-call/.DS_Store
 
 # Xcode
 #
-react-native-block-call/build/
-react-native-block-call/*.pbxuser
-react-native-block-call/!default.pbxuser
-react-native-block-call/*.mode1v3
-react-native-block-call/!default.mode1v3
-react-native-block-call/*.mode2v3
-react-native-block-call/!default.mode2v3
-react-native-block-call/*.perspectivev3
-react-native-block-call/!default.perspectivev3
-react-native-block-call/xcuserdata
-react-native-block-call/*.xccheckout
-react-native-block-call/*.moved-aside
-react-native-block-call/DerivedData
-react-native-block-call/*.hmap
-react-native-block-call/*.ipa
-react-native-block-call/*.xcuserstate
-react-native-block-call/ios/.xcode.env.local
+app-block-call/build/
+app-block-call/*.pbxuser
+app-block-call/!default.pbxuser
+app-block-call/*.mode1v3
+app-block-call/!default.mode1v3
+app-block-call/*.mode2v3
+app-block-call/!default.mode2v3
+app-block-call/*.perspectivev3
+app-block-call/!default.perspectivev3
+app-block-call/xcuserdata
+app-block-call/*.xccheckout
+app-block-call/*.moved-aside
+app-block-call/DerivedData
+app-block-call/*.hmap
+app-block-call/*.ipa
+app-block-call/*.xcuserstate
+app-block-call/ios/.xcode.env.local
 
 # Android/IntelliJ
 #
-react-native-block-call/build/
-react-native-block-call/.idea
-react-native-block-call/.gradle
-react-native-block-call/local.properties
-react-native-block-call/*.iml
-react-native-block-call/*.hprof
-react-native-block-call/.cxx/
+app-block-call/build/
+app-block-call/.idea
+app-block-call/.gradle
+app-block-call/local.properties
+app-block-call/*.iml
+app-block-call/*.hprof
+app-block-call/.cxx/
 
 # node.js
 #
-react-native-block-call/node_modules/
-react-native-block-call/npm-debug.log
-react-native-block-call/yarn-error.log
+app-block-call/node_modules
+app-block-call/node_modules
+app-block-call/npm-debug.log
+app-block-call/yarn-error.log
 
 # BUCK
-react-native-block-call/buck-out/
-react-native-block-call/\.buckd/
-react-native-block-call/*.keystore
-react-native-block-call/!debug.keystore
+app-block-call/buck-out/
+app-block-call/\.buckd/
+app-block-call/*.keystore
+app-block-call/!debug.keystore
 
 # fastlane
 #
@@ -78,8 +81,8 @@ react-native-block-call/!debug.keystore
 **/fastlane/test_output
 
 # Bundle artifact
-react-native-block-call/*.jsbundle
+app-block-call/*.jsbundle
 
 # Ruby / CocoaPods
-react-native-block-call/ios/Pods/
-react-native-block-call/vendor/bundle/
+app-block-call/ios/Pods/
+app-block-call/vendor/bundle/
