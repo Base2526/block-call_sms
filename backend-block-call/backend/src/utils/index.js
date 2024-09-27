@@ -92,7 +92,7 @@ export const checkAuth = async(req) => {
                     //  1 : OK
                     if(expiredDays >= 0){
                         let userId  = jwt.verify(session.token, process.env.JWT_SECRET);
-                        let current_user = await getMember({_id: userId}) 
+                        let current_user = await Model.User.findOne( {_id: userId}  );// await getMember({_id: userId}) 
 
                         if(!_.isNull(current_user)){
                             return {
@@ -898,50 +898,34 @@ export const createRevision = (model) =>{
     return [...model?.history, { version: version, data: current, updatedAt: new Date() }];
 }
 
-export const saveFile = async(user, file) =>{
-     // Start a transaction
-     const session = await mongoose.startSession();
-     session.startTransaction()
- 
-     try {
-        const { createReadStream, filename, encoding, mimetype } = file?.file
-        const stream = createReadStream();
-        const assetUniqName = fileRenamer(filename);
-        let pathName = `/app/uploads/${assetUniqName}`;
+export const saveFile = async(session, user, file) =>{
+    const { createReadStream, filename, encoding, mimetype } = await file?.file
+    const stream = createReadStream();
+    const assetUniqName = fileRenamer(filename);
+    let pathName = `/app/uploads/${assetUniqName}`;
 
-        const output = fs.createWriteStream(pathName)
-        stream.pipe(output);
+    const output = fs.createWriteStream(pathName)
+    stream.pipe(output);
 
-        const resultFile = await new Promise(function (resolve, reject) {
-            output.on('finish', async () => {
-                try {
-                    let file = await Model.File.create({userId: user?._id,  url: `images/${assetUniqName}`, filename, encoding, mimetype });
-                    resolve(file);
-                } catch (error) {
-                    reject(`Failed to save data to MongoDB: ${error.message}`);
-                }
-            });
-        
-            output.on('error', async(err) => {
-                // await loggerError(req, err.toString());
-                console.log("error")
-
-                reject(err);
-            });
+    const resultFile = await new Promise(function (resolve, reject) {
+        output.on('finish', async () => {
+            try {
+                let file = await Model.File.create([{userId: user?._id,  url: `images/${assetUniqName}`, filename, encoding, mimetype }], { session });
+                resolve(file);
+            } catch (error) {
+                reject(`Failed to save data to MongoDB: ${error.message}`);
+            }
         });
+    
+        output.on('error', async(err) => {
+            // await loggerError(req, err.toString());
+            console.log("error")
 
-        // Commit the transaction
-        await session.commitTransaction(); // Replace with your transaction commit logic
+            reject(err);
+        });
+    });
 
-        return resultFile;
-     }catch(error){
-         await session.abortTransaction();
-         console.log(`saveFiles Error : ${error}`)
-     }finally {
-         session.endSession();
-     }     
- 
-     return ;
+    return resultFile;
 }
 
 export const saveFiles = async(user, files) =>{

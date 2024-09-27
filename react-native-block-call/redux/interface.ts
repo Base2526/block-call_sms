@@ -54,24 +54,26 @@ enum Roles {
 }
 
 export interface UserItem{
-    username: string;
-    password: string;
-    email: string;
-    tel: string;
-    displayName: string;
-    address?: string;
-    packages: 1 | 2 | 3;
-    roles: Roles[];
-    isActive: 0 | 1;
-    avatar?: {
+    current:{
+        username: string;
+        password: string;
+        email: string;
+        tel: string;
+        displayName: string;
+        address?: string;
+        packages: 1 | 2 | 3;
+        roles: Roles[];
+        isActive: 0 | 1;
+        lockAccount?: {
+            lock: boolean;
+            date: Date;
+        };
+        lastAccess: Date;
+    }
+    ,avatar?: {
         url?: string;
         filename?: string;
         mimetype?: string;
         encoding?: string;
     };
-    lockAccount?: {
-        lock: boolean;
-        date: Date;
-    };
-    lastAccess: Date;
 }

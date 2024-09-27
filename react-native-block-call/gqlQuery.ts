@@ -8,3 +8,8 @@ export const mutation_register= gql`mutation register($input: JSON) { register(i
 
 export const mutation_profile = gql`mutation profile($input: JSON) { profile(input: $input) }`;
 
+export const mutation_uploadfile =  gql`
+  mutation UploadFile($file: Upload!, $username: String!, $details: String!) {
+    UploadFile(file: $file, username: $username, details: $details)
+  }
+`;

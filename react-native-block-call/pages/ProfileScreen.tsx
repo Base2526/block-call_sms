@@ -1,40 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Switch, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useToast } from "react-native-toast-notifications";
 import { useSelector, useDispatch } from 'react-redux';
 import { useMutation } from '@apollo/client';
 import { launchImageLibrary } from 'react-native-image-picker'; // Import image picker
-import { resetUser } from "../redux/slices/userSlice"
+
+import {ReactNativeFile} from 'apollo-upload-client';
+
+import { updateUser, resetUser } from "../redux/slices/userSlice"
 import { getHeaders } from "../utils";
-import { mutation_profile } from "../gqlQuery";
+import { mutation_profile, mutation_uploadfile } from "../gqlQuery";
 import { RootState, AppDispatch } from '../redux/store';
 
-const ProfileScreen: React.FC<any> = ({navigation}) => {
+import LoadingDialog from "../LoadingDialog"
 
+const ProfileScreen: React.FC<any> = ({navigation}) => {
+  const [loading, setLoading] = useState(false);
   const dispatch: AppDispatch = useDispatch();
   const toast = useToast();
-
   const user = useSelector((state: RootState) => state.user );
 
   const [onProfile] = useMutation(mutation_profile, {
     context: { headers: getHeaders(user.sessionId) },
     update: (cache, { data: { profile } }) => {
-      // if (profile.status) {
-      //   dispatch(updateProfile({ profile: profile.data }));
-
-      //   setLoadingUpdateProfile(false)
-      //   message.success('Update profile success!');
-      // }
-      console.log("profile :", profile)
+      if (profile.status) {
+        dispatch(updateUser(profile.data));
+      }
+      setLoading(false);
     },
     onError(error) {
       console.error("onError:", error);
 
+      setLoading(false);
     }
   });
 
-  // Function to open image gallery
   const openImageGallery = () => {
     launchImageLibrary(
       {
@@ -49,11 +50,17 @@ const ProfileScreen: React.FC<any> = ({navigation}) => {
         } else if (response.errorMessage) {
           console.error('Image picker error: ', response.errorMessage);
         } else if (response.assets && response.assets.length > 0) {
-          const selectedImage = response.assets[0].uri;
-          console.log('Selected image: ', selectedImage);
-          // You can handle the selected image URI here (e.g., update profile image)
+          const assets = response.assets[0];
 
-          onProfile({ variables: { input: { file: response.assets[0] } } })
+          let file = new ReactNativeFile({
+                                            uri: assets.uri,
+                                            name: assets.fileName,
+                                            type: assets.type,
+                                          })
+
+          onProfile({variables:{ input:  { mode: "update_image_profile",  file } }});
+
+          setLoading(true);
         }
       }
     );
@@ -61,33 +68,37 @@ const ProfileScreen: React.FC<any> = ({navigation}) => {
 
   return (
       <View style={styles.container}>
+        <LoadingDialog visible={loading} />
         <View style={styles.header}>
           <Image 
             source={require("../assets/banner-image.png")}
             style={styles.bannerImage} 
             resizeMode="cover" 
           />
-
-          {/* Profile Image with Edit Icon */}
           <View style={styles.profileContainer}>
-            <MaterialCommunityIcons name="account" size={80} color="#aaa" style={styles.profileImage}  />
+            {
+              user.user?.avatar
+              ? <Image
+                  source={{ uri: `http://192.168.1.3:1984/${ user.user?.avatar?.url }` }} 
+                  style={{ width: 80, height: 80, borderRadius: 40, borderWidth: .5, borderColor:'gray' }}
+                  resizeMode="cover" 
+                />
+              : <MaterialCommunityIcons name="account" size={80} color="#aaa" style={styles.profileImage}  />
+            }
             <TouchableOpacity style={styles.editIconContainer} onPress={openImageGallery}>
               <MaterialCommunityIcons name="pencil" size={24} color="#007AFF" />
             </TouchableOpacity>
           </View>
         </View>
-
         <View style={styles.infoContainer}>
           <View style={styles.row}>
             <Text style={styles.label}>Display name</Text>
-            <Text style={styles.value}>MiAmi</Text>
+            <Text style={styles.value}>{user.user?.current.displayName}</Text>
           </View>
-
           <View style={styles.row}>
             <Text style={styles.label}>Status message</Text>
             <Text style={styles.value}>Build your money.</Text>
           </View>
-
           <View style={styles.row}>
             <Text style={styles.label}>Phone number</Text>
             <Text style={styles.value}>+66 62 958 0897</Text>

@@ -22,6 +22,30 @@ import connection from './mongo'
 
 const mongoose = require('mongoose');
 
+const getUserById = async(_id) => {
+  return await Model.User.aggregate([
+    { $match: { _id } },
+    {
+      $addFields: {
+        avatarId: "$current.avatarId",  // Bring the nested field to the top level
+      }
+    },{
+      $lookup: {
+        localField: "avatarId",
+        from: "file",
+        foreignField: "_id",
+        as: "avatar"
+      }
+    },
+    {
+      $unwind: {
+        path: "$avatar",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+  ]);  
+}
+
 export default {
   Query: {
     async test(parent, args, context, info){
@@ -136,25 +160,54 @@ export default {
       let { input } = args
       let { req } = context
 
-      try{
-      
-        let current_user =  await Utils.checkAuth(req);
-        console.log("profile ", current_user, req)
-      } catch (e) {
-        console.error("profile ", e)
-        // throw new AppError(Constants.FORCE_LOGOUT, 'Expired!', {...e, ...req} )
-      }
+       // Start a transaction
+     const session = await mongoose.startSession();
+     session.startTransaction()
+ 
+     try {
+        let { current_user }=  await Utils.checkAuth(req);
+        let role = Utils.checkRole(current_user)
+        if( role !==Constants.ADMINISTRATOR && role !== Constants.AUTHENTICATED ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+  
+        switch(input.mode){
+          case "update_image_profile":{
+            let avatar  =  await Utils.saveFile(session, current_user, input.file)
 
-      
-      // let files  =  await Utils.saveFile(current_user, input.file)
+            let userHistory = await Model.User.findById(current_user?._id)
+            await Model.User.updateOne({ _id: current_user?._id }, { "current.avatarId":  avatar[0]._id, history: Utils.createRevision(userHistory) }, { session });
+
+            await session.commitTransaction(); 
+
+            let user = await getUserById(current_user?._id)
+            return {
+              status: true,
+              data: user[0],
+              executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+            } 
+          }
+        }
+      }catch(error){
+          await session.abortTransaction();
+
+          throw new AppError(Constants.ERROR, error)
+      }finally {
+          session.endSession();
+      }   
+        
+    },
+    async UploadFile (parent, { file, username, details }) {
+      let start     = Date.now()
+
+      const { createReadStream, filename, encoding, mimetype } = await file
+
+      // createReadStream
+      console.log("UploadFile ", createReadStream, filename, encoding, mimetype, file)
+
       return {
         status: true,
-        message: "profile",
-        args,
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
-      } 
-      
-    },
+      }
+    }
 
     // 
   },

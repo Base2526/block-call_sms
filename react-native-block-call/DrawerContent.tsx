@@ -24,6 +24,12 @@ const DrawerContent: React.FC<MenuProps> = ({ isOpen, onClose, navigation }) => 
   const user = useSelector((state: RootState) => state.user.user );
   console.log('DrawerContent user @@@ :', user )
 
+  /*
+    const user = useSelector((state: RootState) => state.user );
+
+  console.log("ProfileScreen @@@ :", user.user, `http://192.168.1.3:1984/${ user.user?.avatar?.url }`)
+  */
+
   const { openLoginModal } = useMyContext();
   return (
       <TouchableWithoutFeedback onPress={() => onClose()}>
@@ -53,13 +59,15 @@ const DrawerContent: React.FC<MenuProps> = ({ isOpen, onClose, navigation }) => 
                         <View style={styles.avatarContainer}>
                           {
                             user?.avatar
-                            ? <Image source={{ uri: user.avatar.url }} />
+                            ? <Image 
+                                source={{ uri: `http://192.168.1.3:1984/${ user?.avatar?.url }`}}
+                                style={{  width: 80, height: 80, borderRadius: 40, borderWidth: .5, borderColor:'gray' }} />
                             : <MaterialCommunityIcons name="account" size={40} color="#aaa" />
                           }
                         </View>
                         <View style={styles.profileInfo}>
-                          <Text style={styles.profileName}>{user.displayName}</Text>
-                          <Text style={styles.profileEmail}>{user.email}</Text>
+                          <Text style={styles.profileName}>{user.current.displayName}</Text>
+                          <Text style={styles.profileEmail}>{user.current.email}</Text>
                         </View> 
                       </View>
                     </TouchableOpacity>

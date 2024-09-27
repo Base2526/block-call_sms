@@ -35,12 +35,13 @@ const userSchema = new Schema({
             enum : [0, 1], // 0: FALSE, 1: TRUE
             default: 0
         },
-        avatar:{
-            url: { type: String },
-            filename: { type: String },
-            mimetype: { type: String },
-            encoding: { type: String },
-        },
+        avatarId: { type: Schema.Types.ObjectId },
+        // avatar:{
+        //     url: { type: String },
+        //     filename: { type: String },
+        //     mimetype: { type: String },
+        //     encoding: { type: String },
+        // },
         lockAccount: {
             lock: { type: Boolean, default: false },
             date: { type : Date, default: Date.now },

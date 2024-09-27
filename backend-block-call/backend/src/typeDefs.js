@@ -17,6 +17,8 @@ export default gql`
     register(input: JSON): JSON
 
     profile(input: JSON): JSON
+
+    UploadFile(file: Upload!, username: String!, details: String!): JSON
   }
 
   type Subscription {
