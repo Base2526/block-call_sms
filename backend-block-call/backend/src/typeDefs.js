@@ -15,6 +15,8 @@ export default gql`
   type Mutation {
     login(input: JSON): JSON
     register(input: JSON): JSON
+
+    profile(input: JSON): JSON
   }
 
   type Subscription {

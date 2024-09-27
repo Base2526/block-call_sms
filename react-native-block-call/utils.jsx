@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 // import DeviceInfo from 'react-native-device-info';
 
+import _ from "lodash"
+
 // Function to save an object by name
 export const saveObject = async (name: string, object: any) => {
     try {
@@ -73,13 +75,13 @@ export const formatDate = (dateString) => {
 //   return info;
 // };
 
-export const getHeaders = () => {
+export const getHeaders = (sessionId) => {
   const headers = {
       "apollo-require-preflight": "true",
       "content-Type": "application/json",
       "authorization": `Bearer  xxxxx`,
-      // "custom-location": JSON.stringify(),
-      // "custom-authorization": !_.isUndefined(usidaCookie) ? `Bearer ${usidaCookie}` : '',
+      "custom-location": JSON.stringify({}),
+      "custom-authorization": !_.isUndefined(sessionId) ? `Bearer ${sessionId}` : '',
       // "custom-x": `--1-- ${usidaCookie}`
   };
 

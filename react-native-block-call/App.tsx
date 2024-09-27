@@ -85,7 +85,7 @@ export const AppNavigator: React.FC = () => {
   const { loading: loadingMembers, 
     data: dataMembers, 
     error: errorMembers  } =  useQuery(   query_test, {
-                                        context: { headers: getHeaders() },
+                                        context: { headers: getHeaders(null) },
                                         fetchPolicy: 'cache-first', 
                                         nextFetchPolicy: 'network-only', 
                                         notifyOnNetworkStatusChange: false,

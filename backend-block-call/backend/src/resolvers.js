@@ -131,6 +131,32 @@ export default {
         session.endSession();
       }  
     },
+    async profile(parent, args, context, info) {
+      let start     = Date.now()
+      let { input } = args
+      let { req } = context
+
+      try{
+      
+        let current_user =  await Utils.checkAuth(req);
+        console.log("profile ", current_user, req)
+      } catch (e) {
+        console.error("profile ", e)
+        // throw new AppError(Constants.FORCE_LOGOUT, 'Expired!', {...e, ...req} )
+      }
+
+      
+      // let files  =  await Utils.saveFile(current_user, input.file)
+      return {
+        status: true,
+        message: "profile",
+        args,
+        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+      } 
+      
+    },
+
+    // 
   },
   Subscription:{
     userConnected: {

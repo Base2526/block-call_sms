@@ -3,10 +3,12 @@ import { UserItem } from '../interface';
 
 interface UserState {
   user: UserItem | null;
+  sessionId: string; 
 }
 
 const initialState: UserState = {
   user: null,
+  sessionId: ""
 };
 
 // Create the user slice
@@ -22,6 +24,9 @@ const userSlice = createSlice({
         state.user = { ...state.user, ...action.payload }; // Updates specific fields of the user
       }
     },
+    setSessionId(state, action: PayloadAction<string>) { // New reducer to set sessionId
+      state.sessionId = action.payload;
+    },
     resetUser() {
       return initialState;
     },
@@ -29,7 +34,7 @@ const userSlice = createSlice({
 });
 
 // Export the actions
-export const { setUser, updateUser, resetUser } = userSlice.actions;
+export const { setUser, updateUser, setSessionId, resetUser } = userSlice.actions;
 
 // Export the reducer
 export default userSlice.reducer;

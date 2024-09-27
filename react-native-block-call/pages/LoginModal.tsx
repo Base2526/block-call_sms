@@ -7,7 +7,7 @@ import  Toast from 'react-native-toast-notifications';
 import { useMutation } from '@apollo/client';
 
 import { RootState, AppDispatch } from '../redux/store';
-import { setUser, resetUser } from "../redux/slices/userSlice"
+import { setUser, setSessionId } from "../redux/slices/userSlice"
 import { mutation_login } from "../gqlQuery";
 import { getHeaders } from "../utils";
 import handlerError from "../handlerError";
@@ -35,7 +35,7 @@ const LoginModal: React.FC<LoginScreenProps> = (props) => {
   // console.log("LoginModal :", user)
 
   const [onMutationLogin] = useMutation(mutation_login, {
-    context: { headers: getHeaders() },
+    context: { headers: getHeaders(null) },
     update: (cache, {data: {login}}) => { 
       console.log("login :", login)
 
@@ -44,6 +44,7 @@ const LoginModal: React.FC<LoginScreenProps> = (props) => {
         console.log("login result :", sessionId, data)
 
         dispatch(setUser(data.current));
+        dispatch(setSessionId(sessionId))
 
         if (toastRef.current) {
           toastRef.current.show("Login success.", {

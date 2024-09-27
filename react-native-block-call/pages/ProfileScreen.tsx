@@ -2,15 +2,63 @@ import React from 'react';
 import { View, Text, Switch, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useToast } from "react-native-toast-notifications";
-import { useDispatch } from 'react-redux';
-
+import { useSelector, useDispatch } from 'react-redux';
+import { useMutation } from '@apollo/client';
+import { launchImageLibrary } from 'react-native-image-picker'; // Import image picker
 import { resetUser } from "../redux/slices/userSlice"
-import { AppDispatch } from '../redux/store';
+import { getHeaders } from "../utils";
+import { mutation_profile } from "../gqlQuery";
+import { RootState, AppDispatch } from '../redux/store';
 
 const ProfileScreen: React.FC<any> = ({navigation}) => {
 
   const dispatch: AppDispatch = useDispatch();
   const toast = useToast();
+
+  const user = useSelector((state: RootState) => state.user );
+
+  const [onProfile] = useMutation(mutation_profile, {
+    context: { headers: getHeaders(user.sessionId) },
+    update: (cache, { data: { profile } }) => {
+      // if (profile.status) {
+      //   dispatch(updateProfile({ profile: profile.data }));
+
+      //   setLoadingUpdateProfile(false)
+      //   message.success('Update profile success!');
+      // }
+      console.log("profile :", profile)
+    },
+    onError(error) {
+      console.error("onError:", error);
+
+    }
+  });
+
+  // Function to open image gallery
+  const openImageGallery = () => {
+    launchImageLibrary(
+      {
+        mediaType: 'photo',
+        maxWidth: 300,
+        maxHeight: 300,
+        quality: 1,
+      },
+      (response) => {
+        if (response.didCancel) {
+          console.log('User cancelled image picker');
+        } else if (response.errorMessage) {
+          console.error('Image picker error: ', response.errorMessage);
+        } else if (response.assets && response.assets.length > 0) {
+          const selectedImage = response.assets[0].uri;
+          console.log('Selected image: ', selectedImage);
+          // You can handle the selected image URI here (e.g., update profile image)
+
+          onProfile({ variables: { input: { file: response.assets[0] } } })
+        }
+      }
+    );
+  };
+
   return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -19,12 +67,15 @@ const ProfileScreen: React.FC<any> = ({navigation}) => {
             style={styles.bannerImage} 
             resizeMode="cover" 
           />
-          {/* <Image 
-            source={{uri: 'your-profile-image-url'}}
-            style={styles.profileImage} 
-          /> */}
-          <MaterialCommunityIcons name="account" size={80} color="#aaa" style={styles.profileImage}  />
+
+          {/* Profile Image with Edit Icon */}
+          <View style={styles.profileContainer}>
+            <MaterialCommunityIcons name="account" size={80} color="#aaa" style={styles.profileImage}  />
+            <TouchableOpacity style={styles.editIconContainer} onPress={openImageGallery}>
+              <MaterialCommunityIcons name="pencil" size={24} color="#007AFF" />
+            </TouchableOpacity>
           </View>
+        </View>
 
         <View style={styles.infoContainer}>
           <View style={styles.row}>
@@ -63,9 +114,8 @@ const ProfileScreen: React.FC<any> = ({navigation}) => {
               <Text style={styles.qrText}>View QR Code</Text>
             </TouchableOpacity>
           </View>
+          
           <TouchableOpacity style={styles.logoutButton} onPress={async()=>{
-            // await utils.saveObject('login', null)
-
             dispatch(resetUser());
 
             toast.show("Logout success.", {
@@ -76,12 +126,6 @@ const ProfileScreen: React.FC<any> = ({navigation}) => {
             });
 
             navigation.goBack();
-
-            /*
-              // 
-              // const user = useSelector((state: RootState) => state.user );
-              // console.log("LoginModal :", user)
-            */
           }}>
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
@@ -96,7 +140,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    // backgroundColor: 'blue',
     paddingVertical: 20,
     alignItems: 'center',
     justifyContent: 'center',
@@ -105,25 +148,25 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 150,
   },
-  profileImage: {
+  profileContainer: {
     width: 80,
     height: 80,
+    bottom: -20,
+    position: 'absolute',
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
     borderRadius: 40,
-    position: 'absolute',
-    bottom: -40,
-    backgroundColor: '#f5f5f5'
+    backgroundColor: '#f5f5f5',
   },
-  closeButton: {
+  editIconContainer: {
     position: 'absolute',
-    top: 20,
-    right: 20,
-    padding: 10,
-    // backgroundColor: 'rgba(0, 0, 0, 0.5)', // Optional: semi-transparent background
-    // borderRadius: 20,
-  },
-  closeText: {
-    color: '#fff',
-    fontSize: 18, // Adjust size as needed
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 2,
   },
   infoContainer: {
     marginTop: 40,
