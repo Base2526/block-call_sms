@@ -86,3 +86,5 @@ app-block-call/*.jsbundle
 # Ruby / CocoaPods
 app-block-call/ios/Pods/
 app-block-call/vendor/bundle/
+
+react-comments-section-ts/node_modules
