@@ -87,4 +87,5 @@ app-block-call/*.jsbundle
 app-block-call/ios/Pods/
 app-block-call/vendor/bundle/
 
-react-comments-section-ts/node_modules
+react-comments/example/node_modules
+react-comments/react-comments-section/node_modules
