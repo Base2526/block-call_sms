@@ -27,22 +27,6 @@ interface EmojiInputProps {
 
 const EmojiInput = ({ text, setText, mode, inputStyle }: EmojiInputProps) => {
 
-  // function useOutsideAlerter(ref: any, setOpen: Function) {
-  //   useEffect(() => {
-  //     function handleClickOutside(event: any) {
-  //       if (ref.current && !ref.current.contains(event.target)) {
-  //         // setOpen(!open)
-  
-  //         console.log("handleClickOutside :")
-  //       }
-  //     }
-  //     document.addEventListener('mousedown', handleClickOutside)
-  //     return () => {
-  //       document.removeEventListener('mousedown', handleClickOutside)
-  //     }
-  //   }, [ref])
-  // }
-
   const [open, setOpen] = useState(false)
   const [chosenEmoji, setChosenEmoji] = useState<{ emoji?: any }>()
   const wrapperRef = useRef(null)
