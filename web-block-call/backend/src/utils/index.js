@@ -523,11 +523,11 @@ export const checkRole = (user) =>{
     return Constants.ANONYMOUS;
 }
 
-export const getUser = async(query, without_password = true) =>{
-    let fields = { username: 1, password: 1, email: 1, displayName: 1, banks: 1, roles: 1, avatar: 1, subscriber: 1, producer: 1, lastAccess: 1 }
-    if(without_password){
-        fields = { username: 1, email: 1, displayName: 1, banks: 1, roles: 1, avatar: 1, subscriber: 1, producer: 1, lastAccess: 1 }
-    }
+export const getUser = async(query) =>{
+    // let fields = { username: 1, password: 1, email: 1, displayName: 1, banks: 1, roles: 1, avatar: 1, subscriber: 1, producer: 1, lastAccess: 1 }
+    // if(without_password){
+    //     fields = { username: 1, email: 1, displayName: 1, banks: 1, roles: 1, avatar: 1, subscriber: 1, producer: 1, lastAccess: 1 }
+    // }
 
     // if(query?._id){
     //     let cache_user = cache.ca_get( query?._id.toString() )
@@ -540,7 +540,7 @@ export const getUser = async(query, without_password = true) =>{
     //     }       
     // }
 
-    return  await Model.User.findOne( query, fields )
+    return  await Model.User.findOne( query  )
 }
 
 export const getMember = async(query, without_password = true) =>{

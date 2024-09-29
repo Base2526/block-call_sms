@@ -1,7 +1,7 @@
 import "@/pages/administrator/orgchart/index.css"
 
 import React, { useState, useEffect } from 'react';
-import OrgChart from '@somkid.sim/react-org-chart-ts'
+import { OrgChart } from '@somkid.sim/react-org-chart-ts'
 import photo from '@/assets/logo512.png'
 import { generateTreeData } from "@/pages/administrator/orgchart/faker"
 import { Node, TreeNode } from "@/pages/administrator/orgchart/interface" 

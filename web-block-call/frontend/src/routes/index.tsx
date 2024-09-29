@@ -11,6 +11,7 @@ import Dashboard from '@/pages/dashboard';
 import LayoutPage from '@/pages/layout';
 import LoginPage from '@/pages/login';
 import RegisterPage from '@/pages/register';
+import ForgotpasswordPage from "@/pages/forgotpassword";
 
 import ProfilePage from "@/pages/profile"
 import SettingsPage from "@/pages/settings"
@@ -24,8 +25,9 @@ import ListPolicyCtpPage from "@/pages/insurance/ListPolicyCtp"
 import PolicyCTPListExpirePage from "@/pages/insurance/PolicyCTPListExpire"
 import ShowAgentSalePage from "@/pages/insurance/ShowAgentSale"
 
-import ReportCtpListPage from "@/pages/report/ReportCtpList"
-import ReportCtpListByInsPage from "@/pages/report/ReportCtpListByIns"
+import ReportFormPage from "@/pages/report/ReportForm"
+import ReportViewPage from "@/pages/report/ReportView"
+import ReportListPage from "@/pages/report/ReportList"
 import AdministratorPage from "@/pages/administrator"
 import UserListPage from "@/pages/administrator/UserList"
 import UserPage from "@/pages/administrator/User"
@@ -61,6 +63,10 @@ import CalTreeHistoryListPage from "@/pages/administrator/CalTreeHistoryList"
 
 import NoticeListPage from "@/pages/administrator/NoticeList"
 
+import MyReportListPage from "@/pages/report/MyReportList"
+import PrivacyNoticePage from "@/pages/settings/PrivacyNotice"
+import AboutUsPage from "@/pages/settings/AboutUs"
+
 import WrapperRouteComponent from '@/routes/config';
 
 const NotFound = lazy(() => import(/* webpackChunkName: "404'"*/ '@/pages/404'));
@@ -88,9 +94,13 @@ const routeList: RouteObject[] = [
       path: '/login',
       element: <WrapperRouteComponent requireAuth={false} element={<LoginPage />} titleId="title.login" />,
     },{
-      path: '/register/:id',
+      path: '/register',
       element: <WrapperRouteComponent requireAuth={false} element={<RegisterPage />} titleId="title.register" />,
+    },{
+      path: '/forgot-password',
+      element: <WrapperRouteComponent requireAuth={false} element={<ForgotpasswordPage />} titleId="title.register" />,
     }
+    // 
     ]
   },
   {
@@ -108,7 +118,11 @@ const routeList: RouteObject[] = [
       },
       {
         path: 'view',
-        element: <WrapperRouteComponent requireAuth={true} element={<ViewProductPage />} titleId="title.insurance" />,
+        element: <WrapperRouteComponent requireAuth={true} element={<ReportViewPage />} titleId="title.insurance" />,
+      },
+      {
+        path: 'my_list',
+        element: <WrapperRouteComponent requireAuth={true} element={<MyReportListPage />} titleId="title.insurance" />,
       },
       {
         path: 'cart',
@@ -125,12 +139,30 @@ const routeList: RouteObject[] = [
         
       },
       {
-        path: 'purchases/:key/view',
-        element: <WrapperRouteComponent requireAuth={true} element={<OrderFormPage />} titleId="title.insurance" />,
+        path: 'privacy',
+        element: <WrapperRouteComponent /*requireAuth={true} */ element={<PrivacyNoticePage />} titleId="title.insurance" />,
+      },
+      // 
+      {
+        path: 'about-us',
+        element: <WrapperRouteComponent /*requireAuth={true} */ element={<AboutUsPage />} titleId="title.insurance" />,
+      },
+      // ReportList
+      {
+        path: 'administrator/reportlist',
+        element: <WrapperRouteComponent /*requireAuth={true} */ element={<ReportListPage />} titleId="title.insurance" />,
       },
       {
         path: 'insurance',
         element: <WrapperRouteComponent requireAuth={true} element={<InsurancePage />} titleId="title.insurance" />,
+      },
+      {
+        path: 'report',
+        element: <WrapperRouteComponent requireAuth={true} element={<ReportFormPage />} titleId="title.insurance" />,
+      },
+      {
+        path: 'report/view',
+        element: <WrapperRouteComponent requireAuth={true} element={<ReportViewPage />} titleId="title.insurance" />,
       },
       {
         path: 'insurance/listenddosnotic',
@@ -175,11 +207,11 @@ const routeList: RouteObject[] = [
     
       {
         path: 'report/reportctplist',
-        element: <WrapperRouteComponent requireAuth={true} element={<ReportCtpListPage />} titleId="title.insurance" />,
+        element: <WrapperRouteComponent requireAuth={true} element={<ReportFormPage />} titleId="title.insurance" />,
       },
       {
         path: 'report/reportctplistbyins',
-        element: <WrapperRouteComponent requireAuth={true} element={<ReportCtpListByInsPage />} titleId="title.insurance" />,
+        element: <WrapperRouteComponent requireAuth={true} element={<ReportViewPage />} titleId="title.insurance" />,
       },
       {
         path: 'administrator',

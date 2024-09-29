@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const AdministratorPage: React.FC = () => {
     const navigate = useNavigate();
     const cardsData = [
-        { title: 'Products', details: 'Products system', path:'/administrator/products' },
+        { title: 'Reports', details: 'Reports system', path:'/administrator/reportlist' },
         { title: 'Users', details: 'Users system', path:'/administrator/userlist' },
         { title: 'Import data', details: 'Import system', path:'/administrator/import' },
         { title: 'Faker', details: 'Faker system', path:'/administrator/faker' },

@@ -36,7 +36,7 @@ declare module '@somkid.sim/react-org-chart-ts' {
         showDetail?: (d: any) => void;  
     }
 
-    export default class OrgChart extends Component<OrgChartProps> {
+    export class OrgChart extends Component<OrgChartProps> {
         render(): JSX.Element;
     }
-}
+}  

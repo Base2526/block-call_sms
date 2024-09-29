@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
+import _ from "lodash"
 import * as Model from "../model"
 let logger = require("../utils/logger");
+
+import provinces from "./provinces"
 
 const modelExists =()=>{
   Model.Socket.find({}, async(err, result)=> {
@@ -37,7 +40,21 @@ const modelExists =()=>{
     if (result.length > 0) {
       // console.log('Found Model.Report');
     } else {
-      let newReport = new Model.Report({});
+      let newReport = new Model.Report({
+        current:{
+          ownerId: new mongoose.Types.ObjectId(),
+          sellerFirstName: 'กรุณากรอกชื่อคนขาย',
+          sellerLastName: 'กรุณากรอกนามสกุลคนขาย',
+          idCard: '1234567890123',
+          sellerAccount:'กรุณากรอกบัญชีคนขาย',
+          bank: 'กรุณาเลือกธนาคาร',
+          product: 'กรุณากรอกสินค้าที่สั่งซื้อ',
+          transferAmount: 0,
+          transferDate: new Date(),
+          sellingWebsite: 'กรุณากรอกเว็บประกาศขายของ',
+          provinceId: new mongoose.Types.ObjectId(),
+        }
+      });
       await newReport.save();
       await Model.Report.deleteMany({})
     }
@@ -108,6 +125,16 @@ const modelExists =()=>{
       
       await newFile.save();
       await Model.File.deleteMany({})
+    }
+  });
+
+  Model.Province.find({}, async(err, result)=> {
+    if (result.length > 0) {
+    } else {
+      _.map(provinces, async(province)=>{
+        const prov = new Model.Province({ name_th: province.value,  name_en: province.label });
+        await prov.save();
+      })
     }
   });
  

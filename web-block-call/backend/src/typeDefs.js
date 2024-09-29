@@ -8,17 +8,27 @@ export default gql`
 
   scalar Upload
 
+  input LoginInput {
+    username: String!
+    password: String!
+    remember: Boolean
+    deviceAgent: String
+  }
+
   type Query {
     test(input: JSON): JSON
+    provinces(input: JSON): JSON
+    reports: JSON
+    report(_id: ID!): JSON
+    my_reports: JSON
   }  
   
   type Mutation {
-    login(input: JSON): JSON
+    login(input: LoginInput): JSON
     register(input: JSON): JSON
-
+    forgot_password(input: JSON): JSON
     profile(input: JSON): JSON
-
-    UploadFile(file: Upload!, username: String!, details: String!): JSON
+    report(input: JSON): JSON
   }
 
   type Subscription {

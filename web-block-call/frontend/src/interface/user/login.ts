@@ -27,3 +27,8 @@ export interface InsuranceParams {
   /** 用户密码 */
   password: string;
 }
+
+export interface ForgotPasswordParams {
+  /** 用户名 */
+  email: string;
+}

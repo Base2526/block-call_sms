@@ -1,11 +1,12 @@
 import React, { FC } from 'react';
 
-import { HomeOutlined, ControlOutlined, BugOutlined, FireOutlined } from '@ant-design/icons';
-import AccountSvg from '@/assets/menu/account.svg';
-import DashboardSvg from '@/assets/menu/dashboard.svg';
-import DocumentationSvg from '@/assets/menu/documentation.svg';
-import GuideSvg from '@/assets/menu/guide.svg';
-import PermissionSvg from '@/assets/menu/permission.svg';
+import {  HomeOutlined, ControlOutlined, BugOutlined, 
+          FireOutlined, InfoCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+// import AccountSvg from '@/assets/menu/account.svg';
+// import DashboardSvg from '@/assets/menu/dashboard.svg';
+// import DocumentationSvg from '@/assets/menu/documentation.svg';
+// import GuideSvg from '@/assets/menu/guide.svg';
+// import PermissionSvg from '@/assets/menu/permission.svg';
 
 interface CustomIconProps {
   type: string;
@@ -41,6 +42,14 @@ export const CustomIcon: FC<CustomIconProps> = props => {
     }
     case 'report':{
       return <span className="anticon"><BugOutlined /></span>;
+    }
+
+    case 'about-us':{
+      return <span className="anticon"><QuestionCircleOutlined /></span>;
+    }
+
+    case 'privacy':{
+      return <span className="anticon"><InfoCircleOutlined /></span>;
     }
 
     default:{

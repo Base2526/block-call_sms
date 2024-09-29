@@ -1,18 +1,17 @@
+import './index.less';
+
 import React, { FC, useState } from 'react';
 import type { LoginParams } from '@/interface/user/login';
-import './index.less';
 import { Layout, Button, Checkbox, Form, Input } from 'antd';
 import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useLocale } from '@/locales';
 import { useDispatch } from 'react-redux';
 import { useMutation } from "@apollo/client";
 import { useTranslation } from 'react-i18next';
-import { updateProfile } from '../../stores/user.store';
-import { mutationLogin } from "../../apollo/gqlQuery";
-import { setCookie, getHeaders } from "../../utils";
-
-import handlerError from "../../utils/handlerError"
+import { updateProfile } from '@/stores/user.store';
+import { mutationLogin } from "@/apollo/gqlQuery";
+import { setCookie, getHeaders } from "@/utils";
+import handlerError from "@/utils/handlerError";
 
 const initialValues: LoginParams = {
   username: '',
@@ -32,14 +31,12 @@ const LoginForm: FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  // const { formatMessage } = useLocale();
-
   const { t } = useTranslation();
 
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-  const [onLogin, resultLogin] = useMutation<LoginData>(mutationLogin, {
+
+  const [onLogin] = useMutation<LoginData>(mutationLogin, {
     context: { headers: getHeaders(location) },
     onCompleted: async (data: LoginData) => {
       const { status, data: profile, sessionId } = data.login;
@@ -48,35 +45,31 @@ const LoginForm: FC = () => {
         dispatch(updateProfile({ profile }));
         navigate("/");
       }
-
       setLoading(false);
     },
     onError(error) {
       setLoading(false);
-
-      handlerError({}, error)
+      handlerError({}, error);
     },
   });
 
   const onFinished = (input: LoginParams) => {
-    console.log("onFinished :", input);
-
     setLoading(true);
     onLogin({ variables: { input } });
   };
 
   return (
-    <Layout>
+    <Layout className="login-layout">
       <div className="login-page">
         <Form onFinish={onFinished} className="login-page-form" initialValues={initialValues}>
           <h2>{t('login')}</h2>
           <Form.Item
             name="username"
             rules={[
-              { required: true, message: t("enterPasswordMessage") || '' },
+              { required: true, message: t("enterUsernameMessage") || '' },
             ]}
           >
-            <Input  placeholder={t("username") || ''} />
+            <Input placeholder={t("username") || ''} />
           </Form.Item>
           <Form.Item
             name="password"
@@ -102,6 +95,23 @@ const LoginForm: FC = () => {
             </Button>
           </Form.Item>
         </Form>
+
+        {/* Register Button */}
+        <div className="layout-login-bottom">
+          <Button
+            type="link"
+            className="layout-login-bottom-register"
+            onClick={() => navigate('/register')}>
+            {t('Register')}
+          </Button>
+          |
+          <Button
+            type="link"
+            className="layout-login-bottom-forgot-password"
+            onClick={() => navigate('/forgot-password')}>
+            {t('Forgot password')}
+          </Button>
+        </div>
       </div>
     </Layout>
   );

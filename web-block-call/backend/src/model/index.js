@@ -45,6 +45,8 @@ import OrderModel from "./OrderModel"
 
 import PeriodModel from "./PeriodModel"
 
+import ProvinceModel from "./ProvinceModel"
+
 module.exports =  {
     Bank:BankModel,
     Post:PostModel,
@@ -86,4 +88,6 @@ module.exports =  {
     Order: OrderModel,
 
     Period: PeriodModel,
+
+    Province: ProvinceModel,
 };

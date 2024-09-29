@@ -10,7 +10,7 @@ export const enUS_title = {
   'title.notFount': '404',
 
 
-  'title.insurance': 'Insurance',
+  'title.insurance': 'Report',
   'title.profile': 'Profile',
   'title.settings': 'Settings',
 

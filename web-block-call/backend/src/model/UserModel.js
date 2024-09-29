@@ -16,15 +16,15 @@ const userSchema = new Schema({
         username: { type: String, unique: true, required:[true, "Username Request is a required field"] },
         password: { type: String, required:[true, "Password Request is a required field"] },
         email: { type: String, unique: true, required:[true, "Email Request is a required field"] },
-        tel: { type: String, unique: true, required:[true, "Email Request is a required field"] },
+        // tel: { type: String, unique: true, required:[true, "Email Request is a required field"] },
         displayName: { type: String, required:[true, "Email Request is a required field"]},
         // idCard: { type: String, required:[true, "ID Card Request is a required field"]},
         address: { type: String },
-        packages: { 
-            type: Number,
-            enum : [1, 2, 3],
-            default: 1
-        },
+        // packages: { 
+        //     type: Number,
+        //     enum : [1, 2, 3],
+        //     default: 1
+        // },
         roles: {
             type: [Number],
             enum: [AUTHENTICATED, ADMINISTRATOR],

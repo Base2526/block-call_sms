@@ -41,7 +41,9 @@ export const queryContentById = gql`query contentById($id: ID!) { contentById(_i
 export const mutationCheck_db = gql`mutation check_db { check_db }`;
 export const mutationLogin = gql`mutation login($input: LoginInput) { login(input: $input) }`;
 export const mutationLoginWithSocial = gql`mutation loginWithSocial($input: LoginWithSocialInput) { loginWithSocial(input: $input) }`;
-export const mutationRegister = gql`mutation register($input: JSON) { register(input: $input) }`;
+export const mutation_register = gql`mutation register($input: JSON) { register(input: $input) }`;
+export const mutation_forgot_password = gql`mutation forgot_password($input: JSON) { forgot_password(input: $input) }`;
+
 export const mutationMe = gql`mutation me($input: JSON) { me(input: $input) }`;
 export const mutationBook = gql`mutation book($input: BookInput) { book(input: $input) }`;
 export const mutationBuy = gql`mutation buy($id: ID!) { buy(_id: $id) }`;
@@ -132,3 +134,10 @@ export const mutation_tree_by_node_id   = gql`mutation tree_by_node_id($input: J
 
 
 export const guery_purchases  = gql`query purchases { purchases }`;
+
+export const guery_reports    = gql`query reports { reports }`;
+export const guery_report     = gql`query report($id: ID!) { report(_id: $id) }`;
+     
+export const guery_my_reports = gql`query my_reports { my_reports }`;
+export const guery_provinces  = gql`query provinces { provinces }`;
+export const mutation_report  = gql`mutation report($input: JSON) { report(input: $input) }`;

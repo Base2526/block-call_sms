@@ -204,7 +204,15 @@ const ProfilePage: FC = () => {
         <Descriptions title="User Information" bordered column={1} style={{ marginTop: '20px' }}>
           <Descriptions.Item label="Phone"><Paragraph className='ant-typography-tel' copyable>{profile?.current?.tel}</Paragraph></Descriptions.Item>
           <Descriptions.Item label="Address">{ profile?.current?.address !== undefined ? <Paragraph className='ant-typography-tel' copyable>{profile?.current?.address}</Paragraph> : <></>  }</Descriptions.Item>
-          <Descriptions.Item label="QR URL">
+          <Descriptions.Item label="My Reports">
+            <Button 
+              type="primary" 
+              style={{ marginRight: '10px' }}
+              onClick={()=>{
+                navigate('/my_list')
+              }}>My Reports</Button>
+          </Descriptions.Item>
+          {/* <Descriptions.Item label="QR URL">
             <Input.Group compact>
               <Input style={{ width: 'calc(100% - 32px)' }} value={"http://167.99.75.91/register/" + profile._id} readOnly />
               <Button icon={<CopyOutlined />} onClick={() => copyToClipboard("http://167.99.75.91/register/" + profile._id)} />
@@ -235,14 +243,6 @@ const ProfilePage: FC = () => {
                 navigate('/administrator/wallet')
               }}>Show Wallet</Button>
           </Descriptions.Item>
-          {/* <Descriptions.Item label="Bills">
-            <Button 
-              type="primary" 
-              style={{ marginRight: '10px' }}
-              onClick={()=>{
-                navigate('/administrator/billlist')
-              }}>Show Bills</Button>
-          </Descriptions.Item> */}
           <Descriptions.Item label="Tree">
             <Button 
               type="primary" 
@@ -258,7 +258,7 @@ const ProfilePage: FC = () => {
               onClick={()=>{
                 navigate('/purchases/1')
               }}>Purchases</Button>
-          </Descriptions.Item>
+          </Descriptions.Item> */}
         </Descriptions>
       </Card>
     </div>

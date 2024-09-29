@@ -15,7 +15,7 @@ import { ReactComponent as ThThSvg } from '@/assets/header/th_TH.svg';
 import { useLocale } from '@/locales';
 import { setGlobalState } from '@/stores/global.store';
 import InsuranceLogo from "@/assets/logo/InsuranceLogo"
-import { logoutAsync } from '@/action/user.action';
+// import { logoutAsync } from '@/action/user.action';
 import CartComponent from "@/pages/layout/cart";
 import HeaderNoticeComponent from '@/pages/layout/notice';
 import LanguageSwitcher from "@/pages/layout/LanguageSwitcher"

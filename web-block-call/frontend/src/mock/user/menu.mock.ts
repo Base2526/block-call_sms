@@ -3,25 +3,25 @@ import { intercepter, mock } from '@/mock/config';
 
 const mockMenuList: MenuList = [
   {
-    code: 'insurance',
+    code: 'privacy',
     label: {
-      zh_CN: 'พ.ร.บ',
-      en_US: 'พ.ร.บ',
-      th_TH: 'พ.ร.บ',
+      zh_CN: 'Privacy',
+      en_US: 'Privacy',
+      th_TH: 'Privacy',
     },
-    icon: 'insurance',
-    path: '/insurance',
+    icon: 'privacy',
+    path: '/privacy',
 
   },
   {
-    code: 'report',
+    code: 'About us',
     label: {
-      zh_CN: 'รายงาน',
-      en_US: 'รายงาน',
-      th_TH: 'รายงาน',
+      zh_CN: 'About us',
+      en_US: 'About us',
+      th_TH: 'About us',
     },
-    icon: 'report',
-    path: '/report',
+    icon: 'about-us',
+    path: '/about-us',
   }
 ];
 
