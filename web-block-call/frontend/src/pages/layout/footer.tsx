@@ -9,7 +9,7 @@ const FooterComponent: FC /*<HeaderProps> */ = () => {
     <Layout>
       <Footer className="footer">
           <div className="footer-content">
-              <p>&copy; {new Date().getFullYear()} INSURANCE</p>
+              <p>&copy; {new Date().getFullYear()} REPORT</p>
           </div>
       </Footer>
     </Layout>

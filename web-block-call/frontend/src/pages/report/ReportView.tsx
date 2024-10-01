@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Descriptions, Image, Carousel, Row, Col, Skeleton } from 'antd';
+import { Descriptions, Image, Carousel, Row, Col, Skeleton, Tag, Typography } from 'antd';
 import { useQuery } from '@apollo/client';
 import { useLocation } from 'react-router-dom';
 import moment from 'moment';
+import _ from "lodash"
 import { guery_report, guery_provinces, mutation_report } from '@/apollo/gqlQuery';
 import { getHeaders } from '@/utils';
 import handlerError from '@/utils/handlerError';
+
+const { Paragraph } = Typography;
 
 interface FormData {
     sellerFirstName: string;
     sellerLastName: string;
     idCard: string;
-    sellerAccount: string;
+    telNumbers: any[];
+    sellerAccounts: any[];
     bank: string;
     product: string;
     transferAmount: number;
@@ -52,11 +56,13 @@ const ReportView: React.FC = (props) => {
     if (!loadingReport && dataReport?.report) {
       if (dataReport.report.status) {
         let report = dataReport.report.data;
+        // console.log("ReportView @@@: ", report)
         setData({
           sellerFirstName: report.current.sellerFirstName,
           sellerLastName: report.current.sellerLastName,
           idCard: report.current.idCard,
-          sellerAccount: report.current.sellerAccount,
+          telNumbers: report.current.telNumbers,
+          sellerAccounts: report.current.sellerAccounts,
           bank: report.current.bank,
           product: report.current.product,
           transferAmount: report.current.transferAmount,
@@ -74,6 +80,21 @@ const ReportView: React.FC = (props) => {
     _id && refetchReport({ id: _id });
   }, [_id, refetchReport]);
 
+  const sellerTelView = () =>{
+    return !data  ? <></> : <>{_.map(data.telNumbers, (v)=><Paragraph copyable>{ v.tel }</Paragraph>) }</>
+  }
+
+  const sellerAccountsView = () =>{
+    return !data  ? <></> : <>{_.map(data.sellerAccounts, (v)=> <>
+                                                                  <Paragraph copyable style={{ display: 'inline', marginRight: 8, fontWeight: 'bold' }}>
+                                                                    {v.sellerAccount}
+                                                                  </Paragraph>
+                                                                  <span>
+                                                                    / {v.bankName_th}   
+                                                                  </span>
+                                                                </> ) }</>
+  }
+
   return (
       <Skeleton loading={loadingReport} active>
         {
@@ -84,11 +105,19 @@ const ReportView: React.FC = (props) => {
               <Carousel arrows infinite={false} style={{ textAlign: 'center' }}>
                 {data.images.map((image, index) => {
                   console.log("@@1 :", image)
-                  return  <div className='xxxxxx-uu' key={index} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+                  return  <div key={index} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
                             <Image
                               src={`http://localhost:1984/${ image.url }`}
                               alt={`Image ${index + 1}`}
-                              style={{ maxHeight: '400px', objectFit: 'contain' }}
+                              // style={{ maxHeight: '400px', objectFit: 'contain' }}
+
+                              style={{
+                                minHeight: '200px', // Set minimum height
+                                minWidth: '300px',  // Set minimum width
+                                maxHeight: '400px',
+                                maxWidth: '100%', // Ensure it doesn't overflow the column
+                                objectFit: 'contain' // Preserve aspect ratio
+                              }}
                             />
                           </div>  
                 })}
@@ -106,11 +135,10 @@ const ReportView: React.FC = (props) => {
               layout="horizontal"
               column={1}
             >
-              <Descriptions.Item label="ชื่อคนขาย (ภาษาไทย)">{data.sellerFirstName}</Descriptions.Item>
-              <Descriptions.Item label="นามสกุล (ภาษาไทย)">{data.sellerLastName}</Descriptions.Item>
-              <Descriptions.Item label="เลขบัตรประชาชนคนขาย">{data.idCard}</Descriptions.Item>
-              <Descriptions.Item label="บัญชีคนขาย">{data.sellerAccount}</Descriptions.Item>
-              <Descriptions.Item label="เลือกธนาคาร">{bankOptions[data.bank] || 'ไม่ระบุ'}</Descriptions.Item>
+              <Descriptions.Item label="ชื่อ-นามสกุล คนขาย"><Paragraph copyable>{data.sellerFirstName} {data.sellerLastName}</Paragraph></Descriptions.Item>
+              <Descriptions.Item label="เลขบัตรประชาชน/พาสปอร์ต คนขาย"><Paragraph copyable>{data.idCard}</Paragraph></Descriptions.Item>
+              <Descriptions.Item label="เบอร์โทรศัพท์/ไอดีไลน์">{sellerTelView()}</Descriptions.Item>
+              <Descriptions.Item label="บัญชีคนขาย">{sellerAccountsView()}</Descriptions.Item>
               <Descriptions.Item label="สินค้าที่สั่งซื้อ">{data.product}</Descriptions.Item>
               <Descriptions.Item label="ยอดโอน">
                 {data.transferAmount.toLocaleString('th-TH', { style: 'currency', currency: 'THB' })}

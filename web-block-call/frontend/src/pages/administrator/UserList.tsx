@@ -7,20 +7,17 @@ import _ from "lodash"
 import { DownOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 
-import { queryMembers } from "@/apollo/gqlQuery"
+import { query_users } from "@/apollo/gqlQuery"
 import { getHeaders, isValidUrl } from "@/utils"
-
-// import AttackFileField from "../../components/basic/attack-file";
+import handlerError from "@/utils/handlerError"
 
 interface DataType {
-    key: string;
-    displayName: string;
-    email: string;
-    avatar?: string;
-    roles:number[];
-    timestamp: any;
-    user?: any; // Optional
-    filename?: string; // Optional
+    current: {
+        displayName: string;
+        email: string;
+        username?: string;
+    }
+    updatedAt: string;
 }
 
 const items = [
@@ -40,24 +37,23 @@ const columns = (navigate: ReturnType<typeof useNavigate>) => [
     },
     {
         title: 'User',
-        dataIndex: 'displayName',
-        sorter: (a: DataType, b: DataType) => a.displayName.localeCompare(b.displayName),
-        render: (name: string) =>{
-            return <Tag color="#2db7f5">{name}</Tag>
+        dataIndex: ['current', 'displayName'] ,
+        sorter: (a: DataType, b: DataType) => a.current.displayName.localeCompare(b.current.displayName),
+        render: (displayName: string) =>{
+            return <>{displayName}</>
         }
     },
     {
         title: 'Email',
-        dataIndex: 'email',
-        sorter: (a: DataType, b: DataType) => a.email.localeCompare(b.email),
-        // render: (path: string) =>{
-        //     let newPath = window.location.protocol +'//'+ window.location.hostname + ':4000/' + path
-        //     return <a href={newPath} target="_blank" rel="noopener noreferrer">{ path }</a>
-        // }
+        dataIndex: ['current', 'email'],
+        sorter: (a: DataType, b: DataType) => a.current.email.localeCompare(b.current.email),
+        render: (email: string) =>{
+            return <>{email}</>
+        }
     },
     {
         title: 'Roles',
-        dataIndex: 'roles',
+        dataIndex: ['current', 'roles'],
         render: (roles: number[]) =>{
             return _.map(roles, role=>{
                 return <Tag color="#2db7f5">{role}</Tag>
@@ -66,7 +62,7 @@ const columns = (navigate: ReturnType<typeof useNavigate>) => [
     },
     {
         title: 'Date',
-        dataIndex: 'timestamp',
+        dataIndex: 'updatedAt',
         // sorter: (a: DataType, b: DataType) => a.address.localeCompare(b.address),
         render: (timestamp: string) =>{
             return <div>{(moment(new Date(timestamp), 'YYYY-MM-DD HH:mm')).format('MMMM Do YYYY, h:mm:ss a')}</div>
@@ -79,17 +75,17 @@ const columns = (navigate: ReturnType<typeof useNavigate>) => [
         render: (data: any) => {
             console.log("Action :", data)
 
-            if(data.roles.includes(1)){
-                return  <Space size="middle">
-                            <a onClick={()=>{
-                                navigate("/administrator/userlist/user")
-                            }}>View</a>
+            // if(data.roles.includes(1)){
+            //     return  <Space size="middle">
+            //                 <a onClick={()=>{
+            //                     navigate("/administrator/userlist/user")
+            //                 }}>View</a>
                             
-                            <Dropdown menu={{ items }}>
-                                <a>More <DownOutlined /></a>
-                            </Dropdown>
-                        </Space>
-            }
+            //                 <Dropdown menu={{ items }}>
+            //                     <a>More <DownOutlined /></a>
+            //                 </Dropdown>
+            //             </Space>
+            // }
             return  <Space size="middle">
                         <a onClick={()=>{
                             navigate("/administrator/userlist/user")
@@ -105,7 +101,7 @@ const columns = (navigate: ReturnType<typeof useNavigate>) => [
     },
 ];
 
-const UserList: React.FC = () => {
+const UserList: React.FC = (props) => {
     const navigate = useNavigate();
     const location = useLocation();
     const [searchText, setSearchText] = useState<string>('');
@@ -118,46 +114,48 @@ const UserList: React.FC = () => {
 
     const { loading: loadingMembers, 
             data: dataMembers, 
-            error: errorMembers  } =  useQuery(   queryMembers, {
+            error: errorMembers  } =  useQuery(  query_users, {
                                                 context: { headers: getHeaders(location) },
                                                 fetchPolicy: 'cache-first', 
                                                 nextFetchPolicy: 'network-only', 
                                                 notifyOnNetworkStatusChange: false,
                                             });
-
+    if(errorMembers){
+        handlerError(props, errorMembers)
+    }
     useEffect(() => {
         if(!loadingMembers){
-            if(!_.isEmpty(dataMembers?.members)){
+            if(!_.isEmpty(dataMembers?.users)){
 
-                console.log("dataMembers?.members :", dataMembers?.members)
+                console.log("dataMembers?.members :", dataMembers?.users)
 
                 setData([])
                 setFilteredData([])
-                if(dataMembers.members.status){
-                    _.map(dataMembers.members.data, (e, key)=>{
+                if(dataMembers.users.status){
+                    _.map(dataMembers.users.data, (e, key)=>{
                         
-                        const newItem: DataType = { key, 
-                                                    displayName: e.current.displayName, 
-                                                    email: e.current.email, 
-                                                    avatar: e.current.avatar?.url,  
-                                                    roles: e.current.roles, 
-                                                    timestamp:e.updatedAt}; 
-                        console.log("e :", e, newItem)
+                        // const newItem: DataType = { key, 
+                        //                             displayName: e.current.displayName, 
+                        //                             email: e.current.email, 
+                        //                             avatar: e.current.avatar?.url,  
+                        //                             roles: e.current.roles, 
+                        //                             timestamp:e.updatedAt}; 
+                        // console.log("e :", e, newItem)
                         setData((prevItems) => {
                             if (Array.isArray(prevItems)) { // Check if prevItems is an array
-                                return [...prevItems, newItem];
+                                return [...prevItems, e];
                             } else {
                                 console.error('prevItems is not an array:', prevItems);
-                                return [newItem]; // Fallback to ensure it is always an array
+                                return [e]; // Fallback to ensure it is always an array
                             }
                         });
 
                         setFilteredData((prevItems) => {
                             if (Array.isArray(prevItems)) { // Check if prevItems is an array
-                                return [...prevItems, newItem];
+                                return [...prevItems, e];
                             } else {
                                 console.error('prevItems is not an array:', prevItems);
-                                return [newItem]; // Fallback to ensure it is always an array
+                                return [e]; // Fallback to ensure it is always an array
                             }
                         });
                     })
@@ -167,12 +165,12 @@ const UserList: React.FC = () => {
     }, [dataMembers, loadingMembers])
 
     const handleSearch = (value: string) => {
-        setSearchText(value);
-        const filtered = data?.filter((item) => 
-            item.user.toLowerCase().includes(value.toLowerCase()) ||
-            item.filename?.toLowerCase().includes(value.toLowerCase()) || false
-        ) || [];
-        setFilteredData(filtered);
+        // setSearchText(value);
+        // const filtered = data?.filter((item) => 
+        //     item.user.toLowerCase().includes(value.toLowerCase()) ||
+        //     item.filename?.toLowerCase().includes(value.toLowerCase()) || false
+        // ) || [];
+        // setFilteredData(filtered);
     };
 
     return (

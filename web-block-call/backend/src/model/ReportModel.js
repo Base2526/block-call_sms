@@ -10,6 +10,15 @@ const historySchema = new Schema({
   updatedAt: Date
 });
 
+const sellerAccountSchema = new Schema({
+  sellerAccount:  { type: String, required:[true, "Seller-Account is a required field"]},
+  bankId: { type: Schema.Types.ObjectId, required:[true, "Bank-ID is a required field"]},
+});
+
+const telNumbersSchema = new Schema({
+  tel:  { type: String, required:[true, "Tel is a required field"]}
+});
+
 const reportSchema = new Schema(
   {
    current:{
@@ -28,14 +37,15 @@ const reportSchema = new Schema(
       maxlength: [13, 'เลขบัตรประชาชนต้องมีความยาว 13 หลัก'],
       minlength: [13, 'เลขบัตรประชาชนต้องมีความยาว 13 หลัก'],
     },
-    sellerAccount: {
-      type: String,
-      required: [true, 'กรุณากรอกบัญชีคนขาย'],
+
+    telNumbers:{
+      type: [telNumbersSchema], default: []
     },
-    bank: {
-      type: String,
-      required: [true, 'กรุณาเลือกธนาคาร'],
+
+    sellerAccounts:{
+      type: [sellerAccountSchema], default: []
     },
+
     product: {
       type: String,
       required: [true, 'กรุณากรอกสินค้าที่สั่งซื้อ'],

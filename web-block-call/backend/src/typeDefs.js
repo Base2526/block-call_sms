@@ -21,6 +21,10 @@ export default gql`
     reports: JSON
     report(_id: ID!): JSON
     my_reports: JSON
+
+    users: JSON
+
+    banks: JSON
   }  
   
   type Mutation {

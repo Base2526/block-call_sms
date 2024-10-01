@@ -13,6 +13,7 @@ import { ToastProvider } from 'react-native-toast-notifications'
 import CallLogsStackScreen from "./pages/CallLogsStackScreen";
 import SMSStackScreen from "./pages/SMSStackScreen";
 import MyBlocklistStackScreen from "./pages/MyBlocklistStackScreen";
+import ReportsStackScreen from "./pages/ReportsStackScreen";
 import { store } from './redux/store';
 import { AppDispatch } from './redux/store';
 import LoadingDialog from './LoadingDialog';
@@ -144,6 +145,16 @@ export const AppNavigator: React.FC = () => {
       <MyProvider>
         <Tab.Navigator>
           <Tab.Screen 
+            name="Reports" 
+            component={ReportsStackScreen} 
+            options={({ route }) => ({
+              // tabBarBadge: 9,
+              tabBarIcon: ({ color, size }) => (
+                <Icon name="flag" color={color} size={size} />
+              ),
+            })}  
+          />
+          <Tab.Screen 
             name={`Call Logs`}
             component={CallLogsStackScreen} 
             options={({ route }) => ({
@@ -163,7 +174,7 @@ export const AppNavigator: React.FC = () => {
               ),
             })}  
           />
-          <Tab.Screen 
+          {/* <Tab.Screen 
             name="Blocklist" 
             component={MyBlocklistStackScreen} 
             options={({ route }) => ({
@@ -172,7 +183,7 @@ export const AppNavigator: React.FC = () => {
                 <Icon name="lock" color={color} size={size} />
               ),
             })}  
-          />
+          /> */}
         </Tab.Navigator>
       </MyProvider>
     </NavigationContainer>
