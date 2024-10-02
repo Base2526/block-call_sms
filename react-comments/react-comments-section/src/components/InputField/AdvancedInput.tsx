@@ -200,7 +200,7 @@ const AdvancedInput = ({
                   : null
               }
             >
-              Post
+              Post x
             </button>
           </div>
         </form>
