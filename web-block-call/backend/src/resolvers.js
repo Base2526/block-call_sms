@@ -95,7 +95,22 @@ export default {
 
       let reports = await Model.Report.aggregate([  {
                                                       $addFields: {
+                                                        ownerId: "$current.ownerId",
                                                         provinceId: "$current.provinceId",  // Bring the nested field to the top level
+                                                      }
+                                                    },
+                                                    {
+                                                      $lookup: {
+                                                        localField: "ownerId",
+                                                        from: "user",
+                                                        foreignField: "_id",
+                                                        as: "owner"
+                                                      }
+                                                    },
+                                                    {
+                                                      $unwind: {
+                                                        path: "$owner",
+                                                        preserveNullAndEmptyArrays: true
                                                       }
                                                     },
                                                     {
@@ -112,7 +127,7 @@ export default {
                                                         preserveNullAndEmptyArrays: true
                                                       }
                                                     }
-                                                    ]);
+                                                  ]);
       return {
         status:true,
         data: reports,

@@ -60,26 +60,26 @@ const component = () => {
   return (
     <div style={{ width: '100%' }}>
       <CommentSection
-        // currentUser={{
-        //   currentUserId: '01a',
-        //   currentUserImg:
-        //     'https://ui-avatars.com/api/name=Riya&background=random',
-        //   currentUserProfile:
-        //     'https://www.linkedin.com/in/riya-negi-8879631a9/',
-        //   currentUserFullName: 'Riya Negi'
-        // }}
-        currentUser={null}
+        currentUser={{
+          currentUserId: '01a',
+          currentUserImg:
+            'https://ui-avatars.com/api/name=Riya&background=random',
+          currentUserProfile:
+            'https://www.linkedin.com/in/riya-negi-8879631a9/',
+          currentUserFullName: 'Riya Negi'
+        }}
+        // currentUser={null}
         hrStyle={{ border: '0.5px solid #ff0072' }}
         commentData={data}
         currentData={(data: any) => {
           console.log('curent data', data)
         }}
         logIn={{
-            loginLink: 'http://localhost:3001/',
-            // onLogin: () => alert('Call login function '),
-            signupLink: 'http://localhost:3001/',
+            // loginLink: 'http://localhost:3001/',
+            onLogin: () => alert('Call login function '),
+            // signUpLink: 'http://localhost:3001/',
             // onLogin:()=>{console.log("onLogin")},
-            onSignup:()=>{console.log("onLogin")}
+            onSignUp:()=>{console.log("onLogin")}
             // onLogin: ()=>{console.log("onLogin")},
         }}
         customImg='https://imagesvc.meredithcorp.io/v3/mm/image?url=https%3A%2F%2Fstatic.onecms.io%2Fwp-content%2Fuploads%2Fsites%2F13%2F2015%2F04%2F05%2Ffeatured.jpg&q=60'

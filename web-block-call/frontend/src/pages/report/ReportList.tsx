@@ -89,15 +89,13 @@ const columns = (navigate: ReturnType<typeof useNavigate>) => [
             return <>{ additionalInfo }</>
         }
     },
-    // {
-    //     title: 'Roles',
-    //     dataIndex: 'roles',
-    //     render: (roles: number[]) =>{
-    //         return _.map(roles, role=>{
-    //             return <Tag color="#2db7f5">{role}</Tag>
-    //         })
-    //     }
-    // },
+    {
+        title: 'Owner',
+        dataIndex: ['owner', 'current', 'displayName'],
+        render: (displayName: string) =>{
+            return <Tag color="#2db7f5">{displayName}</Tag>
+        }
+    },
     // {
     //     title: 'Date',
     //     dataIndex: 'timestamp',

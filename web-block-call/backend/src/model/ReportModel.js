@@ -37,15 +37,12 @@ const reportSchema = new Schema(
       maxlength: [13, 'เลขบัตรประชาชนต้องมีความยาว 13 หลัก'],
       minlength: [13, 'เลขบัตรประชาชนต้องมีความยาว 13 หลัก'],
     },
-
     telNumbers:{
       type: [telNumbersSchema], default: []
     },
-
     sellerAccounts:{
       type: [sellerAccountSchema], default: []
     },
-
     product: {
       type: String,
       required: [true, 'กรุณากรอกสินค้าที่สั่งซื้อ'],
