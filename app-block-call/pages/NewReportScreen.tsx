@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 // import { View, TextInput, Text, Button, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-// import { Picker } from '@react-native-picker/picker';
+import { Picker } from '@react-native-picker/picker';
 // import DateTimePicker from '@react-native-community/datetimepicker';
 // import DateTimePickerModal from 'react-native-modal-datetime-picker';
 // import { launchImageLibrary } from 'react-native-image-picker';
@@ -38,19 +38,14 @@ const provinces = [
   // Add more provinces here
 ];
 
-type NewReportScreenProps = {
-  navigation: any;
-  route: any;
-};
-
-const NewReportScreen: React.FC<NewReportScreenProps> = (props) => {
+const NewReportScreen: React.FC = () => {
   // let { navigation, route } = props
 
   const navigation = useNavigation();
   const route = useRoute();
 
   useLayoutEffect(() => {
-    const routeName = getFocusedRouteNameFromRoute(route);
+    // const routeName = getFocusedRouteNameFromRoute(route);
 
     navigation.setOptions({
       headerRight: () => (
@@ -183,6 +178,7 @@ const NewReportScreen: React.FC<NewReportScreenProps> = (props) => {
     />
 
     {/* Dynamic Telephone Numbers */}
+    <Text>Telephone/Line ID</Text>
     {telNumbers.map((tel, index) => (
       <View key={tel._id}>
         <TextInput
@@ -229,6 +225,7 @@ const NewReportScreen: React.FC<NewReportScreenProps> = (props) => {
     </TouchableOpacity>
 
     {/* Seller Accounts */}
+    <Text>Seller</Text>
     {sellerAccounts.map((account, index) => (
       <View key={account._id}>
         <Text>Seller Account {index + 1}</Text>
@@ -241,7 +238,7 @@ const NewReportScreen: React.FC<NewReportScreenProps> = (props) => {
           }}
           placeholder="Enter seller account"
         />
-        {/* <Picker
+        <Picker
           selectedValue={account.bankId}
           onValueChange={(itemValue) => {
             const updatedAccounts = [...sellerAccounts];
@@ -252,7 +249,7 @@ const NewReportScreen: React.FC<NewReportScreenProps> = (props) => {
           {banks.map((bank) => (
             <Picker.Item key={bank._id} label={bank.name_th} value={bank._id} />
           ))}
-        </Picker> */}
+        </Picker>
         {
           sellerAccounts.length > 1 &&  /*<Button title="Remove" onPress={() => removeSellerAccount(index)} />*/ 
           <TouchableOpacity 
@@ -279,6 +276,7 @@ const NewReportScreen: React.FC<NewReportScreenProps> = (props) => {
         paddingVertical: 8,
         paddingHorizontal: 15,
         borderRadius: 5, // Optional: rounded corners
+        marginBottom: 20
       }}
       onPress={addSellerAccount} >
       <Text style={{
