@@ -13,6 +13,7 @@ import ProfileScreen from "./ProfileScreen";
 import DrawerContent from "../DrawerContent";
 import Reposts from './ReportsScreen';
 import PrivatePolicy from "./PrivatePolicy";
+import SearchScreen from "./SearchScreen";
 
 import NewReportScreen from "./NewReportScreen";
 
@@ -36,6 +37,7 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           routeName === 'HelpSendFeedback' ||  
           routeName === 'About'||
           routeName === 'Policy' ||
+          routeName === 'Search' ||
           routeName === 'NewRepost'
       ) {
       navigation.setOptions({ tabBarStyle: { display: 'none' } });
@@ -79,46 +81,54 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
             headerShown: true, 
             headerTitle: 'Settings', 
           }}/>
-          <ReportsStack.Screen
-            name="HelpSendFeedback"
-            component={HelpSendFeedbackScreen}
-            options={{  
-              headerShown: true, 
-              headerTitle: 'Help & SendFeedback', 
-            }}
-          />
-          <ReportsStack.Screen
-            name="Policy"
-            component={PrivatePolicy}
-            options={{  
-              headerTitle: 'Private policy', 
-              headerShown: true, 
-            }}
-          />
-          <ReportsStack.Screen
-            name="About"
-            component={AboutScreen}
-            options={{  
-              headerShown: true, 
-              headerTitle: 'About', 
-            }}
-          />
-          <ReportsStack.Screen
-            name="Profile"
-            component={ProfileScreen}
-            options={{  
-              headerShown: true, 
-              headerTitle: 'Profile', 
-            }}
-          />
-          <ReportsStack.Screen
-              name="CallLogsDetail"
-              component={CallLogsDetailScreen}
-              options={{  
-                headerTitle: '', 
-                headerShown: true, 
-              }}
-            />
+        <ReportsStack.Screen
+          name="HelpSendFeedback"
+          component={HelpSendFeedbackScreen}
+          options={{  
+            headerShown: true, 
+            headerTitle: 'Help & SendFeedback', 
+          }}
+        />
+        <ReportsStack.Screen
+          name="Policy"
+          component={PrivatePolicy}
+          options={{  
+            headerTitle: 'Private policy', 
+            headerShown: true, 
+          }}
+        />
+        <ReportsStack.Screen
+          name="About"
+          component={AboutScreen}
+          options={{  
+            headerShown: true, 
+            headerTitle: 'About', 
+          }}
+        />
+        <ReportsStack.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{  
+            headerShown: true, 
+            headerTitle: 'Profile', 
+          }}
+        />
+        <ReportsStack.Screen
+          name="CallLogsDetail"
+          component={CallLogsDetailScreen}
+          options={{  
+            headerTitle: '', 
+            headerShown: true, 
+          }}
+        />
+        <ReportsStack.Screen
+          name="Search"
+          component={SearchScreen}
+          options={{  
+            headerShown: true,
+            headerTitle: 'Search', 
+          }}
+        />
       </ReportsStack.Navigator>
       <DrawerContent isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} navigation={navigation} />
     </>

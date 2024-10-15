@@ -11,8 +11,8 @@ import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useQuery } from '@apollo/client';
 
 import { RootState, AppDispatch } from '../redux/store';
-import { formatDate } from "../utils";
-import TabIconWithMenu from "../TabIconWithMenu"
+// import { formatDate } from "../utils";
+// import TabIconWithMenu from "../TabIconWithMenu"
 import { BlockItem } from "../redux/interface"
 
 import { addBlocks, removeBlock } from "../redux/slices/blockSlice";
@@ -39,8 +39,8 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
           routeName === "SMSDetail" ||
           routeName === "Settings" ||
           routeName === 'HelpSendFeedback' ||  
-          routeName === 'About' /*||
-          routeName === 'NewRepost'*/
+          routeName === 'About' ||
+          routeName === 'Search'
       ) {
       navigation.setOptions({ tabBarStyle: { display: 'none' } });
     } else {
@@ -56,15 +56,15 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
           <TouchableOpacity 
+            style={{padding:10}}
             onPress={() => { navigation.navigate("NewRepost")  }} >
-            <Icon name="plus" size={25}  color="#333" />
+            <Icon name="plus" size={30}  color="#333" />
           </TouchableOpacity>
-          {/* <TabIconWithMenu 
-            iconName="dots-vertical"
-            menuItems={[
-              { label: 'Clear all', onPress: ()=>{ console.log(">>") } },
-            ]}
-          /> */}
+          <TouchableOpacity 
+            style={{padding:10}}
+            onPress={() => { navigation.navigate("Search") }} >
+            <Icon name="magnify" size={30}  color="#333" />
+          </TouchableOpacity>
         </View>
       ),
       headerShown: true, // hide/show header parent
@@ -81,11 +81,6 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
 
   const [filteredData, setFilteredData] = useState<any[]>([]);
 
-  // const sessionId = useSelector((state: RootState) => state.user.sessionId );
-  // // const location = useLocation();
-
-  // console.log("ReportsScreen sessionId :", sessionId)
-
   const { loading: loadingReports, 
           data: dataReports, 
           error: errorReports} = useQuery(query_reports, {
@@ -98,8 +93,6 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   if(errorReports){
     handlerError(props, toast, errorReports)
   }
-
-  console.log("ReportsScreen")
 
   useEffect(() => {
     if (!loadingReports && dataReports?.reports) {
@@ -129,21 +122,21 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
     setRefreshing(false);
   }, []);
 
-  const handleUnblock = async(data: BlockItem) =>{
+  const handleUnblock = async(data: any) =>{
     try {
-      if(data.PHONE_NUMBER){
-        const response = await DatabaseHelper.deleteBlockNumberData(data.PHONE_NUMBER);
-        console.log("response :", response);
-        if(response.status){
-          dispatch(removeBlock(data.PHONE_NUMBER))
+      if(data._id){
+        // const response = await DatabaseHelper.deleteBlockNumberData(data.PHONE_NUMBER);
+        // console.log("response :", response);
+        // if(response.status){
+        //   dispatch(removeBlock(data.PHONE_NUMBER))
   
-          toast.show("Unblock.", {
-            type: "normal",
-            placement: "bottom",
-            duration: 4000,
-            animationType: "slide-in",
-          });
-        }
+        //   toast.show("Unblock.", {
+        //     type: "normal",
+        //     placement: "bottom",
+        //     duration: 4000,
+        //     animationType: "slide-in",
+        //   });
+        // }
         // fetchBlockNumberAll();
         closeMenu();
       }
@@ -165,9 +158,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   }
 
   const renderItem = useCallback(({ item }: { item: any }) => {
-
-    // console.log("@@@ item.current.images : ", item.current.images)
-    // url
+    // console.log("url >", item.current.images ? `http://192.168.1.3:1984/${item.current.images[0].url}` : "" )
     return (
       <TouchableOpacity
         style={styles.itemContainer}
@@ -176,32 +167,34 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
         key= {item._id}>
         <View style={styles.avatarContainer}>
           {item.current.images
-            ? <Image source={{ uri: `http://192.16.1.3:1984/${item.current.images[0].url}` }} style={styles.image} />
+            ? <Image source={{ uri: `http://192.168.1.3:1984/${item.current.images[0].url}` }} style={styles.image} />
             : <Icon name="account" size={30} />}
         </View>
-        <View style={styles.detailsContainer}>
+        <View style={styles.detailsContainer} >
           <Text style={styles.name}>{item.current.sellerFirstName} {item.current.sellerLastName}</Text> 
           <Text style={styles.name}>{item.current.additionalInfo}</Text>
           <Text style={styles.phone}>{item.current.sellingWebsite}</Text>
           <Text style={styles.phone}>{item.createdAt}</Text>
         </View>
-        {/* <View style={styles.timeContainer}>
+        
+        <View style={styles.menuContainer}>
           <Menu
-            visible={visibleMenuId === item.PHONE_NUMBER}
+            visible={visibleMenuId === item._id}
             onDismiss={closeMenu}
             anchor={
-              <TouchableOpacity onPress={() => openMenu(item.PHONE_NUMBER)}>
+              <TouchableOpacity onPress={()=>openMenu(item._id)}>
                 <Icon name="dots-vertical" size={24} color="#555" />
               </TouchableOpacity>
             }
           >
-            <Menu.Item 
-              onPress={() => { handleUnblock(item) }} title="Unblock" />
+            <Menu.Item onPress={() => { handleUnblock(item) }} title="Unblock" />
           </Menu>
+          {/* 
           <View style={styles.timeAndIconContainer}>
             <Text style={styles.time}>{formatDate(item.UPDATE_AT)}</Text>
-          </View>
-        </View> */}
+          </View> 
+          */}
+        </View>
       </TouchableOpacity>
     );
   }, [visibleMenuId]);
@@ -253,12 +246,12 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   avatarContainer: {
-    width: 60,
-    height: 60,
+    width: 100,
+    height: 100,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 35, 
-    backgroundColor: '#eee',
+    borderRadius: 5, 
+    // backgroundColor: 'red',
     marginRight: 15,
   },
   image: {
@@ -268,16 +261,26 @@ const styles = StyleSheet.create({
   },
   detailsContainer: {
     flex: 1,
+    backgroundColor: 'yellow'
   },
+  // rightContainer:{
+  //   flex: 1,
+  //   backgroundColor: 'green'
+  // },
   name: {
     fontWeight: 'bold',
   },
   phone: {
     color: '#555',
   },
-  timeContainer: {
+  menuContainer: {
     alignItems: 'flex-end',
     justifyContent: 'center',
+    // backgroundColor:'blue',
+    position:'absolute',
+    top:0,
+    right:0,
+    padding:10
   },
   timeAndIconContainer: {
     flexDirection: 'row',
