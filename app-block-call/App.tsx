@@ -39,7 +39,7 @@ export const AppNavigator: React.FC = () => {
       dispatch(clearCallLogs());
 
       const response = await DatabaseHelper.fetchCallLogs();
-      console.log("fetchCallLog:", response);
+      // console.log("fetchCallLog:", response);
       
       if (response.status) {
         dispatch(addMultipleCallLogs(response.data));
@@ -56,7 +56,7 @@ export const AppNavigator: React.FC = () => {
       dispatch(clearSmsLogs());
 
       const response = await DatabaseHelper.fetchSmsLogs();
-      console.log("fetchSmsLogs:", response);
+      // console.log("fetchSmsLogs:", response);
       
       if (response.status) {
         dispatch(addMultipleSmsLogs(response.data));
@@ -71,7 +71,7 @@ export const AppNavigator: React.FC = () => {
   const fetchBlockList = async()=>{
     try {
       const response = await DatabaseHelper.getBlockNumberAllData();
-      console.log("fetchBlockNumberAll :", response);
+      // console.log("fetchBlockNumberAll :", response);
 
       if(response.status){
         dispatch(addBlocks(response.data))
@@ -86,7 +86,7 @@ export const AppNavigator: React.FC = () => {
   const { loading: loadingMembers, 
     data: dataMembers, 
     error: errorMembers  } =  useQuery(   query_test, {
-                                        context: { headers: getHeaders(null) },
+                                        context: { headers: getHeaders() },
                                         fetchPolicy: 'cache-first', 
                                         nextFetchPolicy: 'network-only', 
                                         notifyOnNetworkStatusChange: false,
@@ -95,7 +95,7 @@ export const AppNavigator: React.FC = () => {
   useEffect(() => {
     if(!loadingMembers){
 
-      console.log("loadingMembers :", dataMembers )
+      // console.log("loadingMembers :", dataMembers )
         // if(!_.isEmpty(dataMembers?.members)){
         //     setUsers([])
         //     if(dataMembers.members.status){
@@ -150,7 +150,7 @@ export const AppNavigator: React.FC = () => {
             options={({ route }) => ({
               // tabBarBadge: 9,
               tabBarIcon: ({ color, size }) => (
-                <Icon name="flag" color={color} size={size} />
+                <Icon name="bug" color={color} size={size} />
               ),
             })}  
           />

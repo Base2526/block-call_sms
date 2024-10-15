@@ -24,7 +24,7 @@ export const getObject = async (name: string) => {
     }
 };
 
-export const getDate = (timestamp, format: string = 'MM/DD'): string => {
+export const getDate = (timestamp: string, format: string = 'MM/DD'): string => {
   const today = new Date(timestamp);
   const month = (today.getMonth() + 1).toString().padStart(2, '0'); // Add leading zero
   const year = today.getFullYear();
@@ -46,7 +46,7 @@ export const getDate = (timestamp, format: string = 'MM/DD'): string => {
   }
 }
 
-export const formatDate = (dateString) => {
+export const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
@@ -75,13 +75,15 @@ export const formatDate = (dateString) => {
 //   return info;
 // };
 
-export const getHeaders = (sessionId) => {
+export const getHeaders = async() => {
+  let sessionId = await getObject("sessionId")
+  console.log("@@@@ getHeaders :", sessionId)
   const headers = {
       "apollo-require-preflight": "true",
       "content-Type": "application/json",
       "authorization": `Bearer  xxxxx`,
       "custom-location": JSON.stringify({}),
-      "custom-authorization": !_.isUndefined(sessionId) ? `Bearer ${sessionId}` : '',
+      "custom-authorization": sessionId ? `Bearer ${sessionId}` : '',
       // "custom-x": `--1-- ${usidaCookie}`
   };
 

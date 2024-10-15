@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useLayoutEffect } from 'react';
+import React, { useCallback, useState, useLayoutEffect, useEffect } from 'react';
 import { View, Text, StyleSheet, 
         TouchableOpacity, Alert, Image, 
         RefreshControl, FlatList, NativeModules } from 'react-native';
@@ -7,6 +7,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Menu, Divider } from 'react-native-paper';
 import { useToast } from "react-native-toast-notifications";
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
+// import { useLocation } from 'react-router-dom';
+import { useQuery } from '@apollo/client';
 
 import { RootState, AppDispatch } from '../redux/store';
 import { formatDate } from "../utils";
@@ -14,6 +16,10 @@ import TabIconWithMenu from "../TabIconWithMenu"
 import { BlockItem } from "../redux/interface"
 
 import { addBlocks, removeBlock } from "../redux/slices/blockSlice";
+
+import { query_reports } from "../gqlQuery";
+import { getHeaders } from "../utils";
+import handlerError from "../handlerError";
 
 const { DatabaseHelper } = NativeModules;
 
@@ -23,7 +29,9 @@ type ReportsScreenProps = {
   setMenuOpen: () => void; 
 };
 
-const ReportsScreen: React.FC<ReportsScreenProps> = ({ navigation, route, setMenuOpen }) => {
+const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
+  let { navigation, route, setMenuOpen } = props
+
   useLayoutEffect(() => {
     const routeName = getFocusedRouteNameFromRoute(route);
 
@@ -46,17 +54,17 @@ const ReportsScreen: React.FC<ReportsScreenProps> = ({ navigation, route, setMen
           </TouchableOpacity>
       ),
       headerRight: () => (
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
           <TouchableOpacity 
             onPress={() => { navigation.navigate("NewRepost")  }} >
             <Icon name="plus" size={25}  color="#333" />
           </TouchableOpacity>
-          <TabIconWithMenu 
+          {/* <TabIconWithMenu 
             iconName="dots-vertical"
             menuItems={[
               { label: 'Clear all', onPress: ()=>{ console.log(">>") } },
             ]}
-          />
+          /> */}
         </View>
       ),
       headerShown: true, // hide/show header parent
@@ -71,15 +79,48 @@ const ReportsScreen: React.FC<ReportsScreenProps> = ({ navigation, route, setMen
   const blockList = useSelector((state: RootState) => state.block.blockList );
   const toast = useToast();
 
-  const fetchBlockList = async()=>{
-    try {
-      const response = await DatabaseHelper.getBlockNumberAllData();
-      if(response.status){
-        dispatch(addBlocks(response.data))
+  const [filteredData, setFilteredData] = useState<any[]>([]);
+
+  // const sessionId = useSelector((state: RootState) => state.user.sessionId );
+  // // const location = useLocation();
+
+  // console.log("ReportsScreen sessionId :", sessionId)
+
+  const { loading: loadingReports, 
+          data: dataReports, 
+          error: errorReports} = useQuery(query_reports, {
+              context: { headers: getHeaders() },
+              fetchPolicy: 'cache-first', 
+              nextFetchPolicy: 'network-only', 
+              notifyOnNetworkStatusChange: false,
+          });
+
+  if(errorReports){
+    handlerError(props, toast, errorReports)
+  }
+
+  console.log("ReportsScreen")
+
+  useEffect(() => {
+    if (!loadingReports && dataReports?.reports) {
+      console.log("@@@@@@ ReportsScreen > ", dataReports)
+      if(dataReports.reports.status){
+        console.log("dataReports :", dataReports.reports.data[0])
+
+        setFilteredData(dataReports.reports.data)
       }
-    } catch (error ) {
-      console.error("fetchBlockList : ", error);
     }
+  }, [dataReports, loadingReports]);
+
+  const fetchBlockList = async()=>{
+    // try {
+    //   const response = await DatabaseHelper.getBlockNumberAllData();
+    //   if(response.status){
+    //     dispatch(addBlocks(response.data))
+    //   }
+    // } catch (error ) {
+    //   console.error("fetchBlockList : ", error);
+    // }
   }
 
   const onRefresh = useCallback(async () => {
@@ -123,23 +164,28 @@ const ReportsScreen: React.FC<ReportsScreenProps> = ({ navigation, route, setMen
     }
   }
 
-  const renderItem = useCallback(({ item }: { item: BlockItem }) => {
+  const renderItem = useCallback(({ item }: { item: any }) => {
+
+    // console.log("@@@ item.current.images : ", item.current.images)
+    // url
     return (
       <TouchableOpacity
         style={styles.itemContainer}
         onPress={() => { navigation.navigate("CallLogsDetail", { itemId: item.PHONE_NUMBER }); }}
         onLongPress={() => Alert.alert("onLongPress")}
-        key= {item.ID}>
+        key= {item._id}>
         <View style={styles.avatarContainer}>
-          {item.PHOTO_URI
-            ? <Image source={{ uri: item.PHOTO_URI }} style={styles.image} />
+          {item.current.images
+            ? <Image source={{ uri: `http://192.16.1.3:1984/${item.current.images[0].url}` }} style={styles.image} />
             : <Icon name="account" size={30} />}
         </View>
         <View style={styles.detailsContainer}>
-          <Text style={styles.name}>{item.NAME}</Text>
-          <Text style={styles.phone}>{item.PHONE_NUMBER}</Text>
+          <Text style={styles.name}>{item.current.sellerFirstName} {item.current.sellerLastName}</Text> 
+          <Text style={styles.name}>{item.current.additionalInfo}</Text>
+          <Text style={styles.phone}>{item.current.sellingWebsite}</Text>
+          <Text style={styles.phone}>{item.createdAt}</Text>
         </View>
-        <View style={styles.timeContainer}>
+        {/* <View style={styles.timeContainer}>
           <Menu
             visible={visibleMenuId === item.PHONE_NUMBER}
             onDismiss={closeMenu}
@@ -153,10 +199,9 @@ const ReportsScreen: React.FC<ReportsScreenProps> = ({ navigation, route, setMen
               onPress={() => { handleUnblock(item) }} title="Unblock" />
           </Menu>
           <View style={styles.timeAndIconContainer}>
-            {/* {renderItemCall(itemCall.type)} */}
             <Text style={styles.time}>{formatDate(item.UPDATE_AT)}</Text>
           </View>
-        </View>
+        </View> */}
       </TouchableOpacity>
     );
   }, [visibleMenuId]);
@@ -164,14 +209,14 @@ const ReportsScreen: React.FC<ReportsScreenProps> = ({ navigation, route, setMen
   return (
     <View style={styles.container}>
       {
-        blockList.length === 0 ? (
+        filteredData.length === 0 ? (
           <TouchableOpacity style={styles.emptyContainer} onPress={()=>{fetchBlockList()}}>
             <Icon name="file-document-outline" size={80} color="#ccc" />
             <Text style={styles.emptyText}>No Reports Found</Text>
           </TouchableOpacity>
         ) : (
           <FlatList
-            data={blockList}
+            data={filteredData}
             renderItem={renderItem}
             keyExtractor={(item) => item.PHONE_NUMBER}
             initialNumToRender={10}
