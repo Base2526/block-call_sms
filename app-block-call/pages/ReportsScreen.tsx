@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useLayoutEffect, useEffect } from 'react';
 import { View, Text, StyleSheet, 
         TouchableOpacity, Alert, Image, 
-        RefreshControl, FlatList, NativeModules } from 'react-native';
+        RefreshControl, FlatList, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useSelector, useDispatch } from 'react-redux';
 import { Menu, Divider } from 'react-native-paper';
@@ -9,6 +9,8 @@ import { useToast } from "react-native-toast-notifications";
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 // import { useLocation } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
+import ImageViewer from 'react-native-image-zoom-viewer';
+import _ from "lodash";
 
 import { RootState, AppDispatch } from '../redux/store';
 // import { formatDate } from "../utils";
@@ -21,8 +23,6 @@ import { query_reports } from "../gqlQuery";
 import { getHeaders } from "../utils";
 import handlerError from "../handlerError";
 
-const { DatabaseHelper } = NativeModules;
-
 type ReportsScreenProps = {
   navigation: any;
   route: any;
@@ -31,6 +31,10 @@ type ReportsScreenProps = {
 
 const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   let { navigation, route, setMenuOpen } = props
+
+  // State to handle image viewer visibility
+  const [isImageViewerVisible, setImageViewerVisible] = useState(false);
+  const [imageUrls, setImageUrls] = useState<{ url: string }[]>([]);
 
   useLayoutEffect(() => {
     const routeName = getFocusedRouteNameFromRoute(route);
@@ -80,6 +84,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   const toast = useToast();
 
   const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   const { loading: loadingReports, 
           data: dataReports, 
@@ -105,17 +110,6 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
     }
   }, [dataReports, loadingReports]);
 
-  const fetchBlockList = async()=>{
-    // try {
-    //   const response = await DatabaseHelper.getBlockNumberAllData();
-    //   if(response.status){
-    //     dispatch(addBlocks(response.data))
-    //   }
-    // } catch (error ) {
-    //   console.error("fetchBlockList : ", error);
-    // }
-  }
-
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     // fetchBlockNumberAll();
@@ -125,19 +119,6 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   const handleUnblock = async(data: any) =>{
     try {
       if(data._id){
-        // const response = await DatabaseHelper.deleteBlockNumberData(data.PHONE_NUMBER);
-        // console.log("response :", response);
-        // if(response.status){
-        //   dispatch(removeBlock(data.PHONE_NUMBER))
-  
-        //   toast.show("Unblock.", {
-        //     type: "normal",
-        //     placement: "bottom",
-        //     duration: 4000,
-        //     animationType: "slide-in",
-        //   });
-        // }
-        // fetchBlockNumberAll();
         closeMenu();
       }
     } catch (error ) {
@@ -158,25 +139,73 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   }
 
   const renderItem = useCallback(({ item }: { item: any }) => {
-    // console.log("url >", item.current.images ? `http://192.168.1.3:1984/${item.current.images[0].url}` : "" )
+    const isExpanded = expandedItemId === item._id;
     return (
-      <TouchableOpacity
+      <View
         style={styles.itemContainer}
-        onPress={() => { navigation.navigate("CallLogsDetail", { itemId: item.PHONE_NUMBER }); }}
-        onLongPress={() => Alert.alert("onLongPress")}
         key= {item._id}>
-        <View style={styles.avatarContainer}>
+        <TouchableOpacity 
+          style={styles.avatarContainer}
+          onPress={() => {
+            // Show ImageViewer when image is pressed
+            if(item.current.images) {
+              setImageUrls(item.current.images.map((img: any) => ({ url: `http://192.168.1.3:1984/${img.url}` })));
+              setImageViewerVisible(true);
+            }
+          }}>
           {item.current.images
-            ? <Image source={{ uri: `http://192.168.1.3:1984/${item.current.images[0].url}` }} style={styles.image} />
+            // ? <Image source={{ uri: `http://192.168.1.3:1984/${item.current.images[0].url}` }} style={styles.image} />
+            ? <View style={styles.imageContainer}>
+                <Image 
+                  source={{ uri: `http://192.168.1.3:1984/${item.current.images[0].url}` }} 
+                  style={styles.image} 
+                />
+                <View style={styles.imageCountContainer}>
+                  <Text style={styles.imageCountText}>
+                    {item.current.images.length}
+                  </Text>
+                </View>
+              </View>
             : <Icon name="account" size={30} />}
-        </View>
+        </TouchableOpacity>
         <View style={styles.detailsContainer} >
-          <Text style={styles.name}>{item.current.sellerFirstName} {item.current.sellerLastName}</Text> 
-          <Text style={styles.name}>{item.current.additionalInfo}</Text>
-          <Text style={styles.phone}>{item.current.sellingWebsite}</Text>
-          <Text style={styles.phone}>{item.createdAt}</Text>
+          <TouchableOpacity onPress={()=>{ navigation.navigate("ReportDetail") }} >
+            <Text style={styles.name}>{item.current.sellerFirstName} {item.current.sellerLastName}</Text> 
+            {
+              item.current.additionalInfo.length > 200 
+              ? <Text style={styles.name}>
+                  {isExpanded ? item.current.additionalInfo : `${item.current.additionalInfo.substring(0, 200)}...`}
+                  <TouchableOpacity onPress={() => setExpandedItemId(isExpanded ? null : item._id)}>
+                    <Text style={styles.readMoreLess}>{isExpanded ? '' : ' Read More'}</Text>
+                  </TouchableOpacity>
+                </Text>
+              : <Text style={styles.name}>{item.current.additionalInfo}</Text> 
+            }
+            <Text style={styles.phone}>{item.current.sellingWebsite}</Text>
+            {
+              _.map(item.current.telNumbers, (value)=>{
+                return <TouchableOpacity><Text style={styles.phone}>{value.tel}</Text></TouchableOpacity>
+              })
+            }
+            <Text style={styles.phone}>{item.createdAt}</Text>
+          </TouchableOpacity>
+         
+          {/* Action Buttons */}
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity style={{padding:5}}  onPress={() => { /* handle like */ }}>
+              <Icon name="heart-outline" size={16} color="#555" />
+            </TouchableOpacity>
+            <TouchableOpacity style={{padding:5}}  onPress={() => { /* handle bookmark */ }}>
+              <Icon name="bookmark-outline" size={16} color="#555" />
+            </TouchableOpacity>
+            <TouchableOpacity style={{padding:5}}  onPress={() => { /* handle comment */ }}>
+              <Icon name="comment-outline" size={16} color="#555" />
+            </TouchableOpacity>
+            <TouchableOpacity style={{padding:5}}  onPress={() => { /* handle comment */ }}>
+              <Icon name="share" size={16} color="#555" />
+            </TouchableOpacity>
+          </View>
         </View>
-        
         <View style={styles.menuContainer}>
           <Menu
             visible={visibleMenuId === item._id}
@@ -189,21 +218,16 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
           >
             <Menu.Item onPress={() => { handleUnblock(item) }} title="Unblock" />
           </Menu>
-          {/* 
-          <View style={styles.timeAndIconContainer}>
-            <Text style={styles.time}>{formatDate(item.UPDATE_AT)}</Text>
-          </View> 
-          */}
         </View>
-      </TouchableOpacity>
+      </View>
     );
-  }, [visibleMenuId]);
+  }, [visibleMenuId, expandedItemId]);
 
   return (
     <View style={styles.container}>
       {
         filteredData.length === 0 ? (
-          <TouchableOpacity style={styles.emptyContainer} onPress={()=>{fetchBlockList()}}>
+          <TouchableOpacity style={styles.emptyContainer} onPress={()=>{}}>
             <Icon name="file-document-outline" size={80} color="#ccc" />
             <Text style={styles.emptyText}>No Reports Found</Text>
           </TouchableOpacity>
@@ -220,6 +244,16 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           />
         )
+      }
+      {/* ImageViewer Modal */}
+      { isImageViewerVisible && 
+        <Modal visible={isImageViewerVisible} transparent={true} onRequestClose={() => setImageViewerVisible(false)}>
+          <ImageViewer
+            imageUrls={imageUrls}
+            enableSwipeDown
+            onSwipeDown={() => setImageViewerVisible(false)}
+            onCancel={() => setImageViewerVisible(false)}/>
+        </Modal> 
       }
     </View>
   );
@@ -242,31 +276,33 @@ const styles = StyleSheet.create({
   },
   itemContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
+    // alignItems: 'center',
+    paddingLeft: 5,
+    // maxHeight: 500,
   },
   avatarContainer: {
+    flex: 3,
     width: 100,
     height: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 5, 
+    // backgroundColor: 'blue',
+    // justifyContent: 'center',
+    // alignItems: 'center',
     // backgroundColor: 'red',
-    marginRight: 15,
+    borderRadius: 5, 
+    margin: 5, 
+    padding: 2,
   },
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: 35,
+    borderRadius: 5,
   },
   detailsContainer: {
-    flex: 1,
-    backgroundColor: 'yellow'
+    flex: 9,
+    // backgroundColor: 'yellow'
+    // backgroundColor: 'red',
+    paddingTop: 10,
   },
-  // rightContainer:{
-  //   flex: 1,
-  //   backgroundColor: 'green'
-  // },
   name: {
     fontWeight: 'bold',
   },
@@ -276,25 +312,41 @@ const styles = StyleSheet.create({
   menuContainer: {
     alignItems: 'flex-end',
     justifyContent: 'center',
-    // backgroundColor:'blue',
     position:'absolute',
     top:0,
     right:0,
     padding:10
   },
-  timeAndIconContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  time: {
-    color: '#888',
-    marginLeft: 5,
-  },
-  icon: {
-    marginRight: 5,
-  },
   menuButton: {
-    marginLeft: 10,
+    marginLeft: 15
+  },
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+  },
+  imageCountContainer: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 10,
+    padding: 5,
+  },
+  imageCountText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  actionsContainer: {
+    // backgroundColor:'blue',
+    flexDirection: 'row',
+    alignSelf: 'flex-end'
+  },
+  readMoreLess: {
+    color: 'blue',
+    marginLeft: 5,
+    textDecorationLine: 'underline',
   },
 });
 

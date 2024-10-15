@@ -16,6 +16,7 @@ import PrivatePolicy from "./PrivatePolicy";
 import SearchScreen from "./SearchScreen";
 
 import NewReportScreen from "./NewReportScreen";
+import ReportDetailScreen from "./ReportDetailScreen";
 
 const ReportsStack = createStackNavigator();
 
@@ -38,7 +39,8 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           routeName === 'About'||
           routeName === 'Policy' ||
           routeName === 'Search' ||
-          routeName === 'NewRepost'
+          routeName === 'NewRepost' ||
+          routeName === 'ReportDetail'
       ) {
       navigation.setOptions({ tabBarStyle: { display: 'none' } });
     } else {
@@ -127,6 +129,14 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           options={{  
             headerShown: true,
             headerTitle: 'Search', 
+          }}
+        />
+        <ReportsStack.Screen
+          name="ReportDetail"
+          component={ReportDetailScreen}
+          options={{  
+            headerShown: true,
+            headerTitle: 'ReportDetail', 
           }}
         />
       </ReportsStack.Navigator>
