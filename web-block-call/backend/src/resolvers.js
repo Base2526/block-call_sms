@@ -140,11 +140,11 @@ export default {
 
       let { _id } = args
 
-      // console.log("report @@1 ", args)
+      console.log("report @@1 ", args)
 
       let { current_user } =  await Utils.checkAuth(req);
       let role = Utils.checkRole(current_user)
-      if( role !== Constants.ADMINISTRATOR  && role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+      // if( role !== Constants.ADMINISTRATOR  && role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
 
       let report = await Model.Report.aggregate([
                                                       { 
@@ -217,6 +217,7 @@ export default {
                                                       }
                                                     ]);
                                                     
+      // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
       return {
         status:true,
         data: report.length > 0 ? report[0] : undefined,
