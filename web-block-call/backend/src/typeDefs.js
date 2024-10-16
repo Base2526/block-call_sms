@@ -19,11 +19,9 @@ export default gql`
     test(input: JSON): JSON
     provinces(input: JSON): JSON
     reports: JSON
-    report(_id: ID!): JSON
+    report(_id: ID): JSON
     my_reports: JSON
-
     users: JSON
-
     banks: JSON
   }  
   
