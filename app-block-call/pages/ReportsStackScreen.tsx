@@ -75,6 +75,7 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           children={(props) => <NewReportScreen />}
           options={{
             headerShown: true, 
+            headerTitle: '', 
           }}/>
         <ReportsStack.Screen
           name="Settings"
@@ -128,7 +129,7 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           component={SearchScreen}
           options={{  
             headerShown: true,
-            headerTitle: 'Search', 
+            headerTitle: 'ค้นหา', 
           }}
         />
         <ReportsStack.Screen
@@ -136,7 +137,7 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           component={ReportDetailScreen}
           options={{  
             headerShown: true,
-            headerTitle: 'ReportDetail', 
+            headerTitle: '', 
           }}
         />
       </ReportsStack.Navigator>

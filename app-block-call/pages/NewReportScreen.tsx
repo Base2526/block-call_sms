@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
-// import { View, TextInput, Text, Button, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-// import DateTimePicker from '@react-native-community/datetimepicker';
-// import DateTimePickerModal from 'react-native-modal-datetime-picker';
-// import { launchImageLibrary } from 'react-native-image-picker';
-// import { useForm, Controller } from 'react-hook-form';
 
 import { View, Text, TextInput, Button, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 // import { useForm, Controller } from 'react-hook-form';
@@ -12,7 +7,7 @@ import { useNavigation, useRoute, getFocusedRouteNameFromRoute } from '@react-na
 import { useQuery, useMutation } from '@apollo/client';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { guery_report, query_banks, guery_provinces } from "../gqlQuery";
+import { query_banks, guery_provinces } from "../gqlQuery";
 
 interface ProvinceItem {
   _id: string;
@@ -52,7 +47,6 @@ const NewReportScreen: React.FC = () => {
         <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 5 }}>
           <TouchableOpacity 
             style={{
-              // backgroundColor: '#007bff', // Button background color
               paddingVertical: 8,
               paddingHorizontal: 15,
               borderRadius: 5, // Optional: rounded corners
@@ -62,7 +56,7 @@ const NewReportScreen: React.FC = () => {
                fontSize: 18,
                color: '#007bff', // Text color (white)
                fontWeight: 'bold', // Make text bold
-            }}>Submit</Text>
+            }}>สร้าง</Text>
           </TouchableOpacity>
         </View>
       ),
@@ -82,26 +76,18 @@ const NewReportScreen: React.FC = () => {
   const [provinces, setProvinces] = useState<ProvinceItem[]>([]);
   const [banks, setBanks] = useState<BankItem[]>([]);
   const [loading, setLoading] = useState(false);
+  // Error states
+  const [errors, setErrors] = useState({
+    sellerFirstName: '',
+    sellerLastName: '',
+    idCard: '',
+    telNumbers: [] as string[],
+    sellerAccounts: [] as string[],
+  });
 
   // Apollo Queries
   const { loading: loadingBanks, data: dataBanks } = useQuery(query_banks);
   const { loading: loadingProvinces, data: dataProvinces } = useQuery(guery_provinces);
-  // const { loading: loadingReport, data: dataReport, refetch: refetchReport } = useQuery(guery_report, {
-  //   variables: { id: _id }
-  // });
-
-  // Handle mutation for report submission
-  // const [onReport] = useMutation(mutation_report, {
-  //   onCompleted: (data) => {
-  //     setLoading(false);
-  //     Alert.alert('Success', mode === 'added' ? 'Added successfully!' : 'Edited successfully!');
-  //     navigation.goBack();
-  //   },
-  //   onError: (error) => {
-  //     setLoading(false);
-  //     Alert.alert('Error', error.message);
-  //   }
-  // });
 
   // Handle seller accounts
   const addSellerAccount = () => setSellerAccounts([...sellerAccounts, { _id: sellerAccounts.length, bankId: '', sellerAccount: '' }]);
@@ -111,25 +97,6 @@ const NewReportScreen: React.FC = () => {
   const addTelNumber = () => setTelNumbers([...telNumbers, { _id: telNumbers.length, tel: '' }]);
   const removeTelNumber = (index: number) => setTelNumbers(telNumbers.filter((_, idx) => idx !== index));
 
-  // useEffect(() => {
-  //   console.log("@1 loadingBanks :", dataBanks)
-  //   if (!loadingBanks && dataBanks?.banks?.status) {
-  //     console.log("@2 loadingBanks :", dataBanks.banks.data)
-  //     setBanks(dataBanks.banks.data);
-  //   }
-  //   // if (!loadingProvinces && dataProvinces?.provinces?.status) {
-  //   //   setProvinces(dataProvinces.provinces.data);
-  //   // }
-  //   // if (mode === 'edited' && !loadingReport && dataReport?.report?.status) {
-  //   //   const report = dataReport.report.data;
-  //   //   setSellerFirstName(report.sellerFirstName);
-  //   //   setSellerLastName(report.sellerLastName);
-  //   //   setIdCard(report.idCard);
-  //   //   setSellerAccounts(report.sellerAccounts);
-  //   //   setTelNumbers(report.telNumbers);
-  //   // }
-  // }, [dataBanks , dataProvinces ]);
-
   useEffect(() => {
     if (!loadingBanks && dataBanks?.banks) {
       if(dataBanks.banks.status){
@@ -138,16 +105,70 @@ const NewReportScreen: React.FC = () => {
     }
   }, [dataBanks, loadingBanks]);
 
-  const handleSubmit = () => {
-    setLoading(true);
-    const input = {
-      sellerFirstName,
-      sellerLastName,
-      idCard,
-      sellerAccounts,
-      telNumbers,
-      // mode,
+  useEffect(()=>{
+    console.log("sellerFirstName %%% ", sellerFirstName)
+  }, [sellerFirstName])
+
+
+  const validateFields = () => {
+    let valid = true;
+    const newErrors = {
+      sellerFirstName: '',
+      sellerLastName: '',
+      idCard: '',
+      telNumbers: [] as string[],
+      sellerAccounts: [] as string[],
     };
+  
+    if (sellerFirstName.trim() === '') {
+      newErrors.sellerFirstName = `กรุณากรอกชื่อ - ${ sellerFirstName }`;
+      valid = false;  // Set to false if validation fails
+    }
+  
+    if (sellerLastName.trim() === '') {
+      newErrors.sellerLastName = 'กรุณากรอกนามสกุล';
+      valid = false;
+    }
+  
+    if (idCard.trim() === '') {
+      newErrors.idCard = 'กรุณากรอกเลขที่บัตรประชาชน/Passport';
+      valid = false;
+    }
+  
+    telNumbers.forEach((tel, index) => {
+      if (!tel.tel) {
+        newErrors.telNumbers[index] = `เบอร์โทรศัพท์/Line ID ${index + 1} is required`;
+        valid = false;
+      }
+    });
+  
+    sellerAccounts.forEach((account, index) => {
+      if (!account.sellerAccount) {
+        newErrors.sellerAccounts[index] = `เลขบัญชี ${index + 1} is required`;
+        valid = false;
+      }
+    });
+  
+    console.log("validateFields :", newErrors, sellerFirstName);
+    setErrors(newErrors);
+    return valid;
+  };
+  
+  const handleSubmit = () => {
+    console.log("handleSubmit @@@1")
+    if (validateFields()) {
+      setLoading(true);
+      const input = {
+        sellerFirstName,
+        sellerLastName,
+        idCard,
+        sellerAccounts,
+        telNumbers,
+      };
+      // Call the mutation here
+
+      console.log("handleSubmit @@@2", input)
+    }
     // onReport({ variables: { input } });
   };
 
@@ -155,136 +176,165 @@ const NewReportScreen: React.FC = () => {
     <ScrollView style={{ padding: 16 }}>
     {/* <Text> {mode === 'edited' ? 'Edit Report' : 'Add New Report'} </Text> */}
 
-    <Text>Seller First Name</Text>
+    <Text style={{fontSize:16, fontWeight:'700'}}>ชื่อ</Text>
     <TextInput
       value={sellerFirstName}
-      onChangeText={setSellerFirstName}
-      placeholder="Enter seller's first name"
+      onChangeText={(text) => {
+        setSellerFirstName(text);
+        validateFields(); 
+      }}
+      placeholder="ชื่อ"
+      style={styles.textInput}
     />
+    {errors.sellerFirstName ? <Text style={styles.errorText}>{errors.sellerFirstName}</Text> : null}
 
-    <Text>Seller Last Name</Text>
+    <Text style={{fontSize:16, fontWeight:'700'}}>นามสกุล</Text>
     <TextInput
       value={sellerLastName}
-      onChangeText={setSellerLastName}
-      placeholder="Enter seller's last name"
+      onChangeText={(text) => {
+        setSellerLastName(text);
+        validateFields(); 
+      }}
+      placeholder="นามสกุล"
+      style={styles.textInput}
     />
+    {errors.sellerLastName ? <Text style={styles.errorText}>{errors.sellerLastName}</Text> : null}
 
-    <Text>ID Card</Text>
+    <Text style={{fontSize:16, fontWeight:'700'}}>เลขทีบัตรปะชาขน/Passport</Text>
     <TextInput
       value={idCard}
       onChangeText={setIdCard}
-      placeholder="Enter ID card or passport"
+      placeholder="เลขทีบัตรปะชาขน/Passport"
       maxLength={13}
+      style={styles.textInput}
     />
+    {errors.idCard ? <Text style={styles.errorText}>{errors.idCard}</Text> : null}
 
     {/* Dynamic Telephone Numbers */}
-    <Text>Telephone/Line ID</Text>
-    {telNumbers.map((tel, index) => (
-      <View key={tel._id}>
-        <TextInput
-          value={tel.tel}
-          onChangeText={(text) => {
-            const updatedTels = [...telNumbers];
-            updatedTels[index].tel = text;
-            setTelNumbers(updatedTels);
-          }}
-          placeholder={`Telephone/Line ID ${index + 1}`}
-        />
-        {telNumbers.length > 1 &&  /*<Button title="Remove" onPress={() => removeTelNumber(index)} />*/ 
-        <TouchableOpacity 
-          style={{
-            // backgroundColor: '#007bff', // Button background color
-            paddingVertical: 8,
-            paddingHorizontal: 15,
-            borderRadius: 5, // Optional: rounded corners
-          }}
-          onPress={() => removeTelNumber(index)} >
-          <Text style={{
-            fontSize: 18,
-            color: '#007bff', // Text color (white)
-            fontWeight: 'bold', // Make text bold
-          }}>ลบ</Text>
-        </TouchableOpacity>
-      }
-      </View>
-    ))}
-    {/* <Button title="Add New Telephone" onPress={addTelNumber} /> */}
-    <TouchableOpacity 
-      style={{
-        // backgroundColor: '#007bff', // Button background color
-        paddingVertical: 8,
-        paddingHorizontal: 15,
-        borderRadius: 5, // Optional: rounded corners
-      }}
-      onPress={addTelNumber} >
-      <Text style={{
-        fontSize: 18,
-        color: '#007bff', // Text color (white)
-        fontWeight: 'bold', // Make text bold
-      }}>เพิ่ม</Text>
-    </TouchableOpacity>
-
-    {/* Seller Accounts */}
-    <Text>Seller</Text>
-    {sellerAccounts.map((account, index) => (
-      <View key={account._id}>
-        <Text>Seller Account {index + 1}</Text>
-        <TextInput
-          value={account.sellerAccount}
-          onChangeText={(text) => {
-            const updatedAccounts = [...sellerAccounts];
-            updatedAccounts[index].sellerAccount = text;
-            setSellerAccounts(updatedAccounts);
-          }}
-          placeholder="Enter seller account"
-        />
-        <Picker
-          selectedValue={account.bankId}
-          onValueChange={(itemValue) => {
-            const updatedAccounts = [...sellerAccounts];
-            updatedAccounts[index].bankId = itemValue;
-            setSellerAccounts(updatedAccounts);
-          }}
-        >
-          {banks.map((bank) => (
-            <Picker.Item key={bank._id} label={bank.name_th} value={bank._id} />
-          ))}
-        </Picker>
-        {
-          sellerAccounts.length > 1 &&  /*<Button title="Remove" onPress={() => removeSellerAccount(index)} />*/ 
+    <Text style={{fontSize:16, fontWeight:'700'}}>เบอร์โทรศัพท์/Line ID</Text>
+    <View style={{ borderWidth: .5, borderColor: '#ccc', borderRadius: 10, padding: 5, marginBottom: 10 }}>
+      {telNumbers.map((tel, index) => (
+        <View key={tel._id} style={{ marginBottom: 5}}>
+          <TextInput
+            value={tel.tel}
+            onChangeText={(text) => {
+              const updatedTels = [...telNumbers];
+              updatedTels[index].tel = text;
+              setTelNumbers(updatedTels);
+            }}
+            placeholder={`เบอร์โทรศัพท์/Line ID ${index + 1}`}
+            style={styles.textInput}
+          />
+          {errors.telNumbers[index] ? <Text style={styles.errorText}>{errors.telNumbers[index]}</Text> : null}
+          {telNumbers.length > 1 &&  
           <TouchableOpacity 
             style={{
-              // backgroundColor: '#007bff', // Button background color
               paddingVertical: 8,
               paddingHorizontal: 15,
-              borderRadius: 5, // Optional: rounded corners
+              borderRadius: 5,
             }}
-            onPress={() => removeSellerAccount(index)} >
+            onPress={() => removeTelNumber(index)} >
             <Text style={{
               fontSize: 18,
-              color: '#007bff', // Text color (white)
-              fontWeight: 'bold', // Make text bold
+              color: '#007bff', 
+              fontWeight: 'bold', 
             }}>ลบ</Text>
           </TouchableOpacity>
         }
-      </View>
-    ))}
-    {/* <Button title="Add New Seller Account" onPress={addSellerAccount} /> */}
-    <TouchableOpacity 
-      style={{
-        // backgroundColor: '#007bff', // Button background color
-        paddingVertical: 8,
-        paddingHorizontal: 15,
-        borderRadius: 5, // Optional: rounded corners
-        marginBottom: 20
-      }}
-      onPress={addSellerAccount} >
-      <Text style={{
-        fontSize: 18,
-        color: '#007bff', // Text color (white)
-        fontWeight: 'bold', // Make text bold
-      }}>เพิ่ม</Text>
-    </TouchableOpacity>
+        </View>
+      ))}
+      <TouchableOpacity 
+        style={{
+          paddingVertical: 8,
+          paddingHorizontal: 15,
+          borderRadius: 5
+        }}
+        onPress={addTelNumber} >
+        <Text style={{
+          fontSize: 18,
+          color: '#007bff',
+          fontWeight: 'bold', 
+        }}>เพิ่ม</Text>
+      </TouchableOpacity>
+    </View>
+
+    {/* Seller Accounts */}
+    <Text style={{fontSize:16, fontWeight:'700'}}>บัญชีธนาคาร</Text>
+    <View style={{ borderWidth: .5, borderColor: '#ccc', borderRadius: 10, padding: 5, marginBottom: 20 }}>
+      {sellerAccounts.map((account, index) => (
+        <View key={account._id} style={{ marginBottom: 5}}>
+          <Text>เลขบัญชี {index + 1}</Text>
+          <TextInput
+            value={account.sellerAccount}
+            onChangeText={(text) => {
+              const updatedAccounts = [...sellerAccounts];
+              updatedAccounts[index].sellerAccount = text;
+              setSellerAccounts(updatedAccounts);
+            }}
+            placeholder="เลขบัญชี"
+            style={styles.textInput}
+          />
+          {errors.sellerAccounts[index] ? <Text style={styles.errorText}>{errors.sellerAccounts[index]}</Text> : null}
+
+          <Text>ธนาคาร {index + 1}</Text>
+          <View style={{
+            borderColor: '#ccc', // Border color
+            borderWidth: 1, // Border width
+            borderRadius: 5, // Rounded corners
+            overflow: 'hidden', // Ensures rounded corners are visible
+            backgroundColor: '#fff', // Background color
+          }}>
+            <Picker
+              style={{
+                height: 50, // Height of the picker
+                width: '100%', // Width of the picker
+                }}
+              selectedValue={account.bankId}
+              onValueChange={(itemValue) => {
+                const updatedAccounts = [...sellerAccounts];
+                updatedAccounts[index].bankId = itemValue;
+                setSellerAccounts(updatedAccounts);
+              }}
+            >
+              {banks.map((bank) => (
+                <Picker.Item key={bank._id} label={bank.name_th} value={bank._id} />
+              ))}
+            </Picker>
+          </View>
+          {
+            sellerAccounts.length > 1 &&  /*<Button title="Remove" onPress={() => removeSellerAccount(index)} />*/ 
+            <TouchableOpacity 
+              style={{
+                // backgroundColor: '#007bff', // Button background color
+                paddingVertical: 8,
+                paddingHorizontal: 15,
+                borderRadius: 5, // Optional: rounded corners
+              }}
+              onPress={() => removeSellerAccount(index)} >
+              <Text style={{
+                fontSize: 18,
+                color: '#007bff', // Text color (white)
+                fontWeight: 'bold', // Make text bold
+              }}>ลบ</Text>
+            </TouchableOpacity>
+          }
+        </View>
+      ))}
+      <TouchableOpacity 
+        style={{
+          paddingVertical: 8,
+          paddingHorizontal: 15,
+          borderRadius: 5,
+        }}
+        onPress={addSellerAccount} >
+        <Text style={{
+          fontSize: 18,
+          color: '#007bff', 
+          fontWeight: 'bold', 
+        }}>เพิ่ม</Text>
+      </TouchableOpacity>
+    </View>
+   
 
     {/* <Button title="Submit" onPress={handleSubmit} />
     {loading && <ActivityIndicator size="large" />} */}
@@ -314,7 +364,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 4,
     marginBottom: 16,
-  }
+  },
+  textInput: {
+    height: 50,
+    borderColor: '#ccc', // Border color
+    borderWidth: 1, // Border width
+    borderRadius: 5, // Rounded corners
+    paddingHorizontal: 10, // Horizontal padding
+    fontSize: 16, // Font size
+    color: '#000', // Text color
+    backgroundColor: '#fff', // Background color
+    marginBottom: 10
+  },
 });
 
 export default NewReportScreen;
