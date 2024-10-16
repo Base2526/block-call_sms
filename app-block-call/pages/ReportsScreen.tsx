@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useLayoutEffect, useEffect } from 'react';
+import React, { useCallback, useState, useLayoutEffect, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, 
         TouchableOpacity, Alert, Image, 
         RefreshControl, FlatList, Modal } from 'react-native';
@@ -10,10 +10,9 @@ import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useQuery } from '@apollo/client';
 import _ from "lodash";
 import Share from 'react-native-share';
+import ActionSheet from 'react-native-actions-sheet';
 
 import { RootState, AppDispatch } from '../redux/store';
-// import { formatDate } from "../utils";
-// import TabIconWithMenu from "../TabIconWithMenu"
 import { BlockItem } from "../redux/interface"
 
 import { addBlocks, removeBlock } from "../redux/slices/blockSlice";
@@ -22,7 +21,8 @@ import { query_reports } from "../gqlQuery";
 import { getHeaders } from "../utils";
 import handlerError from "../handlerError";
 
-import ImageZoomViewer from "./ImageZoomViewer"
+import ImageZoomViewer from "./ImageZoomViewer";
+import CommentActionSheet from "./CommentActionSheet";
 
 type ReportsScreenProps = {
   navigation: any;
@@ -32,6 +32,8 @@ type ReportsScreenProps = {
 
 const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   let { navigation, route, setMenuOpen } = props
+
+  const actionSheetRef = useRef<ActionSheet>(null);
 
   useLayoutEffect(() => {
     const routeName = getFocusedRouteNameFromRoute(route);
@@ -215,9 +217,9 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
             <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle bookmark");/* handle bookmark */ }}>
               <Icon name="bookmark-outline" size={16} color="#555" />
             </TouchableOpacity>
-            {/* <TouchableOpacity style={{padding:5}}  onPress={() => {}}>
+            <TouchableOpacity style={{padding:5}}  onPress={() => { actionSheetRef.current?.show() }}>
               <Icon name="comment-outline" size={16} color="#555" />
-            </TouchableOpacity> */}
+            </TouchableOpacity>
             <TouchableOpacity style={{padding:5}}  onPress={()=>handleShare(item)}>
               <Icon name="share" size={16} color="#555" />
             </TouchableOpacity>
@@ -263,6 +265,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
         )
       }
       { isImageViewerVisible && <ImageZoomViewer images={imageUrls} isVisible={isImageViewerVisible} onClose={()=>setImageViewerVisible(false)}/> }
+      <CommentActionSheet actionSheetRef={actionSheetRef} />
     </View>
   );
 };

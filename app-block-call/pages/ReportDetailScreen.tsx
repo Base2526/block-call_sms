@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
-import { View, TextInput, Text, StyleSheet, ActivityIndicator, Image, ScrollView, TouchableOpacity, Modal  } from 'react-native';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { View, TextInput, Text, StyleSheet, ActivityIndicator, Image, ScrollView, TouchableOpacity, Dimensions  } from 'react-native';
 import { useQuery } from '@apollo/client';
 import { useToast } from "react-native-toast-notifications";
 import { RouteProp } from '@react-navigation/native';
@@ -8,12 +8,15 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import { Menu, Divider } from 'react-native-paper';
 import Share from 'react-native-share';
+import ActionSheet from 'react-native-actions-sheet';
 
 import { query_report } from "../gqlQuery";
 import { getHeaders } from "../utils";
 import handlerError from "../handlerError";
 
-import ImageZoomViewer from "./ImageZoomViewer"
+import ImageZoomViewer from "./ImageZoomViewer";
+import CommentActionSheet from "./CommentActionSheet";
+// const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 type ReportDetailProps = {
   navigation: any;
@@ -30,6 +33,8 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
   const [isImageViewerVisible, setImageViewerVisible] = useState(false);
   const [imageUrls, setImageUrls] = useState<{ url: string }[]>([]);
 
+  const actionSheetRef = useRef<ActionSheet>(null);
+  
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -39,6 +44,9 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
           </TouchableOpacity>
           <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle bookmark"); /*console.log("handle bookmark")*/ }}>
             <Icon name="bookmark-outline" size={30} color="#555" />
+          </TouchableOpacity>
+          <TouchableOpacity style={{padding:5}}  onPress={() => { actionSheetRef.current?.show() }}>
+            <Icon name="comment-outline" size={30} color="#555" />
           </TouchableOpacity>
           <TouchableOpacity style={{padding:5}}  onPress={handleShare} >
             <Icon name="share" size={30} color="#555" />
@@ -89,6 +97,11 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
       }
     }
   }, [dataReport, loadingReport]);
+
+  const handleActionPress = (action: string) => {
+    console.log(`Selected Action: ${action}`);
+    actionSheetRef.current?.hide(); // Hide the action sheet
+  };
 
   const handleShare = async () => {
     try {
@@ -164,13 +177,9 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
                 return <TouchableOpacity><Text style={styles.phone}>- {value.sellerAccount}/{value.bankName_th}</Text></TouchableOpacity>
               })
             }
-
-            {/*  */}
           </View>
-
-
-
-          { isImageViewerVisible &&  <ImageZoomViewer images={imageUrls} isVisible={isImageViewerVisible} onClose={()=>setImageViewerVisible(false)}/>}
+          { isImageViewerVisible &&  <ImageZoomViewer images={imageUrls} isVisible={isImageViewerVisible} onClose={()=>setImageViewerVisible(false)}/> }
+          <CommentActionSheet actionSheetRef={actionSheetRef} />
         </ScrollView>
       )}
     </View>
@@ -182,7 +191,8 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 5,
+    paddingLeft: 5,
+    paddingRight: 5,
     // backgroundColor: 'red',
   },
   avatarContainer: {
@@ -237,6 +247,47 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignSelf: 'flex-end',
     // backgroundColor: 'green'
+  },
+  openButton: {
+    padding: 15,
+    backgroundColor: '#007bff',
+    borderRadius: 5,
+  },
+  openButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  actionSheetContainer: {
+    height: '90%',//SCREEN_HEIGHT * 0.8,  // Max height for the sheet
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+  },
+  indicator: {
+    width: 40,
+    height: 5,
+    backgroundColor: '#ccc',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginVertical: 10,
+  },
+  actionSheetContent: {
+    flex: 1,
+    // alignItems: 'center',
+    // justifyContent: 'center',
+  },
+  actionSheetText: {
+    fontSize: 18,
+    marginBottom: 20,
+  },
+  dragIndicatorTouchable: {
+    padding: 10,
+    backgroundColor: '#efefef',
+    borderRadius: 50,
+    alignItems: 'center',
   },
 });
 
