@@ -7,6 +7,7 @@ import _ from "lodash";
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import ImageViewer from 'react-native-image-zoom-viewer';
 import { Menu, Divider } from 'react-native-paper';
+import Share from 'react-native-share';
 
 import { query_report } from "../gqlQuery";
 import { getHeaders } from "../utils";
@@ -33,13 +34,13 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
     navigation.setOptions({
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
-          <TouchableOpacity style={{padding:5}}  onPress={() => { console.log("handle like") }}>
+          <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle like"); /*console.log("handle like")*/  }}>
             <Icon name="heart-outline" size={30} color="#555" />
           </TouchableOpacity>
-          <TouchableOpacity style={{padding:5}}  onPress={() => { console.log("handle bookmark") }}>
+          <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle bookmark"); /*console.log("handle bookmark")*/ }}>
             <Icon name="bookmark-outline" size={30} color="#555" />
           </TouchableOpacity>
-          <TouchableOpacity style={{padding:5}}  onPress={() => { console.log("handle share") }}>
+          <TouchableOpacity style={{padding:5}}  onPress={handleShare} >
             <Icon name="share" size={30} color="#555" />
           </TouchableOpacity>
           <View >
@@ -88,6 +89,20 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
       }
     }
   }, [dataReport, loadingReport]);
+
+  const handleShare = async () => {
+    try {
+      // Add the Share functionality
+      const shareOptions = {
+        title: 'Share via',
+        message: 'Check out this report!',
+        url: `http://your-backend-url.com/report/${_id}`, // Replace with the actual URL
+      };
+      await Share.open(shareOptions);
+    } catch (error) {
+      console.log("Error sharing:", error);
+    }
+  };
 
   return (
     <View style={styles.container}>
