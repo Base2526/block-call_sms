@@ -27,5 +27,20 @@ cd android
 ./gradlew wrapper --gradle-version 7.5.1  
 
 
+/////////////////// @@@@@@@@@@
+To resolve this, you can follow these steps:
+
+Check the AndroidManifest in the library: Go to the node_modules/react-native-gesture-handler/android/src/main/AndroidManifest.xml file and see if the <manifest> tag includes a package attribute. It should look like this:
+
+xml
+Copy code
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.swmansion.gesturehandler">
+/////////////////// @@@@@@@@@@
+
+
 
 IOS
+
+
+More example about RN : https://github.com/JianlongCao/React-native-resources/tree/master

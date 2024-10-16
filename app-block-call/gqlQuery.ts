@@ -3,7 +3,7 @@ import { gql } from "@apollo/client";
 export const query_test = gql`query test($input: JSON) { test(input: $input) }`;
 
 export const query_reports = gql`query reports{ reports }`;
-export const guery_report  = gql`query report($id: ID!) { report(_id: $id) }`;
+export const query_report  = gql`query report($id: ID) { report(_id: $id) }`;
 
 export const mutation_login   = gql`mutation login($input: JSON) { login(input: $input) }`;
 export const mutation_register= gql`mutation register($input: JSON) { register(input: $input) }`;
