@@ -9,7 +9,7 @@ import { useMutation } from '@apollo/client';
 import { RootState, AppDispatch } from '../redux/store';
 import { setUser, setSessionId } from "../redux/slices/userSlice"
 import { mutation_login } from "../gqlQuery";
-import { getHeaders } from "../utils";
+import { saveObject, getHeaders } from "../utils";
 import handlerError from "../handlerError";
 
 interface LoginScreenProps {
@@ -35,7 +35,7 @@ const LoginModal: React.FC<LoginScreenProps> = (props) => {
   // console.log("LoginModal :", user)
 
   const [onMutationLogin] = useMutation(mutation_login, {
-    context: { headers: getHeaders(null) },
+    context: { headers: getHeaders() },
     update: (cache, {data: {login}}) => { 
       console.log("login :", login)
 
@@ -44,7 +44,9 @@ const LoginModal: React.FC<LoginScreenProps> = (props) => {
         console.log("login result :", sessionId, data)
 
         dispatch(setUser(data.current));
-        dispatch(setSessionId(sessionId))
+        // dispatch(setSessionId(sessionId))
+
+        saveObject("sessionId", sessionId)
 
         if (toastRef.current) {
           toastRef.current.show("Login success.", {
@@ -71,7 +73,6 @@ const LoginModal: React.FC<LoginScreenProps> = (props) => {
       setLoading(false)
     }
   });
-
 
   const closeModal = () => {
     closeLoginModal();

@@ -66,8 +66,8 @@ const DrawerContent: React.FC<MenuProps> = ({ isOpen, onClose, navigation }) => 
                           }
                         </View>
                         <View style={styles.profileInfo}>
-                          <Text style={styles.profileName}>{user.current.displayName}</Text>
-                          <Text style={styles.profileEmail}>{user.current.email}</Text>
+                          <Text style={styles.profileName}>{user.current?.displayName}</Text>
+                          <Text style={styles.profileEmail}>{user.current?.email}</Text>
                         </View> 
                       </View>
                     </TouchableOpacity>

@@ -3,6 +3,8 @@ import '@/mock';
 
 // import 'react-comments-section/dist/index.css'
 
+// import 'react-comments-section/dist/index.css'
+
 import React from 'react';
 import { createRoot } from 'react-dom/client'; // Import createRoot
 import { Provider } from "react-redux";

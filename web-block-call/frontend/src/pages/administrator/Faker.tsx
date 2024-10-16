@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Form, Input, Button, Checkbox, Switch, Card, Select, Row, Col, Typography  } from 'antd';
 import moment from "moment";
 import { useQuery, useMutation } from "@apollo/client";
@@ -10,19 +10,21 @@ import { useSelector } from 'react-redux';
 import { getHeaders, getCookie } from "@/utils"
 import { queryMembers, faker_agent, 
         faker_insurance, mutationTest_addmember, 
-        mutationMlm, mutation_product } from "@/apollo/gqlQuery"
+        query_users, mutation_report, mutation_register,
+        guery_provinces, query_banks } from "@/apollo/gqlQuery"
 
 import  { DefaultRootState } from '@/interface/DefaultRootState';
 // import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
-import SaleOrderPDF from './PDF';
+// import SaleOrderPDF from './PDF';
 
+import handlerError from '@/utils/handlerError';
 
 interface SaleItem {
     id: number;
     name: string;
     amount: number;
     checked: boolean;
-  }
+}
 
 interface UserType {
     _id: string;
@@ -30,26 +32,96 @@ interface UserType {
 
 const { mode, REACT_APP_HOST_GRAPHAL }  = process.env
 
-const Faker: React.FC = () => {
+const Faker: React.FC = (props) => {
     const navigate = useNavigate();
     const location = useLocation();
 
     const { profile } = useSelector((state : DefaultRootState) => state.user);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    console.log("profile ", profile)
+    const [provinces, setProvinces] = useState<any[]>([]);
+    const [banks, setBanks] = useState<any[]>([]);
+    const [users, setUsers] = useState<any[]>([]);
 
-    const [users, setUsers] = useState<UserType[]>();
+    // console.log("profile ", profile)
 
-    const [onTest_addmember, resultTest_addmember] = useMutation(mutationTest_addmember, {
+    const { loading: loadingProvinces, 
+        data: dataProvinces, 
+        error: errorProvinces } = useQuery(guery_provinces, {
         context: { headers: getHeaders(location) },
-        update: (cache, {data: {test_addmember}}) => { 
-            console.log("onTest_addmember ")
+        fetchPolicy: 'cache-first',
+        nextFetchPolicy: 'network-only',
+        notifyOnNetworkStatusChange: false,
+    });
+
+    if (errorProvinces) {
+        handlerError(props, errorProvinces);
+    }
+    useEffect(() => {
+    if (!loadingProvinces && dataProvinces?.provinces) {
+        setProvinces([]);
+        if (dataProvinces?.provinces.status) {
+            _.map(dataProvinces?.provinces.data, (e) => {
+                setProvinces((prevItems) => Array.isArray(prevItems) ? [...prevItems, e] : [e]);
+            });
+        }
+    }
+    }, [dataProvinces, loadingProvinces]);
+
+    const { loading: loadingBanks, 
+        data: dataBanks, 
+        error: errorBanks} = useQuery(query_banks, {
+        context: { headers: getHeaders(location) },
+        fetchPolicy: 'cache-first',
+        nextFetchPolicy: 'network-only',
+        notifyOnNetworkStatusChange: false,
+        });
+    
+    if (errorBanks) {
+        handlerError(props, errorBanks);
+    }
+
+    useEffect(() => {
+        if (!loadingBanks && dataBanks?.banks) {
+            setBanks([]);
+            if (dataBanks?.banks.status) {
+                setBanks(dataBanks?.banks.data);
+            }
+        }
+    }, [dataBanks, loadingBanks]);
+
+    const { loading: loadingUsers, 
+        data: dataUsers, 
+        error: errorUsers  } =  useQuery(  query_users, {
+                                            context: { headers: getHeaders(location) },
+                                            fetchPolicy: 'cache-first', 
+                                            nextFetchPolicy: 'network-only', 
+                                            notifyOnNetworkStatusChange: false,
+                                        });
+    if(errorUsers){
+        handlerError(props, errorUsers)
+    }
+    useEffect(() => {
+        if(!loadingUsers){
+            if(!_.isEmpty(dataUsers?.users)){
+                console.log("dataMembers?.members :", dataUsers?.users)
+                if(dataUsers.users.status){
+                    setUsers(dataUsers.users.data)
+                }
+            }
+        }
+    }, [dataUsers, loadingUsers])
+
+    const [onRegister] = useMutation(mutation_register, {
+        context: { headers: getHeaders(location) },
+        update: (cache, {data: {register}}) => { 
+            console.log("register :", register)
         },
         onCompleted( data ) {
         //   history.goBack()
         },
         onError(error){
-          console.log("onTest_addmember onError :", error)
+          console.log("register onError :", error)
         }
     });
 
@@ -80,10 +152,10 @@ const Faker: React.FC = () => {
     });
 
     
-    const [onProduct] = useMutation(mutation_product, {
+    const [onReport] = useMutation(mutation_report, {
         context: { headers: getHeaders(location) },
-        update: (cache, { data: { product } }) => {
-          console.log("product:", product);
+        update: (cache, { data: { report } }) => {
+          console.log("report:", report);
         },
         onCompleted: (data) => {
         },
@@ -111,67 +183,56 @@ const Faker: React.FC = () => {
     //     }
     // });
 
-    const { loading: loadingMembers, 
-        data: dataMembers, 
-        error: errorMembers  } =  useQuery(   queryMembers, {
-                                            context: { headers: getHeaders(location) },
-                                            fetchPolicy: 'cache-first', 
-                                            nextFetchPolicy: 'network-only', 
-                                            notifyOnNetworkStatusChange: false,
-                                        });
+    // const { loading: loadingMembers, 
+    //     data: dataMembers, 
+    //     error: errorMembers  } =  useQuery(   queryMembers, {
+    //                                         context: { headers: getHeaders(location) },
+    //                                         fetchPolicy: 'cache-first', 
+    //                                         nextFetchPolicy: 'network-only', 
+    //                                         notifyOnNetworkStatusChange: false,
+    //                                     });
 
-    useEffect(() => {
-        if(!loadingMembers){
-            if(!_.isEmpty(dataMembers?.members)){
-                setUsers([])
-                if(dataMembers.members.status){
+    // useEffect(() => {
+    //     if(!loadingMembers){
+    //         if(!_.isEmpty(dataMembers?.members)){
+    //             setUsers([])
+    //             if(dataMembers.members.status){
                     
-                    _.map(dataMembers.members.data, (e, key)=>{
+    //                 _.map(dataMembers.members.data, (e, key)=>{
                         
-                        // const newItem: any = {key, displayName: e.current.displayName, email: e.current.email, avatar: e.current.avatar?.url,  roles: e.current.roles, timestamp:e.updatedAt}; 
-                        // console.log("e :", e, newItem)
-                        setUsers((prevItems) => {
-                            if (Array.isArray(prevItems)) { // Check if prevItems is an array
-                                return [...prevItems, e];
-                            } else {
-                                console.error('prevItems is not an array:', prevItems);
-                                return [e]; // Fallback to ensure it is always an array
-                            }
-                        });
-                    })
-                }
-            }
-        }
-    }, [dataMembers, loadingMembers])
+    //                     // const newItem: any = {key, displayName: e.current.displayName, email: e.current.email, avatar: e.current.avatar?.url,  roles: e.current.roles, timestamp:e.updatedAt}; 
+    //                     // console.log("e :", e, newItem)
+    //                     setUsers((prevItems) => {
+    //                         if (Array.isArray(prevItems)) { // Check if prevItems is an array
+    //                             return [...prevItems, e];
+    //                         } else {
+    //                             console.error('prevItems is not an array:', prevItems);
+    //                             return [e]; // Fallback to ensure it is always an array
+    //                         }
+    //                     });
+    //                 })
+    //             }
+    //         }
+    //     }
+    // }, [dataMembers, loadingMembers])
 
     useEffect(()=>{
-        console.log("users :", users)
+        // console.log("users :", users)
     }, [users])
 
-    const onFinishMember = (values: any) => {
-        console.log('onFinishMember Received values:', values);
+    const onFinishUser = (values: any) => {
+        console.log('onFinishUser Received values:', values);
         // Here you can handle form submission (e.g., send data to an API)
 
-        for ( var i = 0; i < 20; i++ ) {
+        for ( var i = 0; i < 1000; i++ ) {
             let name = faker.name.firstName().toLowerCase()
 
-            const parentId = users ? users[Math.floor(Math.random() * users.length)]._id : undefined;
             let newInput =  {
-                parentId,
-                displayName: faker.name.firstName(),
-                email: faker.internet.email(),
                 password: name,
                 username: name,
-                idCard: faker.datatype.uuid(),
-                tel: faker.phone.phoneNumber(),
-                avatar: {
-                    url: faker.image.avatar(),
-                    filename: faker.name.firstName(),
-                    encoding: '7bit',
-                    mimetype: 'image/png'
-                }
+                email: faker.internet.email(),
             }
-            onTest_addmember({ variables: { input: newInput } });
+            onRegister({ variables: { input: newInput } });
         }
     };
 
@@ -289,50 +350,138 @@ const Faker: React.FC = () => {
         }
     };
 
-    const onFinishProduct=  (values: any) => {
+    // Function to generate a random color in HEX format
+    const getRandomColor = (): string => {
+        const randomColor = Math.floor(Math.random() * 16777215).toString(16);
+        return `#${randomColor.padStart(6, '0')}`; // Ensure it's a 6-digit hex
+    };
 
-        /*
-        name: string;
-        detail: string;
-        plan: number[];
-        price: number;
-        packages: number[];
-        images: RcFile[];
-        */
+    // Function to generate a random size
+    const getRandomSize = (): number => {
+        return Math.floor(Math.random() * 100) + 20; // Size between 20 and 120
+    };
 
-        const plans = [1, 2];
-        const pakg = [1, 2 ,3];
+    // Function to generate a random file name
+    const generateRandomFileName = () => {
+        const timestamp = Date.now(); // Use the current timestamp
+        return `image-${timestamp}.png`; // Create a unique filename
+    };
 
-        const generate_img=(leth: number) =>{
-            let imgs:any[] = []
-            for ( var i = 0; i < leth; i++ ) {
-                if(profile._id !== undefined){
-                    imgs = [...imgs, {
-                        userId: profile._id,
-                        url: faker.image.avatar(),
-                        filename: faker.name.firstName(),
-                        encoding: '7bit',
-                        mimetype: 'image/png'
-                    }]
-                }
-                
+    const createPngFile = async (): Promise<File | null> => {
+        if (canvasRef.current) {
+          const ctx = canvasRef.current.getContext('2d');
+          if (ctx) {
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    
+            // Generate random properties
+            const color = getRandomColor();
+    
+            // Randomly choose to draw a rectangle or circle
+            const drawShape = Math.random() < 0.5; // 50% chance to draw a rectangle or circle
+    
+            ctx.fillStyle = color;
+    
+            if (drawShape) {
+              // Draw rectangle that fills the entire canvas
+              ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            } else {
+              // Draw circle that fills the entire canvas
+              const radius = Math.min(canvasRef.current.width, canvasRef.current.height) / 2;
+              ctx.beginPath();
+              ctx.arc(canvasRef.current.width / 2, canvasRef.current.height / 2, radius, 0, Math.PI * 2);
+              ctx.fill();
             }
-            return imgs
+    
+            // Convert canvas to a PNG file
+            return new Promise((resolve) => {
+                canvasRef.current && canvasRef.current.toBlob((blob) => {
+                if (blob) {
+                  const fileName = generateRandomFileName(); // Get a random file name
+                  const file = new File([blob], fileName, { type: 'image/png' });
+                  console.log('File created:', file);
+                  resolve(file); // Resolve the promise with the file
+                } else {
+                  resolve(null); // Resolve with null if blob creation failed
+                }
+              }, 'image/png');
+            });
+          }
+        }
+        return null; // Return null if canvas is not available
+    };
+
+    // Function to generate an array of PNG files
+    const createMultiplePngFiles = async (fileCount: number): Promise<File[]> => {
+        const files: File[] = [];
+
+        for (let i = 0; i < fileCount; i++) {
+            const file = await createPngFile();
+            if (file) {
+                files.push(file); // Add the generated file to the array
+            }
         }
 
-        for ( var i = 0; i < 200; i++ ) {
+        return files; // Return the array of files
+    };
+
+    const generateIDCard = (): string => {
+        // Example custom format for ID: 1234-567890-12-3 (adjust to your format)
+        const idPart1 = faker.random.numeric(4); // First part
+        const idPart2 = faker.random.numeric(6); // Second part
+        const idPart3 = faker.random.numeric(2); // Third part
+        const idPart4 = faker.random.numeric(1); // Fourth part (check digit)
+    
+        return `${idPart1}-${idPart2}-${idPart3}-${idPart4}`;
+    };
+
+    const generateTelNumbers = (count: number): any[] => {
+        const tels: any[] = [];
+        for (let i = 0; i < count; i++) {
+            tels.push({tel: faker.phone.phoneNumber()}); // Use 'phoneNumber' method
+        }
+        return tels;
+    };
+
+    const generateSellerAccounts = (count: number): any[] => {
+        const sellerAccounts: any[] = [];
+        for (let i = 0; i < count; i++) {
+            sellerAccounts.push({ sellerAccount: generateIDCard(), bankId: banks[Math.floor(Math.random() * banks.length)]?._id }); 
+        }
+        return sellerAccounts;
+    };
+
+    const generateIdCardNumber = (): string => {
+        const idCard = Math.floor(1000000000000 + Math.random() * 9000000000000).toString();
+        return idCard; // Returns a 13-digit string
+      };
+
+    const onFinishReport=  async(values: any) => {
+        for ( var i = 0; i < 500; i++ ) {
+
+            const fileCount = Math.floor(Math.random() * 8) + 1; // Define the number of files you want to generate
+            const images = await createMultiplePngFiles(fileCount); // Call the function to create multiple files
+
             let newInput = {
-                name: faker.name.jobTitle(),
-                detail: faker.name.jobTitle(),
-                plan:  [plans[Math.floor(Math.random() * plans.length)]],
-                price: faker.commerce.price(),
-                packages: [pakg[Math.floor(Math.random() * pakg.length)]],
-                images: generate_img( Math.floor(Math.random() * (10 - 1 + 1)) + 1 ),
-                quantity: Math.floor(Math.random() * 1000) + 100
+                ownerId: users[Math.floor(Math.random() * users.length)]._id,
+                sellerFirstName: faker.name.firstName(),
+                sellerLastName: faker.name.firstName(),
+                idCard: generateIdCardNumber(),
+                product: faker.name.jobTitle(),
+                transferAmount: faker.commerce.price(),
+                transferDate: new Date(),
+                sellingWebsite: faker.address.streetAddress(),
+                provinceId: provinces[Math.floor(Math.random() * provinces.length)]._id,
+                telNumbers: generateTelNumbers(fileCount),
+                sellerAccounts: generateSellerAccounts(fileCount), //[{ sellerAccount: 'A001', bankId: ObjectId('66fa659dec7a4f0134b57610') }],
+                additionalInfo: faker.name.jobTitle(),
+                images,
             }
 
-            console.log("newInput :", newInput)
-            onProduct({ variables: { input: { mode:'added', _isDEV: true, current: newInput }  } });
+            let input = { mode:'added', ...newInput }
+            console.log("onReport newInput :", input)
+
+            onReport({ variables: { input  } });
         }
     }
 
@@ -352,10 +501,12 @@ const Faker: React.FC = () => {
 
     return (
         <div>
-            <Card title="Create Member" style={{ marginBottom: '10px' }}>
-                <Form layout="vertical" onFinish={onFinishMember}>
+            <canvas ref={canvasRef} width={200} height={200} style={{ display: 'none' }} />
+    
+            <Card title="Create User" style={{ marginBottom: '10px' }}>
+                <Form layout="vertical" onFinish={onFinishUser}>
                     <Form.Item>
-                        <Button disabled={_.isEmpty(users) ? true : false} type="primary" htmlType="submit">
+                        <Button type="primary" htmlType="submit">
                             Create
                         </Button>
                     </Form.Item>
@@ -380,8 +531,8 @@ const Faker: React.FC = () => {
                 </Form>
             </Card>
 
-            <Card title="Create Product" style={{ marginBottom: '10px' }}>
-                <Form layout="vertical" onFinish={onFinishProduct}>
+            <Card title="Create Report" style={{ marginBottom: '10px' }}>
+                <Form layout="vertical" onFinish={onFinishReport}>
                     <Form.Item>
                         <Button type="primary" htmlType="submit">
                             Create

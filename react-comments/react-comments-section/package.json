@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": "RiyaNegi/react-comments-section",
   "main": "dist/index.js",
-  "style": "dist/styles.css",
+  "style": "dist/index.css",
   "module": "dist/index.modern.js",
   "source": "src/index.tsx",
   "sideEffects": false,
@@ -63,7 +63,8 @@
     "typescript": "^3.9.10"
   },
   "files": [
-    "dist"
+    "dist/*",
+    "dist/*.css" 
   ],
   "dependencies": {
     "@emotion/react": "^11.9.0",

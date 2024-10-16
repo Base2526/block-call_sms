@@ -3,9 +3,21 @@ import _ from "lodash"
 import * as Model from "../model"
 let logger = require("../utils/logger");
 
+import banksInThailand from "./banks"
 import provinces from "./provinces"
 
 const modelExists =()=>{
+  Model.Bank.find({}, async(err, result)=> {
+    if (result.length > 0) {
+      // console.log('Found Model.Socket');
+    } else {
+      _.map(banksInThailand, async(item)=>{
+        const bank = new Model.Bank({ name_th: item.name_th,  name_en: item.name_en });
+        await bank.save();
+      })
+    }
+  });
+
   Model.Socket.find({}, async(err, result)=> {
     if (result.length > 0) {
       // console.log('Found Model.Socket');
@@ -46,8 +58,9 @@ const modelExists =()=>{
           sellerFirstName: 'กรุณากรอกชื่อคนขาย',
           sellerLastName: 'กรุณากรอกนามสกุลคนขาย',
           idCard: '1234567890123',
-          sellerAccount:'กรุณากรอกบัญชีคนขาย',
-          bank: 'กรุณาเลือกธนาคาร',
+          // sellerAccount:'กรุณากรอกบัญชีคนขาย',
+          // bank: 'กรุณาเลือกธนาคาร',
+          sellerAccounts: [ { sellerAccount:"123456789", bankId: new mongoose.Types.ObjectId() }],
           product: 'กรุณากรอกสินค้าที่สั่งซื้อ',
           transferAmount: 0,
           transferDate: new Date(),

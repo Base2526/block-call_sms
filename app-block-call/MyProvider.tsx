@@ -3,7 +3,6 @@ import { NativeModules, NativeEventEmitter } from 'react-native';
 import { useToast } from "react-native-toast-notifications";
 
 import LoginModal from "./pages/LoginModal"
-import NotificationHandler from './NotificationHandler'; 
 
 const { DatabaseHelper } = NativeModules;
 
@@ -29,20 +28,6 @@ export const MyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const openLoginModal = () => {
       setVisible(true)
     };
-
-
-    // useEffect(()=>{
-
-    //   const eventEmitter = new NativeEventEmitter(DatabaseHelper);
-      
-    //   const subscription = eventEmitter.addListener('onSmsReceived', (data) => {
-    //     // Handle the data from the notification (sender, messageBody)
-    //     console.log('SMS Received:', data);
-    //     // Use this data to navigate or update the UI
-    //   });
-
-    //   return () => subscription.remove();
-    // }, [])
   
     return (
       <MyContext.Provider value={{ openLoginModal }} >

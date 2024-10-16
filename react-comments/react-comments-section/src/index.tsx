@@ -13,6 +13,8 @@ interface CommentSectionProps {
   logIn: {
     loginLink: string
     signupLink: string
+    onLogin?: Function
+    onSignup?: Function
   }
   replyTop?: boolean
   customImg?: string

@@ -205,10 +205,10 @@ const CallLogsScreen: React.FC<CallLogsProps> = ({ navigation, route, setMenuOpe
             : "" 
           }
         </View>
-        <View style={styles.detailsContainer}>
+        <TouchableOpacity style={styles.detailsContainer} >
           <Text style={styles.name}>{itemCall.name}</Text>
           <Text style={styles.phone}>{item.number}</Text>
-        </View>
+        </TouchableOpacity>
         <View style={styles.timeContainer}>
           <Menu
             visible={visibleMenuId === item.number}
@@ -303,6 +303,7 @@ const styles = StyleSheet.create({
   },
   detailsContainer: {
     flex: 1,
+    backgroundColor: 'red'
   },
   name: {
     fontWeight: 'bold',

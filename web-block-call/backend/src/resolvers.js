@@ -5,8 +5,6 @@ import cryptojs from "crypto-js";
 import deepdash from "deepdash";
 deepdash(_);
 import * as fs from "fs";
-// import mongoose from 'mongoose';
-// import fetch from "node-fetch";
 import { GraphQLUpload } from 'graphql-upload';
 import moment from "moment";
 import jwt from 'jsonwebtoken';
@@ -76,9 +74,9 @@ export default {
 
       let { current_user }=  await Utils.checkAuth(req);
       let role = Utils.checkRole(current_user)
-      if( role !== Constants.ADMINISTRATOR  &&
-          role !== Constants.AUTHENTICATED 
-          ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied')
+      // if( role !== Constants.ADMINISTRATOR  &&
+      //     role !== Constants.AUTHENTICATED 
+      //     ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied')
     
       let provinces = await Model.Province.find({})
       return {
@@ -93,11 +91,26 @@ export default {
 
       let { current_user } =  await Utils.checkAuth(req);
       let role = Utils.checkRole(current_user)
-      if( role !== Constants.ADMINISTRATOR  && role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+      // if( role !== Constants.ADMINISTRATOR  && role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
 
       let reports = await Model.Report.aggregate([  {
                                                       $addFields: {
+                                                        ownerId: "$current.ownerId",
                                                         provinceId: "$current.provinceId",  // Bring the nested field to the top level
+                                                      }
+                                                    },
+                                                    {
+                                                      $lookup: {
+                                                        localField: "ownerId",
+                                                        from: "user",
+                                                        foreignField: "_id",
+                                                        as: "owner"
+                                                      }
+                                                    },
+                                                    {
+                                                      $unwind: {
+                                                        path: "$owner",
+                                                        preserveNullAndEmptyArrays: true
                                                       }
                                                     },
                                                     {
@@ -114,7 +127,7 @@ export default {
                                                         preserveNullAndEmptyArrays: true
                                                       }
                                                     }
-                                                    ]);
+                                                  ]);
       return {
         status:true,
         data: reports,
@@ -131,29 +144,80 @@ export default {
 
       let { current_user } =  await Utils.checkAuth(req);
       let role = Utils.checkRole(current_user)
-      if( role !== Constants.ADMINISTRATOR  && role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+      // if( role !== Constants.ADMINISTRATOR  && role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
 
-      let report = await Model.Report.aggregate([{ $match: { _id: mongoose.Types.ObjectId(_id) } },
-                                                    {
-                                                      $addFields: {
-                                                        provinceId: "$current.provinceId",  // Bring the nested field to the top level
+      let report = await Model.Report.aggregate([
+                                                      { 
+                                                        $match: { _id: mongoose.Types.ObjectId(_id) } 
+                                                      },
+                                                      {
+                                                        $addFields: {
+                                                          provinceId: "$current.provinceId",  // Bring the nested field to the top level
+                                                        }
+                                                      },
+                                                      {
+                                                        $lookup: {
+                                                          from: "province",
+                                                          localField: "provinceId",
+                                                          foreignField: "_id",
+                                                          as: "province"
+                                                        }
+                                                      },
+                                                      {
+                                                        $unwind: {
+                                                          path: "$province",
+                                                          preserveNullAndEmptyArrays: true
+                                                        }
+                                                      },
+                                                      // Unwind sellerAccounts to perform a lookup for each account
+                                                      {
+                                                        $unwind: {
+                                                          path: "$current.sellerAccounts",
+                                                          preserveNullAndEmptyArrays: true
+                                                        }
+                                                      },
+                                                      // Lookup bank details for each bankId in sellerAccounts
+                                                      {
+                                                        $lookup: {
+                                                          from: "bank",  // the collection for banks
+                                                          localField: "current.sellerAccounts.bankId",
+                                                          foreignField: "_id",
+                                                          as: "bank"
+                                                        }
+                                                      },
+                                                      // Unwind the bank lookup results to get individual bank details
+                                                      {
+                                                        $unwind: {
+                                                          path: "$bank",
+                                                          preserveNullAndEmptyArrays: false
+                                                        }
+                                                      },
+                                                      // Add the bank name_th field into sellerAccounts
+                                                      {
+                                                        $addFields: {
+                                                          "current.sellerAccounts.bankName_th": "$bank.name_th"
+                                                        }
+                                                      },
+                                                      // Group sellerAccounts back into an array after the unwind
+                                                      {
+                                                        $group: {
+                                                          _id: "$_id",
+                                                          reportData: { $first: "$$ROOT" },
+                                                          sellerAccounts: { $push: "$current.sellerAccounts" }
+                                                        }
+                                                      },
+                                                      // Reconstruct the report with sellerAccounts containing bankName_th
+                                                      {
+                                                        $addFields: {
+                                                          "reportData.current.sellerAccounts": "$sellerAccounts"
+                                                        }
+                                                      },
+                                                      {
+                                                        $replaceRoot: { newRoot: "$reportData" }
                                                       }
-                                                    },
-                                                    {
-                                                      $lookup: {
-                                                        localField: "provinceId",
-                                                        from: "province",
-                                                        foreignField: "_id",
-                                                        as: "province"
-                                                      }
-                                                    },
-                                                    {
-                                                      $unwind: {
-                                                        path: "$province",
-                                                        preserveNullAndEmptyArrays: true
-                                                      }
-                                                    }
                                                     ]);
+                                                    
+      // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
       return {
         status:true,
         data: report.length > 0 ? report[0] : undefined,
@@ -192,6 +256,41 @@ export default {
       return {
         status:true,
         data: reports,
+        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+      }
+    },
+    async users(parent, args, context, info) {
+      let start = Date.now()
+      let { req } = context
+
+      let { current_user } =  await Utils.checkAuth(req);
+      let role = Utils.checkRole(current_user)
+      if( role !== Constants.ADMINISTRATOR ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+
+      let users = await Model.User.aggregate([ {
+                                                $match: {
+                                                  "current.roles": { $ne: 1 } // Matches documents where 'roles' does not contain 1
+                                                }
+                                              }]);
+      return {
+        status: true,
+        data: users,
+        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+      }
+    },
+    async banks(parent, args, context, info) {
+      let start = Date.now()
+      let { req } = context
+
+      let { current_user } =  await Utils.checkAuth(req);
+      let role = Utils.checkRole(current_user)
+      // if( role !== Constants.ADMINISTRATOR  &&
+      //     role !== Constants.AUTHENTICATED ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+
+      let banks = await Model.Bank.find({});
+      return {
+        status: true,
+        data: banks,
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
@@ -425,17 +524,18 @@ export default {
             }
 
             let images = await Promise.all(promises);
-            // console.log("All files processed: ", images );
+            console.log("All files processed: ", images );
 
             const newInput = _.omit(input, ['mode']);
-            let current  = {...newInput, images, ownerId: current_user._id }
+            let current  = {...newInput, images, /*ownerId: current_user._id */ }
             
             console.log("@@@2 Report current : ", current)
             
             await Model.Report.insertMany([{ current }], { session });
-            
             // Commit the transaction
             await session.commitTransaction();
+
+            // await session.abortTransaction();
           }catch(error){
               console.log("error @@@@@@@1 :", error)
               await session.abortTransaction();
@@ -527,7 +627,7 @@ export default {
             let newInput = _.omit(input, ['_id', 'mode']);
           
             let history = await Model.Report.findOne({ _id: mongoose.Types.ObjectId(input._id) })
-            let result = await Model.Report.updateOne({ _id: input._id }, { $set: { current: {...newInput, images: [...images, ...newFiles]}, history: Utils.createRevision(history) } }, { session });
+            let result = await Model.Report.updateOne({ _id: input._id }, { $set: { current: {...newInput, images: [...images, ...newFiles], ownerId: current_user._id}, history: Utils.createRevision(history) } }, { session });
 
             console.log("All files processed @@@ : ", result, input._id, newInput );
             // Commit the transaction

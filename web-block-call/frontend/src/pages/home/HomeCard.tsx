@@ -1,10 +1,10 @@
 import React from 'react';
-import { Card, Button, Image } from 'antd';
+import { Card, Button, Image, Typography } from 'antd';
 import { LikeOutlined, DislikeOutlined } from '@ant-design/icons';
-import { useSelector } from 'react-redux';
-import { DefaultRootState } from '@/interface/DefaultRootState';
+import moment from 'moment';
 import _ from "lodash"
-import { ProductItem } from "@/interface/user/user"
+
+const { Paragraph, Text } = Typography;
 
 interface reportItem {
   current:{
@@ -12,6 +12,7 @@ interface reportItem {
       sellerLastName: string;
       idCard: string;
       sellerAccount: string;
+      telNumbers: any[],
       bank: string;
       product: string;
       transferAmount: number;
@@ -21,6 +22,7 @@ interface reportItem {
       additionalInfo?: string;
       images: any[]; // URLs or file paths
   }
+  updatedAt: string;
 }
 
 // Define a TypeScript interface for card props
@@ -39,15 +41,13 @@ const HomeCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   onDeleteForCart,
   onBuy
-}) => {
-  const { carts } = useSelector((state: DefaultRootState) => state.user);
-
-  // let inCart = false;
-  // if(carts){
-  //   inCart = carts.some((item) => item._id === product._id);
-  // }
-  
+}) => {  
   const items = _.map(report.current.images, v=> `http://${REACT_APP_HOST_GRAPHAL}/${v.url}`);
+
+  const telNumbersView = () =>{
+    return  <>{_.map(report.current.telNumbers, (v)=><Paragraph copyable style={{ display: 'inline', margin: 0 }}>{ v.tel }</Paragraph>) }</>
+  }
+
   return (
     <Card
       hoverable
@@ -58,6 +58,7 @@ const HomeCard: React.FC<ProductCardProps> = ({
               style={{
                 objectFit: 'cover',
                 height: '200px',
+                minWidth: '150px',
                 borderTopRightRadius: 5,
                 borderTopLeftRadius: 5,
               }}
@@ -81,36 +82,29 @@ const HomeCard: React.FC<ProductCardProps> = ({
           </div>
         </div>
       }>
-      <div onClick={onClick} style={{ cursor: 'pointer' }}>
-        <Card.Meta 
-          title={report.current.sellerFirstName} 
-          description={
-            <div style={{
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>
-              {report.current.additionalInfo}
-            </div>
-          }   
-        />
-      </div>
-      <div style={{ marginTop: '16px' }}>
-        {/* <p onClick={onClick} style={{ fontSize: '12px', color:"rgba(0, 0, 0, 0.45)" }}>Max quantity: {'product.current.quantity'}</p> */}
-        <p style={{ fontSize: '18px', fontWeight: 'bold' }}>${report.current.transferAmount}</p>
+      <div style={{ marginTop: '5px', minWidth: '150px' }}>
+        <p onClick={onClick} style={{ fontSize: '12px', color: "rgba(0, 0, 0, 0.45)", display: 'inline' }} >
+          <Text>ชื่อ:</Text>{" "} 
+          <Paragraph copyable style={{ display: 'inline', margin: 0 }}>
+            {report.current.sellerFirstName} {report.current.sellerLastName}
+          </Paragraph>
+        </p>
+        <p onClick={onClick} style={{ fontSize: '12px', color:"rgba(0, 0, 0, 0.45)" }}><Text>สินค้า: { report.current.product}</Text></p>
+        <p onClick={onClick} style={{ fontSize: '12px', color:"rgba(0, 0, 0, 0.45)", display: 'inline' }}>
+          <Text>เบอร์/ไลน์:</Text>{" "} { telNumbersView()}</p>
+        <p onClick={onClick} style={{ fontSize: '12px', color:"rgba(0, 0, 0, 0.45)" }}>
+          <Text>เว็บไซต์:</Text>{" "}
+          <a href={report.current.sellingWebsite} target="_blank" rel="noopener noreferrer"><Text>{ report.current.sellingWebsite}</Text></a>
+        </p>
+        <p onClick={onClick} style={{ fontSize: '12px', color:"rgba(0, 0, 0, 0.45)" }}><Text>ยอดเงิน: {new Intl.NumberFormat('th-TH').format(report.current.transferAmount)}</Text></p>
+        <p onClick={onClick} style={{ fontSize: '12px', color:"rgba(0, 0, 0, 0.45)" }}><Text>วันลงข้อมูล: { moment(report.updatedAt).format('MM/DD, YY hh:mm') }</Text></p>
         <div style={{ 
           display: 'flex', 
           justifyContent: 'flex-end', // Align buttons to the end of the flex container
           gap: '8px' // Space between buttons
         }}>
-          {/* <Button
-            className='ant-btn-product-card'
-            type="dashed"
-            onClick={inCart ? onDeleteForCart : onAddToCart}>
-            {inCart ? 'Delete form cart' : 'Add to cart'}
-          </Button> */}
           <Button className='ant-btn-like' type="primary" icon={<LikeOutlined />} onClick={onBuy} />
-          <Button className='ant-btn-dislike' type="primary" icon={<DislikeOutlined />} onClick={onBuy} />
+          <Button className='ant-btn-dislike' type="primary"  style={{backgroundColor:'red'}} icon={<DislikeOutlined />} onClick={onBuy} />
         </div>
       </div>
     </Card>

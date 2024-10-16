@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, DatePicker, Select, InputNumber } from 'antd';
+import { Form, Input, Button, DatePicker, Select, InputNumber, message, Typography } from 'antd';
 import { useQuery, useMutation } from '@apollo/client';
 import _ from "lodash";
 import moment from 'moment';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from "react-router-dom";
+import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 
 import AttackFileField from "@/components/basic/attack-file";
-import { guery_report, guery_provinces, mutation_report } from '@/apollo/gqlQuery';
+import { guery_report, guery_provinces, mutation_report, query_banks } from '@/apollo/gqlQuery';
 import { getHeaders } from '@/utils';
 import handlerError from '@/utils/handlerError';
+
+const { Title } = Typography;
 
 interface ProvinceItem {
   _id: string;
@@ -16,8 +19,22 @@ interface ProvinceItem {
   name_en: string;
 }
 
+interface BankItem{
+  _id: string;
+  name_th: string;
+  name_en: string;
+  description: string;
+}
+
+interface SellerAccountsItem{
+  _id: string;
+  bankId: string;
+  sellerAccount: string;
+}
+
 const { Option } = Select;
 const ReportForm: React.FC = (props) => {
+  const navigate = useNavigate();
   const location = useLocation();
 
   const { mode, _id } = location.state || {};
@@ -25,30 +42,83 @@ const ReportForm: React.FC = (props) => {
   const [form] = Form.useForm();
   const [images, setImages] = useState<File[]>([]);
   const [provinces, setProvinces] = useState<ProvinceItem[]>([]);
+  const [banks, setBanks] = useState<BankItem[]>([]);
   const [loading, setLoading] = useState(false); 
+  const [sellerAccounts, setSellerAccounts] = useState([{ _id: 0, bankId: "", sellerAccount: "" }]);
+  const [telNumbers, setTelNumbers] = useState([{ _id: 0, tel: '' }]); // Dynamic telephone numbers
+
+  const [initialValues, setInitialValues] = useState<any>(null); // To track initial form values
+  const [isFormChanged, setIsFormChanged] = useState(false); // To track if the form has changed
+
+
+  const addSellerAccount = () => {
+    setSellerAccounts([...sellerAccounts, { _id: sellerAccounts.length,  bankId: "", sellerAccount: "" }]);
+  };
+
+  const removeSellerAccount = (index: number) => {
+    const newAccounts = sellerAccounts.filter((_, idx) => idx !== index);
+    setSellerAccounts(newAccounts);
+  };
+
+  // Add new telephone field
+  const addTelNumber = () => {
+    setTelNumbers([...telNumbers, { _id: telNumbers.length, tel: '' }]);
+  };
+
+  // Remove telephone field
+  const removeTelNumber = (index: number) => {
+    const newTels = telNumbers.filter((_, idx) => idx !== index);
+    setTelNumbers(newTels);
+  };
 
   const [onReport] = useMutation(mutation_report, {
     context: { headers: getHeaders(location) },
     update: (cache, { data: { report } }) => {
       console.log("report: ", report);
     },
-    onCompleted: (data) => {
-      setLoading(false);  // Set loading to false when mutation completes
-      // navigate(-1);
+    onCompleted: (data, clientOptions) => {
+      setLoading(false);  
+      let { variables: { input } } : any = clientOptions;
+      if(input?.mode === 'added'){
+        message.success('Added successfully!');
+        navigate(-1);
+      }else if(input?.mode === 'edited'){
+        message.success('Edited successfully!');
+        navigate(-1);
+      }
     },
     onError: (error) => {
-      setLoading(false);  // Set loading to false when an error occurs
-      // console.log("product onError:", error);
+      setLoading(false);
       handlerError(props, error);
     }
   });
 
+  const { loading: loadingBanks, 
+    data: dataBanks, 
+    error: errorBanks} = useQuery(query_banks, {
+    context: { headers: getHeaders(location) },
+    fetchPolicy: 'cache-first',
+    nextFetchPolicy: 'network-only',
+    notifyOnNetworkStatusChange: false,
+    });
+
+  if (errorBanks) {
+    handlerError(props, errorBanks);
+  }
+  useEffect(() => {
+    if (!loadingBanks && dataBanks?.banks) {
+      setBanks([]);
+      if (dataBanks?.banks.status) {
+        setBanks(dataBanks?.banks.data);
+      }
+    }
+  }, [dataBanks, loadingBanks]);
+
   const { loading: loadingProvinces, 
           data: dataProvinces, 
-          error: errorProvinces, 
-          refetch: refetchProvinces } = useQuery(guery_provinces, {
+          error: errorProvinces } = useQuery(guery_provinces, {
     context: { headers: getHeaders(location) },
-    fetchPolicy: 'no-cache',
+    fetchPolicy: 'cache-first',
     nextFetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: false,
   });
@@ -56,7 +126,6 @@ const ReportForm: React.FC = (props) => {
   if (errorProvinces) {
       handlerError(props, errorProvinces);
   }
-
   useEffect(() => {
     if (!loadingProvinces && dataProvinces?.provinces) {
       setProvinces([]);
@@ -84,30 +153,29 @@ const ReportForm: React.FC = (props) => {
 
   useEffect(() => {
     if (mode === 'edited') {
-
-      console.log("ReportForm @@0 :", dataReport)
       if (!loadingReport && dataReport?.report) {
-
-        console.log("ReportForm @@1 :", dataReport)
         if (dataReport.report.status) {
           let report = dataReport.report.data;
 
-          console.log("ReportForm  @@2 :", report)
-          form.setFieldsValue({
+          console.log("ReportForm  @@1 :", report);
+          const initialData = {
             sellerFirstName: report.current.sellerFirstName,
             sellerLastName: report.current.sellerLastName,
             idCard: report.current.idCard,
-            sellerAccount: report.current.sellerAccount,
-            bank: report.current.bank,
+            telNumbers: report.current.telNumbers,
+            sellerAccounts: report.current.sellerAccounts,
             product: report.current.product,
             transferAmount: report.current.transferAmount,
-            transferDate: moment(report.current.transferDate) ,
+            transferDate: moment(report.current.transferDate),
             sellingWebsite: report.current.sellingWebsite,
-            provinceId: report.current.provinceId, // Province ID
+            provinceId: report.current.provinceId,
             additionalInfo: report.current.additionalInfo,
-            // images: string[]; // URLs or file paths
-          });
+          };
 
+          form.setFieldsValue(initialData);
+          setInitialValues(initialData); // Set initial values
+          setSellerAccounts(report.current.sellerAccounts);
+          setTelNumbers(report.current.telNumbers);
           setImages(report.current.images);
         }
       }
@@ -120,12 +188,21 @@ const ReportForm: React.FC = (props) => {
     }
   }, [mode, refetchReport]);
 
-  useEffect(()=>{
-    console.log("provinces :", provinces)
-  }, [provinces])
+  // useEffect(()=>{
+  //   console.log("form @@@ :", form)
+  // }, [form])
+
+  // Handle form value changes
+  const handleValuesChange = (changedValues: any) => {
+    const currentValues = form.getFieldsValue();
+    console.log("handleValuesChange :", currentValues, initialValues)
+
+    setIsFormChanged(!_.isEqual(currentValues, initialValues));
+  };
 
   const handleSubmit = (input: any) => {
-    console.log('Form values:', input);
+
+    console.log("handleSubmit :", input)
 
     if (mode === 'added') {
       setLoading(true);
@@ -137,145 +214,190 @@ const ReportForm: React.FC = (props) => {
   };
 
   return (
-    <Form
-      form={form}
-      layout="vertical"
-      onFinish={handleSubmit}
-      initialValues={{ 
-        // province: 'กรุงเทพมหานคร' 
-      }}
-    >
-      {/* ชื่อคนขาย (ภาษาไทย) */}
-      <Form.Item
-        label="ชื่อคนขาย (ภาษาไทย)"
-        name="sellerFirstName"
-        rules={[{ required: true, message: 'กรุณากรอกชื่อคนขาย' }]}
-      >
-        <Input placeholder="กรุณากรอกชื่อคนขาย" />
-      </Form.Item>
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleSubmit}
+              onValuesChange={handleValuesChange} // Track value changes
+              initialValues={{}}>
+              <Title level={3}>  { mode === 'edited' ? 'แก้ใข ข้อมูลรายงาน' : 'เพิ่ม รายงานใหม่' }</Title>
+              {/* ชื่อคนขาย (ภาษาไทย) */}
+              <Form.Item
+                label="ชื่อคนขาย"
+                name="sellerFirstName"
+                rules={[{ required: true, message: 'กรุณากรอกชื่อคนขาย' }]}
+              >
+                <Input placeholder="กรุณากรอกชื่อคนขาย" />
+              </Form.Item>
 
-      {/* นามสกุล(ภาษาไทย) */}
-      <Form.Item
-        label="นามสกุล (ภาษาไทย)"
-        name="sellerLastName"
-        rules={[{ required: true, message: 'กรุณากรอกนามสกุลคนขาย' }]}
-      >
-        <Input placeholder="กรุณากรอกนามสกุลคนขาย" />
-      </Form.Item>
+              {/* นามสกุล(ภาษาไทย) */}
+              <Form.Item
+                label="นามสกุลคนขาย"
+                name="sellerLastName"
+                rules={[{ required: true, message: 'กรุณากรอกนามสกุลคนขาย' }]}
+              >
+                <Input placeholder="กรุณากรอกนามสกุลคนขาย" />
+              </Form.Item>
 
-      {/* เลขบัตรประชาชนคนขาย */}
-      <Form.Item
-        label="เลขบัตรประชาชนคนขาย"
-        name="idCard"
-        rules={[{ required: true, message: 'กรุณากรอกเลขบัตรประชาชน' }]}
-      >
-        <Input placeholder="กรุณากรอกเลขบัตรประชาชน" maxLength={13} />
-      </Form.Item>
+              {/* เลขบัตรประชาชนคนขาย */}
+              <Form.Item
+                label="เลขบัตรประชาชนคนขาย (13 หลัก) หรือ พาสปอร์ต (passport)"
+                name="idCard"
+                rules={[{ required: true, message: 'กรุณากรอกเลขบัตรประชาชน หรือ พาสปอร์ต (passport)' }]}
+              >
+                <Input placeholder="กรุณากรอกเลขบัตรประชาชน หรือ พาสปอร์ต (passport)" maxLength={13} />
+              </Form.Item>
 
-      {/* บัญชีคนขาย */}
-      <Form.Item
-        label="บัญชีคนขาย"
-        name="sellerAccount"
-        rules={[{ required: true, message: 'กรุณากรอกบัญชีคนขาย' }]}
-      >
-        <Input placeholder="กรุณากรอกบัญชีคนขาย" />
-      </Form.Item>
+              {/* Add Telephone Numbers */}
+              <div style={{ borderColor: '#d9d9d9', padding: '10px', borderStyle: 'dashed', marginTop: '10px', marginBottom: '10px' }}>
+                {telNumbers.map((tel, index) => (
+                  <div key={tel._id} style={{ marginBottom: 20 }}>
+                    <Form.Item
+                      label={`เบอร์โทรศัพท์ หรือ ไอดีไลน์ ${index + 1}`}
+                      name={['telNumbers', index, 'tel']}
+                      rules={[{ required: true, message: 'กรุณากรอกเบอร์โทรศัพท์ หรือ ไอดีไลน์' }]}
+                    >
+                      <Input placeholder="กรุณากรอกเบอร์โทรศัพท์ หรือ ไอดีไลน์" />
+                    </Form.Item>
 
-      {/* เลือกธนาคาร */}
-      <Form.Item
-        label="เลือกธนาคาร"
-        name="bank"
-        rules={[{ required: true, message: 'กรุณาเลือกธนาคาร' }]}
-      >
-        <Select placeholder="กรุณาเลือกธนาคาร">
-          <Option key="1" value="scb">ไทยพาณิชย์ (SCB)</Option>
-          <Option key="2" value="kbank">กสิกรไทย (KBank)</Option>
-          <Option key="3" value="bbl">กรุงเทพ (BBL)</Option>
-        </Select>
-      </Form.Item>
+                    {telNumbers.length > 1 && (
+                      <Button type="dashed" onClick={() => removeTelNumber(index)}>
+                        <MinusCircleOutlined /> ลบ
+                      </Button>
+                    )}
+                  </div>
+                ))}
 
-      {/* สินค้าที่สั่งซื้อ */}
-      <Form.Item
-        label="สินค้าที่สั่งซื้อ"
-        name="product"
-        rules={[{ required: true, message: 'กรุณากรอกสินค้าที่สั่งซื้อ' }]}
-      >
-        <Input placeholder="กรุณากรอกสินค้าที่สั่งซื้อ" />
-      </Form.Item>
+                {/* Add new telephone number */}
+                <Form.Item>
+                  <Button type="dashed" onClick={addTelNumber} >
+                    <PlusOutlined /> เพิ่มเบอร์โทรศัพท์ใหม่ หรือ ไอดีไลน์
+                  </Button>
+                </Form.Item>
+              </div>
 
-      {/* ยอดโอน */}
-      <Form.Item
-        label="ยอดโอน"
-        name="transferAmount"
-        rules={[{ required: true, message: 'กรุณากรอกยอดโอน' }]}
-      >
-        <InputNumber placeholder="กรุณากรอกยอดโอน" style={{ width: '100%' }} />
-      </Form.Item>
+              <div style={{ borderColor: '#d9d9d9', padding: '10px', borderStyle: 'dashed', marginTop: '10px', marginBottom: '10px' }}>
+                {/* Loop through seller accounts */}
+                {sellerAccounts.map((account, index) => {
+                  return  <div key={account._id} style={{ marginBottom: 20 }}>
+                            <Form.Item
+                              label={`บัญชีคนขาย ${index + 1}`}
+                              name={['sellerAccounts', index, 'sellerAccount']}
+                              rules={[{ required: true, message: 'กรุณากรอกบัญชีคนขาย' }]}
+                            >
+                              <Input placeholder="กรุณากรอกบัญชีคนขาย" />
+                            </Form.Item>
 
-      {/* วันโอนเงิน */}
-      <Form.Item
-        label="วันโอนเงิน"
-        name="transferDate"
-        rules={[{ required: true, message: 'กรุณาเลือกวันโอนเงิน' }]}
-      >
-        <DatePicker placeholder="กรุณาเลือกวันโอนเงิน" style={{ width: '100%' }} />
-      </Form.Item>
+                            <Form.Item
+                              label="เลือกธนาคาร"
+                              name={['sellerAccounts', index, 'bankId']}
+                              rules={[{ required: true, message: 'กรุณาเลือกธนาคาร' }]}>
+                              <Select placeholder="กรุณาเลือกธนาคาร">
+                                {
+                                  _.map(banks, (bank, index)=>{
+                                    return <Option key={ index } value={ bank._id }>{bank.name_th}</Option>
+                                  })
+                                }
+                              </Select>
+                            </Form.Item>
 
-      {/* เว็บประกาศขายของ */}
-      <Form.Item
-        label="เว็บประกาศขายของ"
-        name="sellingWebsite"
-        rules={[{ required: true, message: 'กรุณากรอกเว็บประกาศขายของ' }]}
-      >
-        <Input placeholder="กรุณากรอกเว็บประกาศขายของ" />
-      </Form.Item>
+                            {/* Remove button */}
+                            {sellerAccounts.length > 1 && (
+                              <Button type="dashed" onClick={() => removeSellerAccount(index)}>
+                                <MinusCircleOutlined /> ลบ
+                              </Button>
+                            )}
+                          </div>
+                        }
+                  
+                )}
+                {/* Add button */}
+                <Form.Item>
+                  <Button type="dashed" onClick={addSellerAccount} >
+                    <PlusOutlined /> เพิ่มบัญชีคนขายใหม่
+                  </Button>
+                </Form.Item>
+              </div>
 
-      {/* จังหวัดของคนสร้างรายงาน */}
-      <Form.Item
-        label="จังหวัดของคนสร้างรายงาน"
-        name="provinceId"
-        rules={[{ required: true, message: 'กรุณาเลือกจังหวัด' }]}>
-        <Select placeholder="กรุณาเลือกจังหวัด">
-          {
-            _.map(provinces, (province, index)=>{
-              return <Option key={ index } value={ province._id }>{province.name_th}</Option>
-            })
-          }
-        </Select>
-      </Form.Item>
+              {/* สินค้าที่สั่งซื้อ */}
+              <Form.Item
+                label="สินค้าที่สั่งซื้อ"
+                name="product"
+                rules={[{ required: true, message: 'กรุณากรอกสินค้าที่สั่งซื้อ' }]}
+              >
+                <Input placeholder="กรุณากรอกสินค้าที่สั่งซื้อ" />
+              </Form.Item>
 
-      {/* รายละเอียดเพิ่มเติม */}
-      <Form.Item
-        label="รายละเอียดเพิ่มเติม"
-        name="additionalInfo"
-      >
-        <Input.TextArea rows={4} placeholder="กรุณากรอกรายละเอียดเพิ่มเติม" />
-      </Form.Item>
+              {/* ยอดโอน */}
+              <Form.Item
+                label="ยอดโอน"
+                name="transferAmount"
+                rules={[{ required: true, message: 'กรุณากรอกยอดโอน' }]}
+              >
+                <InputNumber placeholder="กรุณากรอกยอดโอน" style={{ width: '100%' }} />
+              </Form.Item>
 
-      {/* ไฟล์แนบ */}
-      <Form.Item
-        label="ไฟล์แนบ"
-        name="images"
-      >
-        {/* <Upload>
-          <Button icon={<UploadOutlined />}>อัพโหลดไฟล์</Button>
-        </Upload> */}
-         <AttackFileField
-          label={""}
-          values={images}
-          multiple={true}
-          required={true}
-          onSnackbar={(evt)=>console.log("onSnackbar :", evt)}
-          onChange={(values) => setImages(values)}/>
-      </Form.Item>
+              {/* วันโอนเงิน */}
+              <Form.Item
+                label="วันโอนเงิน"
+                name="transferDate"
+                rules={[{ required: true, message: 'กรุณาเลือกวันโอนเงิน' }]}
+              >
+                <DatePicker placeholder="กรุณาเลือกวันโอนเงิน" style={{ width: '100%' }} />
+              </Form.Item>
 
-      <Form.Item>
-        <Button type="primary" htmlType="submit" loading={loading}>
-          { mode === 'edited' ? 'แก้ใขข้อมูล' : 'ส่งข้อมูล' }
-        </Button>
-      </Form.Item>
-    </Form>
-  );
+              {/* เว็บประกาศขายของ */}
+              <Form.Item
+                label="เว็บประกาศขายของ"
+                name="sellingWebsite"
+                rules={[{ required: true, message: 'กรุณากรอกเว็บประกาศขายของ' }]}
+              >
+                <Input placeholder="กรุณากรอกเว็บประกาศขายของ" />
+              </Form.Item>
+
+              {/* จังหวัดของคนสร้างรายงาน */}
+              <Form.Item
+                label="จังหวัดของคนสร้างรายงาน"
+                name="provinceId"
+                rules={[{ required: true, message: 'กรุณาเลือกจังหวัด' }]}>
+                <Select placeholder="กรุณาเลือกจังหวัด">
+                  {
+                    _.map(provinces, (province, index)=>{
+                      return <Option key={ index } value={ province._id }>{province.name_th}</Option>
+                    })
+                  }
+                </Select>
+              </Form.Item>
+
+              {/* รายละเอียดเพิ่มเติม */}
+              <Form.Item
+                label="รายละเอียดเพิ่มเติม"
+                name="additionalInfo"
+              >
+                <Input.TextArea rows={4} placeholder="กรุณากรอกรายละเอียดเพิ่มเติม" />
+              </Form.Item>
+
+              {/* ไฟล์แนบ */}
+              <Form.Item
+                label="ไฟล์แนบ"
+                name="images"
+              >
+                <AttackFileField
+                  label={""}
+                  values={images}
+                  multiple={true}
+                  required={true}
+                  onSnackbar={(evt)=>console.log("onSnackbar :", evt)}
+                  onChange={(values) => setImages(values)}/>
+              </Form.Item>
+
+              <Form.Item>
+                <Button type="primary" htmlType="submit" disabled={!isFormChanged} loading={loading}>
+                  { mode === 'edited' ? 'แก้ใขข้อมูล' : 'ส่งข้อมูล' }
+                </Button>
+              </Form.Item>
+            </Form>
+          );
 };
 
 export default ReportForm;

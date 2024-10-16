@@ -13,6 +13,8 @@ interface CommentSectionProps {
   logIn: {
     loginLink: string
     signupLink: string
+    onLogin?: Function
+    onSignup?: Function
   }
   hrStyle?: object
   titleStyle?: object
@@ -31,6 +33,8 @@ const CommentSection = ({
       <LoginSection
         loginLink={logIn!.loginLink}
         signUpLink={logIn!.signupLink}
+        onLogin= {logIn!.onLogin}
+        onSignup= {logIn!.onSignup}
       />
     )
   }

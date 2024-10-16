@@ -96,11 +96,12 @@ server.start().then(() => {
 
   const allowedOrigins = [
     'http://localhost:5173', // Example frontend URL
-    'http://localhost',      // Another allowed origin
-    'http://167.99.75.91',
-    'http://167.99.75.91:1984',
-    'http://167.99.75.91:5173',
     'http://localhost:1984'
+    // 'http://localhost',      // Another allowed origin
+    // 'http://167.99.75.91',
+    // 'http://167.99.75.91:1984',
+    // 'http://167.99.75.91:5173',
+    
     // Add more origins as needed
   ];
 

@@ -22,7 +22,7 @@ const ProfileScreen: React.FC<any> = ({navigation}) => {
   const user = useSelector((state: RootState) => state.user );
 
   const [onProfile] = useMutation(mutation_profile, {
-    context: { headers: getHeaders(user.sessionId) },
+    context: { headers: getHeaders() },
     update: (cache, { data: { profile } }) => {
       if (profile.status) {
         dispatch(updateUser(profile.data));

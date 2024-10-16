@@ -23,6 +23,8 @@ interface CommentStructureProps {
   logIn: {
     loginLink: string
     signupLink: string
+    onLogin?: Function
+    onSignup?: Function
   }
 }
 
