@@ -7,10 +7,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Menu, Divider } from 'react-native-paper';
 import { useToast } from "react-native-toast-notifications";
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
-// import { useLocation } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import ImageViewer from 'react-native-image-zoom-viewer';
 import _ from "lodash";
+import Share from 'react-native-share';
 
 import { RootState, AppDispatch } from '../redux/store';
 // import { formatDate } from "../utils";
@@ -137,6 +136,24 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
     }
   }
 
+  const handleShare = async (item: any) => {
+    // if (item.current.images && item.current.images.length > 0) {
+    //   const firstImageUrl = `http://192.168.1.3:1984/${item.current.images[0].url}`;
+
+      try {
+        await Share.open({
+          url: "firstImageUrl", // Sharing the first image URL
+          message: 'Check out this image', // Optional message
+          title: 'Share Image', // Optional title
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+      }
+    // } else {
+    //   Alert.alert('No images available to share');
+    // }
+  };
+
   const renderItem = useCallback(({ item }: { item: any }) => {
     // console.log(">> ", `http://192.168.1.3:1984/${item.current.images[0].url}` )
     const isExpanded = expandedItemId === item._id;
@@ -192,16 +209,16 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
          
           {/* Action Buttons */}
           <View style={styles.actionsContainer}>
-            <TouchableOpacity style={{padding:5}}  onPress={() => { /* handle like */ }}>
+            <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle like");/*  */ }}>
               <Icon name="heart-outline" size={16} color="#555" />
             </TouchableOpacity>
-            <TouchableOpacity style={{padding:5}}  onPress={() => { /* handle bookmark */ }}>
+            <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle bookmark");/* handle bookmark */ }}>
               <Icon name="bookmark-outline" size={16} color="#555" />
             </TouchableOpacity>
             {/* <TouchableOpacity style={{padding:5}}  onPress={() => {}}>
               <Icon name="comment-outline" size={16} color="#555" />
             </TouchableOpacity> */}
-            <TouchableOpacity style={{padding:5}}  onPress={() => { /* handle share */ }}>
+            <TouchableOpacity style={{padding:5}}  onPress={()=>handleShare(item)}>
               <Icon name="share" size={16} color="#555" />
             </TouchableOpacity>
           </View>
@@ -245,17 +262,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
           />
         )
       }
-      {/* ImageViewer Modal */}
-      { isImageViewerVisible && <ImageZoomViewer images={imageUrls} isVisible={isImageViewerVisible} onClose={()=>setImageViewerVisible(false)}/>
-       
-        // <Modal visible={isImageViewerVisible} transparent={true} onRequestClose={() => setImageViewerVisible(false)}>
-        //   <ImageViewer
-        //     imageUrls={imageUrls}
-        //     enableSwipeDown
-        //     onSwipeDown={() => setImageViewerVisible(false)}
-        //     onCancel={() => setImageViewerVisible(false)}/>
-        // </Modal> 
-      }
+      { isImageViewerVisible && <ImageZoomViewer images={imageUrls} isVisible={isImageViewerVisible} onClose={()=>setImageViewerVisible(false)}/> }
     </View>
   );
 };
