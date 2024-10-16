@@ -23,6 +23,8 @@ import { query_reports } from "../gqlQuery";
 import { getHeaders } from "../utils";
 import handlerError from "../handlerError";
 
+import ImageZoomViewer from "./ImageZoomViewer"
+
 type ReportsScreenProps = {
   navigation: any;
   route: any;
@@ -31,10 +33,6 @@ type ReportsScreenProps = {
 
 const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   let { navigation, route, setMenuOpen } = props
-
-  // State to handle image viewer visibility
-  const [isImageViewerVisible, setImageViewerVisible] = useState(false);
-  const [imageUrls, setImageUrls] = useState<{ url: string }[]>([]);
 
   useLayoutEffect(() => {
     const routeName = getFocusedRouteNameFromRoute(route);
@@ -82,9 +80,10 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   const closeMenu = () => setVisibleMenuId(null);
   const blockList = useSelector((state: RootState) => state.block.blockList );
   const toast = useToast();
-
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [isImageViewerVisible, setImageViewerVisible] = useState(false);
+  const [imageUrls, setImageUrls] = useState<{ url: string }[]>([]);
 
   const { loading: loadingReports, 
           data: dataReports, 
@@ -139,6 +138,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   }
 
   const renderItem = useCallback(({ item }: { item: any }) => {
+    // console.log(">> ", `http://192.168.1.3:1984/${item.current.images[0].url}` )
     const isExpanded = expandedItemId === item._id;
     return (
       <View
@@ -169,7 +169,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
             : <Icon name="account" size={30} />}
         </TouchableOpacity>
         <View style={styles.detailsContainer} >
-          <TouchableOpacity onPress={()=>{ navigation.navigate("ReportDetail") }} >
+          <TouchableOpacity onPress={()=>{ navigation.navigate("ReportDetail", { _id:  item._id}) }} >
             <Text style={styles.name}>{item.current.sellerFirstName} {item.current.sellerLastName}</Text> 
             {
               item.current.additionalInfo.length > 200 
@@ -198,10 +198,10 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
             <TouchableOpacity style={{padding:5}}  onPress={() => { /* handle bookmark */ }}>
               <Icon name="bookmark-outline" size={16} color="#555" />
             </TouchableOpacity>
-            <TouchableOpacity style={{padding:5}}  onPress={() => { /* handle comment */ }}>
+            {/* <TouchableOpacity style={{padding:5}}  onPress={() => {}}>
               <Icon name="comment-outline" size={16} color="#555" />
-            </TouchableOpacity>
-            <TouchableOpacity style={{padding:5}}  onPress={() => { /* handle comment */ }}>
+            </TouchableOpacity> */}
+            <TouchableOpacity style={{padding:5}}  onPress={() => { /* handle share */ }}>
               <Icon name="share" size={16} color="#555" />
             </TouchableOpacity>
           </View>
@@ -246,14 +246,15 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
         )
       }
       {/* ImageViewer Modal */}
-      { isImageViewerVisible && 
-        <Modal visible={isImageViewerVisible} transparent={true} onRequestClose={() => setImageViewerVisible(false)}>
-          <ImageViewer
-            imageUrls={imageUrls}
-            enableSwipeDown
-            onSwipeDown={() => setImageViewerVisible(false)}
-            onCancel={() => setImageViewerVisible(false)}/>
-        </Modal> 
+      { isImageViewerVisible && <ImageZoomViewer images={imageUrls} isVisible={isImageViewerVisible} onClose={()=>setImageViewerVisible(false)}/>
+       
+        // <Modal visible={isImageViewerVisible} transparent={true} onRequestClose={() => setImageViewerVisible(false)}>
+        //   <ImageViewer
+        //     imageUrls={imageUrls}
+        //     enableSwipeDown
+        //     onSwipeDown={() => setImageViewerVisible(false)}
+        //     onCancel={() => setImageViewerVisible(false)}/>
+        // </Modal> 
       }
     </View>
   );

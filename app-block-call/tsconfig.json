@@ -14,5 +14,7 @@
     "skipLibCheck": true, // Optionally skip type checks on library files
     "strict": true,
     "forceConsistentCasingInFileNames": true,
+
+    "types": ["react-native", "react-native-custom-lib"]
   }
 }
