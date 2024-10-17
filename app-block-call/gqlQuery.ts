@@ -18,3 +18,5 @@ export const mutation_uploadfile =  gql`
 
 export const query_banks = gql`query banks { banks }`;
 export const guery_provinces  = gql`query provinces { provinces }`;
+
+export const mutation_report  = gql`mutation report($input: JSON) { report(input: $input) }`;

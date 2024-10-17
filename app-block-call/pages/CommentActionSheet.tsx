@@ -8,14 +8,6 @@ type MyActionSheetProps = {
 };
 
 const CommentActionSheet: React.FC<MyActionSheetProps> = ({ actionSheetRef }) => {
-  const handleAction1 = () => {
-    actionSheetRef.current?.hide(); // Hide the action sheet
-  };
-
-  const handleAction2 = () => {
-    actionSheetRef.current?.hide(); // Hide the action sheet
-  };
-
   return (
     <ActionSheet 
         ref={actionSheetRef} 
@@ -24,16 +16,7 @@ const CommentActionSheet: React.FC<MyActionSheetProps> = ({ actionSheetRef }) =>
         indicatorStyle={styles.indicator}  // Style for the draggable indicator
         defaultOverlayOpacity={0.3}>
         <View style={styles.container}>
-            <Text style={styles.title}>Select an Action</Text>
-            <TouchableOpacity onPress={handleAction1} style={styles.button}>
-            <Text style={styles.buttonText}>Action 1</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleAction2} style={styles.button}>
-            <Text style={styles.buttonText}>Action 2</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => actionSheetRef.current?.hide()} style={styles.button}>
-            <Text style={styles.buttonText}>Cancel</Text>
-            </TouchableOpacity>
+          <Text style={styles.title}>Comments</Text>
         </View>
     </ActionSheet>
   );
@@ -42,7 +25,7 @@ const CommentActionSheet: React.FC<MyActionSheetProps> = ({ actionSheetRef }) =>
 const styles = StyleSheet.create({
   container: {
     // padding: 5,
-    backgroundColor: 'gray',
+    // backgroundColor: 'gray',
     alignItems: 'center',
   },
   title: {
