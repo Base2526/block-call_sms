@@ -25,6 +25,7 @@
     "graphql": "^16.9.0",
     "lodash": "^4.17.21",
     "react": "18.1.0",
+    "react-hook-form": "^7.53.0",
     "react-native": "0.70.10",
     "react-native-actions-sheet": "^0.9.7",
     "react-native-gesture-handler": "^2.18.1",

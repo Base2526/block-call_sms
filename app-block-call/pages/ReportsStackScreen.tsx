@@ -67,6 +67,7 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           children={(props) => <Reposts {...props} setMenuOpen={()=>setMenuOpen()} />}
           options={{
             headerShown: true, 
+            headerTitle: 'หน้าหลัก', 
           }}/>
 
         <ReportsStack.Screen
@@ -147,4 +148,3 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
 }
 
 export default ReportsStackScreen;
-  

@@ -1,13 +1,18 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
-
-import { View, Text, TextInput, Button, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
-// import { useForm, Controller } from 'react-hook-form';
-import { useNavigation, useRoute, getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import { View, Text, TextInput, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useForm, Controller } from 'react-hook-form';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery, useMutation } from '@apollo/client';
-import Icon from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 
-import { query_banks, guery_provinces } from "../gqlQuery";
+import _ from "lodash"
+import {ReactNativeFile} from 'apollo-upload-client';
+
+import { query_banks, guery_provinces, mutation_report } from "../gqlQuery";
+
+import MultiImageUploader from "./MultiImageUploader"
+import { getHeaders } from "../utils";
 
 interface ProvinceItem {
   _id: string;
@@ -27,67 +32,103 @@ interface SellerAccountsItem {
   sellerAccount: string;
 }
 
-const provinces = [
-  { _id: '1', name_th: 'กรุงเทพมหานคร' },
-  { _id: '2', name_th: 'เชียงใหม่' },
-  // Add more provinces here
-];
+interface SelectedImage {
+  uri: string;
+  name: string;
+  type: string;
+}
 
 const NewReportScreen: React.FC = () => {
-  // let { navigation, route } = props
-
   const navigation = useNavigation();
   const route = useRoute();
+  const { register, control, handleSubmit, setValue, getValues, formState: { errors } } = useForm();
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [images, setImages] = useState<SelectedImage[]>([]);
 
   useLayoutEffect(() => {
-    // const routeName = getFocusedRouteNameFromRoute(route);
-
     navigation.setOptions({
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 5 }}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={{
               paddingVertical: 8,
               paddingHorizontal: 15,
-              borderRadius: 5, // Optional: rounded corners
+              borderRadius: 5,
             }}
-            onPress={handleSubmit} >
-            <Text style={{
-               fontSize: 18,
-               color: '#007bff', // Text color (white)
-               fontWeight: 'bold', // Make text bold
-            }}>สร้าง</Text>
+            disabled={isSubmitting}
+            onPress={handleSubmit(onSubmit)} >
+             {isSubmitting ? (
+                <ActivityIndicator color="green" />
+              ) : (
+                <Text style={{
+                  fontSize: 18,
+                  color: '#007bff',
+                  fontWeight: 'bold',
+                }}>สร้าง</Text>
+              )}
           </TouchableOpacity>
         </View>
       ),
-      headerShown: true, // hide/show header parent
+      headerShown: true,
     });
-  }, [navigation, route]);
+  }, [navigation]);
 
-  // const navigation = useNavigation();
-  // const route = useRoute();
-  // const { mode, _id } = route.params || {};
+  const [sellerAccounts, setSellerAccounts] = React.useState<SellerAccountsItem[]>([{ _id: 0, bankId: '', sellerAccount: '' }]);
+  const [telNumbers, setTelNumbers] = React.useState([{ _id: 0, tel: '' }]);
+  const [banks, setBanks] = React.useState<BankItem[]>([]);
+  const [loading, setLoading] = React.useState(false);
 
-  const [sellerFirstName, setSellerFirstName] = useState('');
-  const [sellerLastName, setSellerLastName] = useState('');
-  const [idCard, setIdCard] = useState('');
-  const [sellerAccounts, setSellerAccounts] = useState<SellerAccountsItem[]>([{ _id: 0, bankId: '', sellerAccount: '' }]);
-  const [telNumbers, setTelNumbers] = useState([{ _id: 0, tel: '' }]);
-  const [provinces, setProvinces] = useState<ProvinceItem[]>([]);
-  const [banks, setBanks] = useState<BankItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  // Error states
-  const [errors, setErrors] = useState({
-    sellerFirstName: '',
-    sellerLastName: '',
-    idCard: '',
-    telNumbers: [] as string[],
-    sellerAccounts: [] as string[],
+  // Register the images field in the form
+  useEffect(() => {
+    register('images'); // This registers the field manually
+  }, [register]);
+
+   // Whenever the images state changes, update the form field
+   useEffect(() => {
+    setValue('images', images);
+  }, [images, setValue]);
+
+  const [onReport] = useMutation(mutation_report, {
+    context: { headers: {  'apollo-require-preflight': 'true'  }},
+    update: (cache, { data: { report } }) => {
+      console.log("report: ", report);
+    },
+    onCompleted: (data: any, clientOptions: any) => {
+      // setLoading(false);  
+      // let { variables: { input } } : any = clientOptions;
+      // if(input?.mode === 'added'){
+      //   message.success('Added successfully!');
+      //   navigate(-1);
+      // }else if(input?.mode === 'edited'){
+      //   message.success('Edited successfully!');
+      //   navigate(-1);
+      // }
+
+      setIsSubmitting(false);
+    },
+    onError: (error: Error) => {
+      setLoading(false);
+      // handlerError(props, error);
+
+      setIsSubmitting(false);
+    }
   });
 
-  // Apollo Queries
-  const { loading: loadingBanks, data: dataBanks } = useQuery(query_banks);
-  const { loading: loadingProvinces, data: dataProvinces } = useQuery(guery_provinces);
+  /*
+    const { loading: loadingReport, 
+        data: dataReport, 
+        error: errorReport,
+        refetch: refetchReport} = useQuery(query_report);
+  */
+
+  const { loading: loadingBanks, data: dataBanks } = useQuery(query_banks, {
+                                                                // context: { headers: getHeaders() },
+                                                                fetchPolicy: 'cache-first', 
+                                                                nextFetchPolicy: 'network-only', 
+                                                                notifyOnNetworkStatusChange: false,
+                                                              });
+  // const { loading: loadingProvinces, data: dataProvinces } = useQuery(guery_provinces);
 
   // Handle seller accounts
   const addSellerAccount = () => setSellerAccounts([...sellerAccounts, { _id: sellerAccounts.length, bankId: '', sellerAccount: '' }]);
@@ -99,282 +140,229 @@ const NewReportScreen: React.FC = () => {
 
   useEffect(() => {
     if (!loadingBanks && dataBanks?.banks) {
-      if(dataBanks.banks.status){
+      if (dataBanks.banks.status) {
         setBanks(dataBanks.banks.data);
       }
     }
   }, [dataBanks, loadingBanks]);
 
-  useEffect(()=>{
-    console.log("sellerFirstName %%% ", sellerFirstName)
-  }, [sellerFirstName])
+  const onSubmit = (input: any) => {
+    // console.log("Form submitted with data:", input);
+    // Call your mutation or API here with the data
 
-
-  const validateFields = () => {
-    let valid = true;
-    const newErrors = {
-      sellerFirstName: '',
-      sellerLastName: '',
-      idCard: '',
-      telNumbers: [] as string[],
-      sellerAccounts: [] as string[],
-    };
-  
-    if (sellerFirstName.trim() === '') {
-      newErrors.sellerFirstName = `กรุณากรอกชื่อ - ${ sellerFirstName }`;
-      valid = false;  // Set to false if validation fails
-    }
-  
-    if (sellerLastName.trim() === '') {
-      newErrors.sellerLastName = 'กรุณากรอกนามสกุล';
-      valid = false;
-    }
-  
-    if (idCard.trim() === '') {
-      newErrors.idCard = 'กรุณากรอกเลขที่บัตรประชาชน/Passport';
-      valid = false;
-    }
-  
-    telNumbers.forEach((tel, index) => {
-      if (!tel.tel) {
-        newErrors.telNumbers[index] = `เบอร์โทรศัพท์/Line ID ${index + 1} is required`;
-        valid = false;
-      }
-    });
-  
-    sellerAccounts.forEach((account, index) => {
-      if (!account.sellerAccount) {
-        newErrors.sellerAccounts[index] = `เลขบัญชี ${index + 1} is required`;
-        valid = false;
-      }
-    });
-  
-    console.log("validateFields :", newErrors, sellerFirstName);
-    setErrors(newErrors);
-    return valid;
-  };
-  
-  const handleSubmit = () => {
-    console.log("handleSubmit @@@1")
-    if (validateFields()) {
-      setLoading(true);
-      const input = {
-        sellerFirstName,
-        sellerLastName,
-        idCard,
-        sellerAccounts,
-        telNumbers,
-      };
-      // Call the mutation here
-
-      console.log("handleSubmit @@@2", input)
-    }
-    // onReport({ variables: { input } });
+    setIsSubmitting(true);
+    let newImages = _.map(input?.images, (assets)=>new ReactNativeFile({
+                      uri: assets.uri,
+                      name: assets.name,
+                      type: assets.type,
+                    }))
+    onReport({ variables: { input: { ...input, mode: 'added', images: newImages } } });
   };
 
   return (
     <ScrollView style={{ padding: 16 }}>
-    {/* <Text> {mode === 'edited' ? 'Edit Report' : 'Add New Report'} </Text> */}
-
-    <Text style={{fontSize:16, fontWeight:'700'}}>ชื่อ</Text>
-    <TextInput
-      value={sellerFirstName}
-      onChangeText={(text) => {
-        setSellerFirstName(text);
-        validateFields(); 
-      }}
-      placeholder="ชื่อ"
-      style={styles.textInput}
-    />
-    {errors.sellerFirstName ? <Text style={styles.errorText}>{errors.sellerFirstName}</Text> : null}
-
-    <Text style={{fontSize:16, fontWeight:'700'}}>นามสกุล</Text>
-    <TextInput
-      value={sellerLastName}
-      onChangeText={(text) => {
-        setSellerLastName(text);
-        validateFields(); 
-      }}
-      placeholder="นามสกุล"
-      style={styles.textInput}
-    />
-    {errors.sellerLastName ? <Text style={styles.errorText}>{errors.sellerLastName}</Text> : null}
-
-    <Text style={{fontSize:16, fontWeight:'700'}}>เลขทีบัตรปะชาขน/Passport</Text>
-    <TextInput
-      value={idCard}
-      onChangeText={setIdCard}
-      placeholder="เลขทีบัตรปะชาขน/Passport"
-      maxLength={13}
-      style={styles.textInput}
-    />
-    {errors.idCard ? <Text style={styles.errorText}>{errors.idCard}</Text> : null}
-
-    {/* Dynamic Telephone Numbers */}
-    <Text style={{fontSize:16, fontWeight:'700'}}>เบอร์โทรศัพท์/Line ID</Text>
-    <View style={{ borderWidth: .5, borderColor: '#ccc', borderRadius: 10, padding: 5, marginBottom: 10 }}>
-      {telNumbers.map((tel, index) => (
-        <View key={tel._id} style={{ marginBottom: 5}}>
+      <Text style={{ fontSize: 16, fontWeight: '700' }}>ชื่อ</Text>
+      <Controller
+        control={control}
+        name="sellerFirstName"
+        defaultValue=""
+        rules={{ required: 'กรุณากรอกชื่อ' }}
+        render={({ field: { onChange, value } }) => (
           <TextInput
-            value={tel.tel}
-            onChangeText={(text) => {
-              const updatedTels = [...telNumbers];
-              updatedTels[index].tel = text;
-              setTelNumbers(updatedTels);
-            }}
-            placeholder={`เบอร์โทรศัพท์/Line ID ${index + 1}`}
+            value={value}
+            onChangeText={onChange}
+            placeholder="ชื่อ"
             style={styles.textInput}
           />
-          {errors.telNumbers[index] ? <Text style={styles.errorText}>{errors.telNumbers[index]}</Text> : null}
-          {telNumbers.length > 1 &&  
-          <TouchableOpacity 
-            style={{
-              paddingVertical: 8,
-              paddingHorizontal: 15,
-              borderRadius: 5,
-            }}
-            onPress={() => removeTelNumber(index)} >
-            <Text style={{
-              fontSize: 18,
-              color: '#007bff', 
-              fontWeight: 'bold', 
-            }}>ลบ</Text>
-          </TouchableOpacity>
-        }
-        </View>
-      ))}
-      <TouchableOpacity 
-        style={{
-          paddingVertical: 8,
-          paddingHorizontal: 15,
-          borderRadius: 5
-        }}
-        onPress={addTelNumber} >
-        <Text style={{
-          fontSize: 18,
-          color: '#007bff',
-          fontWeight: 'bold', 
-        }}>เพิ่ม</Text>
-      </TouchableOpacity>
-    </View>
+        )}
+      />
+      {errors.sellerFirstName && <Text style={styles.errorText}>{errors.sellerFirstName.message}</Text>}
 
-    {/* Seller Accounts */}
-    <Text style={{fontSize:16, fontWeight:'700'}}>บัญชีธนาคาร</Text>
-    <View style={{ borderWidth: .5, borderColor: '#ccc', borderRadius: 10, padding: 5, marginBottom: 20 }}>
-      {sellerAccounts.map((account, index) => (
-        <View key={account._id} style={{ marginBottom: 5}}>
-          <Text>เลขบัญชี {index + 1}</Text>
+      <Text style={{ fontSize: 16, fontWeight: '700' }}>นามสกุล</Text>
+      <Controller
+        control={control}
+        name="sellerLastName"
+        defaultValue=""
+        rules={{ required: 'กรุณากรอกนามสกุล' }}
+        render={({ field: { onChange, value } }) => (
           <TextInput
-            value={account.sellerAccount}
-            onChangeText={(text) => {
-              const updatedAccounts = [...sellerAccounts];
-              updatedAccounts[index].sellerAccount = text;
-              setSellerAccounts(updatedAccounts);
-            }}
-            placeholder="เลขบัญชี"
+            value={value}
+            onChangeText={onChange}
+            placeholder="นามสกุล"
             style={styles.textInput}
           />
-          {errors.sellerAccounts[index] ? <Text style={styles.errorText}>{errors.sellerAccounts[index]}</Text> : null}
+        )}
+      />
+      {errors.sellerLastName && <Text style={styles.errorText}>{errors.sellerLastName.message}</Text>}
 
-          <Text>ธนาคาร {index + 1}</Text>
-          <View style={{
-            borderColor: '#ccc', // Border color
-            borderWidth: 1, // Border width
-            borderRadius: 5, // Rounded corners
-            overflow: 'hidden', // Ensures rounded corners are visible
-            backgroundColor: '#fff', // Background color
-          }}>
-            <Picker
-              style={{
-                height: 50, // Height of the picker
-                width: '100%', // Width of the picker
+      <Text style={{ fontSize: 16, fontWeight: '700' }}>เลขที่บัตรประชาชน/Passport</Text>
+      <Controller
+        control={control}
+        name="idCard"
+        defaultValue=""
+        rules={{ required: 'กรุณากรอกเลขที่บัตรประชาชน/Passport' }}
+        render={({ field: { onChange, value } }) => (
+          <TextInput
+            value={value}
+            onChangeText={onChange}
+            placeholder="เลขที่บัตรประชาชน/Passport"
+            maxLength={13}
+            style={styles.textInput}
+          />
+        )}
+      />
+      {errors.idCard && <Text style={styles.errorText}>{errors.idCard.message}</Text>}
+
+      {/* Dynamic Telephone Numbers */}
+      <Text style={{ fontSize: 16, fontWeight: '700' }}>เบอร์โทรศัพท์/Line ID</Text>
+      <View style={{ borderWidth: .5, borderColor: '#ccc', borderRadius: 10, padding: 5, marginBottom: 10 }}>
+        {telNumbers.map((tel, index) => (
+          <View key={tel._id} style={{ marginBottom: 5 }}>
+            <Controller
+              control={control}
+              name={`telNumbers.${index}.tel`}
+              defaultValue=""
+              rules={{ required: `เบอร์โทรศัพท์/Line ID ${index + 1} is required` }}
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  value={value}
+                  onChangeText={onChange}
+                  placeholder={`เบอร์โทรศัพท์/Line ID ${index + 1}`}
+                  style={styles.textInput}
+                />
+              )}
+            />
+            {errors.telNumbers && errors.telNumbers[index] && <Text style={styles.errorText}>{errors.telNumbers[index].tel.message}</Text>}
+            {telNumbers.length > 1 &&
+              <TouchableOpacity
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 15,
+                  borderRadius: 5,
                 }}
-              selectedValue={account.bankId}
-              onValueChange={(itemValue) => {
-                const updatedAccounts = [...sellerAccounts];
-                updatedAccounts[index].bankId = itemValue;
-                setSellerAccounts(updatedAccounts);
-              }}
-            >
-              {banks.map((bank) => (
-                <Picker.Item key={bank._id} label={bank.name_th} value={bank._id} />
-              ))}
-            </Picker>
+                onPress={() => removeTelNumber(index)} >
+                <Text style={{
+                  fontSize: 18,
+                  color: '#007bff',
+                  fontWeight: 'bold',
+                }}>ลบ</Text>
+              </TouchableOpacity>
+            }
           </View>
-          {
-            sellerAccounts.length > 1 &&  /*<Button title="Remove" onPress={() => removeSellerAccount(index)} />*/ 
-            <TouchableOpacity 
-              style={{
-                // backgroundColor: '#007bff', // Button background color
-                paddingVertical: 8,
-                paddingHorizontal: 15,
-                borderRadius: 5, // Optional: rounded corners
-              }}
-              onPress={() => removeSellerAccount(index)} >
-              <Text style={{
-                fontSize: 18,
-                color: '#007bff', // Text color (white)
-                fontWeight: 'bold', // Make text bold
-              }}>ลบ</Text>
-            </TouchableOpacity>
-          }
-        </View>
-      ))}
-      <TouchableOpacity 
-        style={{
-          paddingVertical: 8,
-          paddingHorizontal: 15,
-          borderRadius: 5,
-        }}
-        onPress={addSellerAccount} >
-        <Text style={{
-          fontSize: 18,
-          color: '#007bff', 
-          fontWeight: 'bold', 
-        }}>เพิ่ม</Text>
-      </TouchableOpacity>
-    </View>
-   
+        ))}
+        <TouchableOpacity
+          style={{
+            paddingVertical: 8,
+            paddingHorizontal: 15,
+            borderRadius: 5
+          }}
+          onPress={addTelNumber} >
+          <Text style={{
+            fontSize: 18,
+            color: '#007bff',
+            fontWeight: 'bold',
+          }}>เพิ่ม</Text>
+        </TouchableOpacity>
+      </View>
 
-    {/* <Button title="Submit" onPress={handleSubmit} />
-    {loading && <ActivityIndicator size="large" />} */}
-  </ScrollView>
+      {/* Seller Accounts */}
+      <Text style={{ fontSize: 16, fontWeight: '700' }}>บัญชีธนาคาร</Text>
+      <View style={{ borderWidth: .5, borderColor: '#ccc', borderRadius: 10, padding: 5, marginBottom: 20 }}>
+        {sellerAccounts.map((account, index) => (
+          <View key={account._id} style={{ marginBottom: 5 }}>
+            <Text>เลขบัญชี {index + 1}</Text>
+            <Controller
+              control={control}
+              name={`sellerAccounts.${index}.sellerAccount`}
+              defaultValue=""
+              rules={{ required: `เลขบัญชี ${index + 1} is required` }}
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  value={value}
+                  onChangeText={onChange}
+                  placeholder="เลขบัญชี"
+                  style={styles.textInput}
+                />
+              )}
+            />
+            {errors.sellerAccounts && errors.sellerAccounts[index] && <Text style={styles.errorText}>{errors.sellerAccounts[index].sellerAccount.message}</Text>}
+            <Text>ธนาคาร {index + 1}</Text>
+            <View style={{
+              borderColor: '#ccc',
+              borderWidth: 1,
+              borderRadius: 5,
+              overflow: 'hidden',
+              backgroundColor: '#fff',
+            }}>
+              <Controller
+                control={control}
+                name={`sellerAccounts.${index}.bankId`}
+                defaultValue=""
+                render={({ field: { onChange, value } }) => (
+                  <Picker
+                    style={{
+                      height: 50,
+                      width: '100%',
+                    }}
+                    selectedValue={value}
+                    onValueChange={onChange}
+                  >
+                    {banks.map((bank) => (
+                      <Picker.Item key={bank._id} label={bank.name_th} value={bank._id} />
+                    ))}
+                  </Picker>
+                )}
+              />
+            </View>
+            {sellerAccounts.length > 1 &&
+              <TouchableOpacity
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 15,
+                  borderRadius: 5,
+                }}
+                onPress={() => removeSellerAccount(index)} >
+                <Text style={{
+                  fontSize: 18,
+                  color: '#007bff',
+                  fontWeight: 'bold',
+                }}>ลบ</Text>
+              </TouchableOpacity>
+            }
+          </View>
+        ))}
+        <TouchableOpacity
+          style={{
+            paddingVertical: 8,
+            paddingHorizontal: 15,
+            borderRadius: 5,
+          }}
+          onPress={addSellerAccount} >
+          <Text style={{
+            fontSize: 18,
+            color: '#007bff',
+            fontWeight: 'bold',
+          }}>เพิ่ม</Text>
+        </TouchableOpacity>
+      </View>
+      {loading && <ActivityIndicator />}
+
+      <MultiImageUploader onImages={setImages} />
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    backgroundColor: 'white',
-  },
-  input: {
-    borderColor: '#ccc',
+  textInput: {
     borderWidth: 1,
-    marginBottom: 16,
-    padding: 8,
-    borderRadius: 4,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
   },
   errorText: {
     color: 'red',
-    marginBottom: 16,
-  },
-  dateInput: {
-    padding: 12,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 4,
-    marginBottom: 16,
-  },
-  textInput: {
-    height: 50,
-    borderColor: '#ccc', // Border color
-    borderWidth: 1, // Border width
-    borderRadius: 5, // Rounded corners
-    paddingHorizontal: 10, // Horizontal padding
-    fontSize: 16, // Font size
-    color: '#000', // Text color
-    backgroundColor: '#fff', // Background color
-    marginBottom: 10
+    marginBottom: 10,
   },
 });
 

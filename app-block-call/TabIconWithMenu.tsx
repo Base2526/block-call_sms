@@ -15,9 +15,9 @@ const TabIconWithMenu = ({ iconName, menuItems }: { iconName: string; menuItems:
       <Menu
         visible={visible}
         onDismiss={closeMenu}
-        anchor={<TouchableOpacity style={{ padding:5, marginRight: 10 }} onPress={()=>{
+        anchor={<TouchableOpacity style={{ padding:10 }} onPress={()=>{
           openMenu()
-        }}><Icon name={iconName} size={25} color="#333" style={{  }} /></TouchableOpacity>}
+        }}><Icon name={iconName} size={30} color="#333" style={{  }} /></TouchableOpacity>}
       >
         {menuItems.map((item, index) => (
           <Menu.Item key={index} onPress={() => { 

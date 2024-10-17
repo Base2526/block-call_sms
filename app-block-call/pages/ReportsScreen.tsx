@@ -23,6 +23,7 @@ import handlerError from "../handlerError";
 
 import ImageZoomViewer from "./ImageZoomViewer";
 import CommentActionSheet from "./CommentActionSheet";
+import TabIconWithMenu from "../TabIconWithMenu";
 
 type ReportsScreenProps = {
   navigation: any;
@@ -57,7 +58,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
           </TouchableOpacity>
       ),
       headerRight: () => (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity 
             style={{padding:10}}
             onPress={() => { navigation.navigate("NewRepost")  }} >
@@ -68,6 +69,11 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
             onPress={() => { navigation.navigate("Search") }} >
             <Icon name="magnify" size={30}  color="#333" />
           </TouchableOpacity>
+          <TabIconWithMenu 
+            iconName="dots-vertical"
+            menuItems={[
+              { label: 'Clear all', onPress: () => {  } },
+            ]}/>
         </View>
       ),
       headerShown: true, // hide/show header parent

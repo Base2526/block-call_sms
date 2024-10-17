@@ -465,8 +465,11 @@ export default {
     },
     async report(parent, args, context, info) {
       let start     = Date.now()
-      let { req } = context
+      let { req }   = context
       let { input } = args
+
+      console.log("report : ", input, req)
+      return ;
 
       let { current_user } =  await Utils.checkAuth(req);
       let role = Utils.checkRole(current_user)
