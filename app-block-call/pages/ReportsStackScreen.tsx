@@ -18,6 +18,8 @@ import SearchScreen from "./SearchScreen";
 import NewReportScreen from "./NewReportScreen";
 import ReportDetailScreen from "./ReportDetailScreen";
 
+import CommentsScreen from "../comments/CommentsScreen"
+
 const ReportsStack = createStackNavigator();
 
 type ReportsStackScreenProps = {
@@ -40,7 +42,8 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           routeName === 'Policy' ||
           routeName === 'Search' ||
           routeName === 'NewRepost' ||
-          routeName === 'ReportDetail'
+          routeName === 'ReportDetail' ||
+          routeName === 'Comments'
       ) {
       navigation.setOptions({ tabBarStyle: { display: 'none' } });
     } else {
@@ -141,6 +144,16 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
             headerTitle: '', 
           }}
         />
+
+        <ReportsStack.Screen
+          name="Comments"
+          component={CommentsScreen}
+          options={{  
+            headerShown: true,
+            headerTitle: '', 
+          }}
+        />
+
       </ReportsStack.Navigator>
       <DrawerContent isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} navigation={navigation} />
     </>

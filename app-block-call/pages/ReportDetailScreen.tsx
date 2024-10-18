@@ -43,7 +43,7 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
           <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle bookmark"); /*console.log("handle bookmark")*/ }}>
             <Icon name="bookmark-outline" size={30} color="#555" />
           </TouchableOpacity>
-          <TouchableOpacity style={{padding:5}}  onPress={() => { actionSheetRef.current?.show() }}>
+          <TouchableOpacity style={{padding:5}}  onPress={() => {  navigation.navigate("Comments") /*actionSheetRef.current?.show()*/  }}>
             <Icon name="comment-outline" size={30} color="#555" />
           </TouchableOpacity>
           <TouchableOpacity style={{padding:5}}  onPress={handleShare} >

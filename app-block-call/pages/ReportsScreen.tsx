@@ -217,7 +217,9 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
             <TouchableOpacity style={{padding:5}}  onPress={() => { console.log("bookmark") } }>
               <Icon name="bookmark-outline" size={16} color="#555" />
             </TouchableOpacity>
-            <TouchableOpacity style={{padding:5}}  onPress={() => { actionSheetRef.current?.show() }}>
+            <TouchableOpacity style={{padding:5}}  onPress={() => { 
+              navigation.navigate("Comments")
+              /*actionSheetRef.current?.show()*/  }}>
               <Icon name="comment-outline" size={16} color="#555" />
             </TouchableOpacity>
             <TouchableOpacity style={{padding:5}}  onPress={()=>handleShare(item)}>
