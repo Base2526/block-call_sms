@@ -8,12 +8,13 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import moment from 'moment';
 
 import constants from './constants';
-import moment from 'moment';
-import useReply from './useReply';
-import useUsername from './useUsername';
+import MentionHashtag from "./MentionHashtag"
+
 interface subcomment {
+  _id: string;
   comment: string;
   timestamp: number;
   username: string;
@@ -34,16 +35,18 @@ const SubComment = ({
   index,
   mainIndex,
   deleteInternalComment,
+  setReply
 }: {
   data: subcomment;
   index: number;
   mainIndex: number;
   deleteInternalComment: Function;
+  setReply: Function;
 }) => {
-  const {setReplyData} = useReply();
-  const {username: signedInUserName} = useUsername();
+  // const {setReplyData} = useReply();
+  // const {username: signedInUserName} = useUsername();
   const [date, setDate] = useState(new Date());
-  const {comment, timestamp, username, replyToUsername, secondReply} = data;
+  const {_id, comment, timestamp, username, replyToUsername, secondReply} = data;
   return (
     <View style={styles.container}>
       <View style={styles.top}>
@@ -65,7 +68,11 @@ const SubComment = ({
           {moment(new Date(timestamp)).from(date)}
         </Text>
       </View>
-      <Text style={styles.body}>{comment}</Text>
+      <MentionHashtag
+        style={{marginLeft: 40}}
+        mentionHashtagPress={(text)=>{console.log(" >", text)}}
+        mentionHashtagColor={"#007BFF"}
+        >{comment}</MentionHashtag>
       <View style={styles.detailsContainer}>
         {/* <Text style={styles.date}>
           {moment(new Date(timestamp)).from(date)}
@@ -74,13 +81,14 @@ const SubComment = ({
           <TouchableOpacity
             style={styles.reply}
             onPress={() => {
-              setReplyData({
-                replyToMain: false,
-                index: index,
-                mainIndex: mainIndex,
-                replyToUsername: replyToUsername,
-                secondReply: username,
-              });
+              // setReplyData({
+              //   replyToMain: false,
+              //   index: index,
+              //   mainIndex: mainIndex,
+              //   replyToUsername: replyToUsername,
+              //   secondReply: username,
+              // });
+              setReply(username)
             }}>
            {/* <Icon name="reply" size={24} color="#333" /> */}
             <Text style={styles.replyText}>{'REPLY'}</Text>
@@ -88,7 +96,7 @@ const SubComment = ({
           <TouchableOpacity
             style={styles.trash}
             onPress={() => {
-              if (signedInUserName == username)
+              // if (signedInUserName == username)
                 Alert.alert(
                   'Delete Comment?',
                   'Do you want to delete this comment',
@@ -97,7 +105,9 @@ const SubComment = ({
                       text: 'Delete',
                       style: 'destructive',
                       onPress: () => {
-                        deleteInternalComment();
+                        deleteInternalComment(_id);
+
+                        // console.log(">> ", _id)
                       },
                     },
                     {
@@ -105,10 +115,10 @@ const SubComment = ({
                     },
                   ],
                 );
-              else
-                Alert.alert(
-                  `Change your username to "${username}" to delete this comment`,
-                );
+              // else
+              //   Alert.alert(
+              //     `Change your username to "${username}" to delete this comment`,
+              //   );
             }}>
             <Icon name="trash-can" size={20} color="#333" />
           </TouchableOpacity>
@@ -126,7 +136,7 @@ const styles = StyleSheet.create({
     // marginTop: 5,
     // borderLeftWidth: 5,
     // borderColor:'gray',
-    borderWidth: .5,
+    // borderWidth: .5,
     borderColor: constants.colors.GREY,
   },
   avatar: {
@@ -157,7 +167,7 @@ const styles = StyleSheet.create({
   },
   body: {
     fontSize: constants.fontSizes.comment,
-    fontWeight: '500',
+    fontWeight: '400',
     // width: '80%',
     marginVertical: 10,
     lineHeight: constants.fontSizes.comment + 6,

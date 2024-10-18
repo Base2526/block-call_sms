@@ -9,13 +9,11 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import moment from 'moment';
 
 import constants from './constants';
-import moment from 'moment';
 import SubComment from './SubComment';
-import useComments from './useComments';
-import useReply from './useReply';
-import useUsername from './useUsername';
+import MentionHashtag from "./MentionHashtag"
 
 interface subcomment {
     _id: string;
@@ -49,23 +47,22 @@ const MainComment = ({
   index,
   deleteInternalComment,
   setExposed,
+  setReply
 }: {
   data: comment;
   deleteComment: Function;
   deleteInternalComment: Function;
   index: number;
   setExposed: Function;
+  setReply: Function;
 }) => {
-  const {username: signedInUserName} = useUsername();
   const [date, setDate] = useState(new Date());
   const {_id, comment, timestamp, username, exposed, subComments} = data;
-  const {setReplyData} = useReply();
 
   return (
     <>
       <View style={styles.container}>
         <View style={styles.top}>
-          {/* <View style={styles.avatar} /> */}
           <TouchableOpacity style={styles.avatar}>
             <Icon name="account" size={20} color="#333" />
           </TouchableOpacity>
@@ -74,25 +71,23 @@ const MainComment = ({
             {moment(new Date(timestamp)).from(date)}
           </Text>
         </View>
-        <Text style={styles.body}>{comment}</Text>
+        <MentionHashtag
+          style={{marginLeft: 40}}
+          mentionHashtagPress={(text)=>{console.log(" >", text)}}
+          mentionHashtagColor={"#007BFF"}
+          >{comment}</MentionHashtag>
         <View style={styles.detailsContainer}>
           <View style={styles.optionsArray}>
             <TouchableOpacity
               style={styles.reply}
               onPress={() => {
-                setReplyData({
-                  replyToMain: true,
-                  index: index,
-                  replyToUsername: username,
-                });
+                setReply(_id, `@${ username } `);
               }}>
-              {/* <Icon name="reply" size={20} color="#333" /> */}
               <Text style={styles.replyText}>{'REPLY'}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.trash}
               onPress={() => {
-                if (signedInUserName == username)
                   Alert.alert(
                     'Delete Comment?',
                     'Do you want to delete this comment',
@@ -101,17 +96,13 @@ const MainComment = ({
                         text: 'Delete',
                         style: 'destructive',
                         onPress: () => {
-                          deleteComment();
+                          deleteComment(_id);
                         },
                       },
                       {
                         text: 'Cancel',
                       },
                     ],
-                  );
-                else
-                  Alert.alert(
-                    `Change your username to "${username}" to delete this comment`,
                   );
               }}>
               <Icon name="trash-can" size={20} color="#333" />
@@ -140,31 +131,38 @@ const MainComment = ({
                                     renderItem={({item, index_}: {item: any; index_: number}) => {
                                     return (
                                         <SubComment
-                                        key={index_}
-                                        data={item}
-                                        mainIndex={index}
-                                        index={index_}
-                                        deleteInternalComment={() => {
-                                            deleteInternalComment(index_);
-                                        }}
+                                          key={index_}
+                                          data={item}
+                                          mainIndex={index}
+                                          index={index_}
+                                          setReply={(tags: string)=>{
+                                            console.log("Reply :", _id)
+                                            // setReplyId(_id)
+                                            // setMessage(tags)
+
+                                            setReply(_id, `@${ tags } `);
+                                          }}
+                                          deleteInternalComment={(subCommentId: string) => {
+                                            deleteInternalComment(_id, subCommentId);
+                                          }}
                                         />
                                     );
                                     }}
                                 />
                                 <TouchableOpacity 
-                                    style={{backgroundColor:'gray', padding: 5}}
+                                    style={{ padding: 5}}
                                     onPress={()=>{
                                         setExposed(_id, false)
                                     }}>
-                                    <Text>Hide replies</Text>
+                                    <Text style={{fontWeight: '500'}}>Hide replies</Text>
                                 </TouchableOpacity>
                             </View>
                         :   <TouchableOpacity 
-                                style={{backgroundColor:'gray', padding: 5}}
+                                style={{ padding: 5}}
                                 onPress={()=>{
                                     setExposed(_id, true)
                                 }}>
-                                <Text>View { subComments.length } more replies</Text>
+                                <Text style={{fontWeight: '500'}}>View { subComments.length } more replies</Text>
                             </TouchableOpacity>
             }
             
@@ -184,7 +182,7 @@ const styles = StyleSheet.create({
     // paddingVertical: 10,
     // margin: 5,
     borderColor:'gray',
-    borderWidth: .5
+    // borderWidth: .5
   },
   avatar: {
     borderColor: constants.colors.GREY,
@@ -209,7 +207,7 @@ const styles = StyleSheet.create({
   },
   body: {
     fontSize: constants.fontSizes.comment,
-    fontWeight: '500',
+    fontWeight: '400',
     // width: '80%',
     marginVertical: 10,
     // backgroundColor: 'blue',

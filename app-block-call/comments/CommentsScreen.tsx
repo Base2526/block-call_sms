@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { TouchableOpacity, StyleSheet, View, Text, TouchableWithoutFeedback, Keyboard, TextInput, FlatList } from "react-native";
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import CommentInput from './CommentInput';
+import { faker } from '@faker-js/faker';
+import _ from "lodash"
 import useComments from './useComments';
 import KeyboardStickyView from "./KeyboardStickyView"
 import MainComment from './MainComment';
 
 import generateComments  from "./faker"
+
+import constants from "./constants";
 
 interface SubComment {
   _id: string;
@@ -27,15 +30,17 @@ interface Comment {
 
 const CommentsScreen: React.FC = () => {
   const [message, setMessage] = useState('');
-  const [comments, setComments] = useState(generateComments(30));
+  const [comments, setComments] = useState(generateComments(20));
 
-  const handleSaveAction = (text: string, parentId: string | false) => {
-    console.log('Saving comment:', text, 'Parent ID:', parentId);
-  };
+  const [replyId, setReplyId] = useState('')
+  const [tags, setTags] = useState('')
 
+  // const handleSaveAction = (text: string, parentId: string | false) => {
+  //   console.log('Saving comment:', text, 'Parent ID:', parentId);
+  // };
   // console.log("CommentsScreen :", comments)
 
-  const sendComment = () => {
+  const sendComment1 = () => {
     console.log("sendComment :", message)
     /*
     if (Object.keys(reply).length === 0) {
@@ -92,6 +97,72 @@ const CommentsScreen: React.FC = () => {
     );
   };
 
+  // Function to remove a comment by _id
+  const removeComment = (_id: string) => {
+    setComments((prevComments) =>
+      prevComments.filter((comment) => comment._id !== _id)
+    );
+  };
+
+  // Function to remove a sub-comment by its _id
+  const removeSubComment = (commentId: string, subCommentId: string) => {
+    setComments((prevComments) =>
+      prevComments.map((comment) =>
+        comment._id === commentId
+          ? {
+              ...comment,
+              subComments: comment.subComments.filter(
+                (subComment) => subComment._id !== subCommentId
+              ),
+            }
+          : comment
+      )
+    );
+  };
+
+    // Function to add a subcomment to the comment with _id '44205eee-6c96-42b9-a4fe-a6677b100470'
+  const sendComment = () => {
+
+    if( !_.isEmpty(replyId) ){
+      const newSubComment: SubComment = {
+        _id: faker.string.uuid(),
+        comment: message,
+        timestamp: Date.now(),
+        username: faker.internet.userName(),
+        secondReply: null, // Can be filled with data if needed
+      };
+  
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment._id === replyId
+            ? {
+                ...comment,
+                exposed: true,
+                subComments: [...comment.subComments, newSubComment],
+              }
+            : comment
+        )
+      );
+
+      setReplyId("")
+      setMessage("")
+      setTags("")
+    }else{
+      const newCommentObject: Comment = {
+        _id: faker.string.uuid(),
+        comment: message,
+        timestamp: Date.now(),
+        username: 'NewUser', // Replace with actual username if needed
+        exposed: false,
+        subComments: [],
+      };
+  
+      setComments((prevComments) => [...prevComments, newCommentObject]);
+
+      setMessage("")
+    }
+  };
+
   return (
     <View>
       {/* Wrap everything in a single parent view */}
@@ -114,11 +185,18 @@ const CommentsScreen: React.FC = () => {
                   setExposed={(_id: string, exposed: boolean)=>{
                     setExposedById(_id, exposed)
                   }}
-                  deleteComment={() => {
-                    // deleteComment(index);
+                  setReply={(_id: string, tags: string)=>{
+                    console.log("Reply :", _id)
+                    setReplyId(_id)
+                    setMessage(tags)
+
+                    setTags(tags)
                   }}
-                  deleteInternalComment={(value: number) => {
-                    // deleteInternalComment(index, value);
+                  deleteComment={(commentId: string) => {
+                    removeComment(commentId);
+                  }}
+                  deleteInternalComment={(commentId: string, subCommentId: string) => {
+                    removeSubComment(commentId, subCommentId)
                   }}
                 />
               );
@@ -128,7 +206,34 @@ const CommentsScreen: React.FC = () => {
        
       </View>
       <KeyboardStickyView style={{borderWidth: .5, borderColor: 'gray'}}>
+        {
+          !_.isEmpty(replyId) 
+          ? <View style={{height: 40, 
+              width:'100%', 
+              backgroundColor: '#eee', 
+              // justifyContent:'center',
+              alignItems:'center', 
+              flexDirection: 'row',
+              justifyContent: 'space-between'
+              }}>
+              <View style={{flexDirection:'row', marginLeft: 10}}>
+                <Text style={{fontSize: 16}}>Replying to { tags }</Text>
+              </View>
+              <TouchableOpacity 
+                style={{flexDirection:'row'}}
+                onPress={()=>{ 
+                  setTags("")
+                  setReplyId("")
+                  setMessage("")
+                 }}>
+                <Icon name="close" size={15} color={ "#333" } style={{ padding: 10}}/>
+              </TouchableOpacity>
+            </View>
+          : <></>
+        }
+        
         <View style={{flexDirection:'row'}}>
+          
           <TextInput
             value={message}
             onChangeText={setMessage}
@@ -138,7 +243,7 @@ const CommentsScreen: React.FC = () => {
             style={styles.textInput}
           />
           <TouchableOpacity style={styles.sendButton} onPress={()=>{ sendComment() }}>
-            <Icon name="send" size={24} color="#333" />
+            <Icon name="send" size={24} color={ _.isEmpty(message) ? "#333" : '#007BFF' }/>
           </TouchableOpacity>
         </View>
       </KeyboardStickyView>
@@ -154,6 +259,7 @@ const styles = StyleSheet.create({
     // alignItems: 'center',
     // paddingBottom: 150,
     // backgroundColor:'yellow'
+    backgroundColor: constants.colors.WHITE,
   },
   containerSafe: {
     width: '100%',
