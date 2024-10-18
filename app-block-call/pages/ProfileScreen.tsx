@@ -4,22 +4,23 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useToast } from "react-native-toast-notifications";
 import { useSelector, useDispatch } from 'react-redux';
 import { useMutation } from '@apollo/client';
-import { launchImageLibrary } from 'react-native-image-picker'; // Import image picker
+import { launchImageLibrary } from 'react-native-image-picker'; 
 
 import {ReactNativeFile} from 'apollo-upload-client';
-
 import { updateUser, resetUser } from "../redux/slices/userSlice"
 import { getHeaders } from "../utils";
 import { mutation_profile, mutation_uploadfile } from "../gqlQuery";
 import { RootState, AppDispatch } from '../redux/store';
-
 import LoadingDialog from "../LoadingDialog"
+import { useAppContext } from '../context/DataContext';
 
 const ProfileScreen: React.FC<any> = ({navigation}) => {
   const [loading, setLoading] = useState(false);
   const dispatch: AppDispatch = useDispatch();
   const toast = useToast();
   const user = useSelector((state: RootState) => state.user );
+
+  const { clearAll } = useAppContext();
 
   const [onProfile] = useMutation(mutation_profile, {
     context: { headers: getHeaders() },
@@ -128,6 +129,8 @@ const ProfileScreen: React.FC<any> = ({navigation}) => {
           
           <TouchableOpacity style={styles.logoutButton} onPress={async()=>{
             dispatch(resetUser());
+
+            clearAll()
 
             toast.show("Logout success.", {
               type: "success",

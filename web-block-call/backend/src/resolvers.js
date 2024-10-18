@@ -74,9 +74,9 @@ export default {
 
       let { current_user }=  await Utils.checkAuth(req);
       let role = Utils.checkRole(current_user)
-      // if( role !== Constants.ADMINISTRATOR  &&
-      //     role !== Constants.AUTHENTICATED 
-      //     ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied')
+      if( role !== Constants.ADMINISTRATOR  &&
+          role !== Constants.AUTHENTICATED 
+          ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied')
     
       let provinces = await Model.Province.find({})
       return {
@@ -91,7 +91,9 @@ export default {
 
       let { current_user } =  await Utils.checkAuth(req);
       let role = Utils.checkRole(current_user)
-      // if( role !== Constants.ADMINISTRATOR  && role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+
+      // if( role !== Constants.ADMINISTRATOR  && 
+      //     role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
 
       let reports = await Model.Report.aggregate([  {
                                                       $addFields: {
@@ -137,14 +139,12 @@ export default {
     async report(parent, args, context, info) {
       let start = Date.now()
       let { req } = context
-
       let { _id } = args
-
-      console.log("report @@1 ", args)
 
       let { current_user } =  await Utils.checkAuth(req);
       let role = Utils.checkRole(current_user)
-      // if( role !== Constants.ADMINISTRATOR  && role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+      // if( role !== Constants.ADMINISTRATOR  && 
+      //     role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
 
       let report = await Model.Report.aggregate([
                                                       { 
@@ -284,8 +284,8 @@ export default {
 
       let { current_user } =  await Utils.checkAuth(req);
       let role = Utils.checkRole(current_user)
-      // if( role !== Constants.ADMINISTRATOR  &&
-      //     role !== Constants.AUTHENTICATED ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+      if( role !== Constants.ADMINISTRATOR  &&
+          role !== Constants.AUTHENTICATED ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
 
       let banks = await Model.Bank.find({});
       return {
@@ -468,9 +468,6 @@ export default {
       let { req }   = context
       let { input } = args
 
-      console.log("report : ", input, req)
-      return ;
-
       let { current_user } =  await Utils.checkAuth(req);
       let role = Utils.checkRole(current_user)
       if( role !==Constants.ADMINISTRATOR &&
@@ -530,7 +527,7 @@ export default {
             console.log("All files processed: ", images );
 
             const newInput = _.omit(input, ['mode']);
-            let current  = {...newInput, images, /*ownerId: current_user._id */ }
+            let current  = {...newInput, images, ownerId: current_user._id }
             
             console.log("@@@2 Report current : ", current)
             

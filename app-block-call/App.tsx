@@ -22,6 +22,7 @@ import { addMultipleSmsLogs, clearSmsLogs } from './redux/slices/smslogSlice';
 import { addBlocks } from "./redux/slices/blockSlice";
 import client from './apollo/apolloClient';
 
+import { AppProvider as AppDataContextProvider } from './context/DataContext';
 import { MyProvider } from './MyProvider';
 
 import { query_test } from "./gqlQuery";
@@ -196,6 +197,7 @@ export const App: React.FC = () => {
   }, []);
 
   return (
+    <AppDataContextProvider>
     <ToastProvider>
       <ApolloProvider client={client}>
         <Provider store={store}>
@@ -205,5 +207,6 @@ export const App: React.FC = () => {
         </Provider>
       </ApolloProvider>
     </ToastProvider>
+    </AppDataContextProvider>
   );
 };

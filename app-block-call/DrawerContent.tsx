@@ -9,7 +9,6 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 
 import { useMyContext } from './MyProvider'; 
 import { RootState, AppDispatch } from './redux/store';
-import { UserItem } from "./redux/interface"
 
 interface MenuProps {
   isOpen: boolean;
@@ -20,15 +19,7 @@ interface MenuProps {
 const DrawerContent: React.FC<MenuProps> = ({ isOpen, onClose, navigation }) => {
   if (!isOpen) return null;
   const insets = useSafeAreaInsets();
-
   const user = useSelector((state: RootState) => state.user.user );
-  console.log('DrawerContent user @@@ :', user )
-
-  /*
-    const user = useSelector((state: RootState) => state.user );
-
-  console.log("ProfileScreen @@@ :", user.user, `http://192.168.1.3:1984/${ user.user?.avatar?.url }`)
-  */
 
   const { openLoginModal } = useMyContext();
   return (
@@ -36,7 +27,6 @@ const DrawerContent: React.FC<MenuProps> = ({ isOpen, onClose, navigation }) => 
         <View style={[styles.overlay, {marginTop: insets.top}]}>
           <TouchableWithoutFeedback>
             <View style={styles.drawerContent}>
-
               {
                 _.isEmpty(user)
                 ? 
@@ -71,6 +61,41 @@ const DrawerContent: React.FC<MenuProps> = ({ isOpen, onClose, navigation }) => 
                         </View> 
                       </View>
                     </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.drawerItem}
+                      onPress={() =>{ 
+                        // navigation.navigate('Settings');
+                        onClose();
+                      }}>
+                      <Icon name="bug" size={20} style={{padding: 10}} />
+                      <Text style={styles.drawerItemText}>โพสต์ของฉัน</Text>
+                    </TouchableOpacity>
+                    <Divider />
+
+                    <TouchableOpacity
+                      style={styles.drawerItem}
+                      onPress={() =>{ 
+                        // navigation.navigate('Settings');
+                        onClose();
+                        // bookmark-outline
+                      }}>
+                      <MaterialCommunityIcons name="bookmark-outline" size={20} style={{padding: 10}} />
+                      <Text style={styles.drawerItemText}>รายการโพสต์ที่ฉันชอบ</Text>
+                    </TouchableOpacity>
+                    <Divider />
+
+                    <TouchableOpacity
+                      style={styles.drawerItem}
+                      onPress={() =>{ 
+                        // navigation.navigate('Settings');
+                        onClose();
+                      }}>
+                      <MaterialCommunityIcons name="block-helper" size={20} style={{padding: 10}} />
+                      <Text style={styles.drawerItemText}>รายการบล็อก เบอร์ & SMS</Text>
+                    </TouchableOpacity>
+                    <Divider />
+
                     <TouchableOpacity
                       style={styles.drawerItem}
                       onPress={() =>{ 
@@ -78,22 +103,11 @@ const DrawerContent: React.FC<MenuProps> = ({ isOpen, onClose, navigation }) => 
                         onClose();
                       }}>
                       <Icon name="cogs" size={20} style={{padding: 10}} />
-                      <Text style={styles.drawerItemText}>Settings</Text>
+                      <Text style={styles.drawerItemText}>ตั้งค่า</Text>
                     </TouchableOpacity>
                     <Divider />
                   </> 
               }
-              
-              {/* <TouchableOpacity 
-                style={styles.drawerItem}
-                onPress={() =>{
-                  navigation.navigate('HelpSendFeedback');
-                  onClose();
-                }}>
-                <Icon name="question" size={20} style={{padding: 10}} />
-                <Text style={styles.drawerItemText}>Help & Send Feedback</Text>
-              </TouchableOpacity>
-              <Divider /> */}
               <TouchableOpacity 
                 style={styles.drawerItem}
                 onPress={() =>{
@@ -101,7 +115,7 @@ const DrawerContent: React.FC<MenuProps> = ({ isOpen, onClose, navigation }) => 
                   onClose();
                 }}>
                 <Icon name="user-shield" size={20} style={{padding: 10}} />
-                <Text style={styles.drawerItemText}>Private policy</Text>
+                <Text style={styles.drawerItemText}>เงื่อนไขการใช้งาน</Text>
               </TouchableOpacity>
               <Divider />
               <TouchableOpacity 
@@ -111,14 +125,13 @@ const DrawerContent: React.FC<MenuProps> = ({ isOpen, onClose, navigation }) => 
                   onClose();
                 }}>
                 <Icon name="question" size={20} style={{padding: 10}} />
-                <Text style={styles.drawerItemText}>About</Text>
+                <Text style={styles.drawerItemText}>เกี่ยวกับฉัน</Text>
               </TouchableOpacity>
               <Divider />
             </View>
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>
-
   );
 };
 
@@ -144,11 +157,11 @@ const styles = StyleSheet.create({
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20
+    paddingBottom: 20,
   },
   profileInfo: {
     flex: 1,
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   profileName: {
     fontSize: 18,
@@ -174,7 +187,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     // paddingVertical: 15,
-    padding: 10
+    // padding: 10,
   },
   drawerItemText: {
     marginLeft: 15,

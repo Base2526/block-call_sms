@@ -26,7 +26,7 @@ export default gql`
   }  
   
   type Mutation {
-    login(input: LoginInput): JSON
+    login(input: JSON): JSON
     register(input: JSON): JSON
     forgot_password(input: JSON): JSON
     profile(input: JSON): JSON
