@@ -7,10 +7,12 @@ import  Toast from 'react-native-toast-notifications';
 import { useMutation } from '@apollo/client';
 
 import { RootState, AppDispatch } from '../redux/store';
-import { setUser, setSessionId } from "../redux/slices/userSlice"
+import { setUser } from "../redux/slices/userSlice"
 import { mutation_login } from "../gqlQuery";
-import { saveObject, getHeaders } from "../utils";
+import { getHeaders } from "../utils";
 import handlerError from "../handlerError";
+
+import { useAppContext } from '../context/DataContext';
 
 interface LoginScreenProps {
   visible: boolean;
@@ -25,29 +27,20 @@ const LoginModal: React.FC<LoginScreenProps> = (props) => {
   const [usernameError, setUsernameError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // New state to toggle password visibility
-
+  const [showPassword, setShowPassword] = useState(false); 
   const dispatch: AppDispatch = useDispatch();
   const toastRef = useRef<Toast | null>(null);
-
-  // dispatch(resetUser());
-  // const user = useSelector((state: RootState) => state.user );
-  // console.log("LoginModal :", user)
+  const { updateSessionId } = useAppContext();
 
   const [onMutationLogin] = useMutation(mutation_login, {
     context: { headers: getHeaders() },
     update: (cache, {data: {login}}) => { 
-      console.log("login :", login)
-
       let { status, sessionId, data } = login;
       if(status){
         console.log("login result :", sessionId, data)
 
-        dispatch(setUser(data.current));
-        // dispatch(setSessionId(sessionId))
-
-        saveObject("sessionId", sessionId)
-
+        dispatch(setUser(data));
+        updateSessionId(sessionId)
         if (toastRef.current) {
           toastRef.current.show("Login success.", {
             type: "success",
@@ -56,9 +49,7 @@ const LoginModal: React.FC<LoginScreenProps> = (props) => {
             animationType: "slide-in",
           });
         }
-
         onLoginSuccess(data.current.displayName)
-
         closeModal()
       }
     },
@@ -164,7 +155,7 @@ const LoginModal: React.FC<LoginScreenProps> = (props) => {
               onChangeText={setUsername}
               autoCapitalize="none"
               onFocus={()=>{  setUsernameError(''); }}
-              onBlur={()=>{ console.log("onBlur") }}
+              onBlur={()=>{  }}
             />
             {usernameError && <View style={{width: '100%'}}><Text style={styles.errorText}>{usernameError}</Text></View>}
 

@@ -54,6 +54,9 @@ enum Roles {
 }
 
 export interface UserItem{
+    _id: string;
+    createdAt: string; 
+    updatedAt: string; 
     current:{
         username: string;
         password: string;

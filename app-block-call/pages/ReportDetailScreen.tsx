@@ -5,10 +5,8 @@ import { useToast } from "react-native-toast-notifications";
 import { RouteProp } from '@react-navigation/native';
 import _ from "lodash";
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
-import ImageViewer from 'react-native-image-zoom-viewer';
 import { Menu, Divider } from 'react-native-paper';
 import Share from 'react-native-share';
-import ActionSheet from 'react-native-actions-sheet';
 
 import { query_report } from "../gqlQuery";
 import { getHeaders } from "../utils";
@@ -73,10 +71,11 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
         data: dataReport, 
         error: errorReport,
         refetch: refetchReport} = useQuery(query_report, {
-            // context: { headers: getHeaders() },
+            context: { headers: getHeaders() },
             fetchPolicy: 'cache-first', 
             nextFetchPolicy: 'network-only', 
             notifyOnNetworkStatusChange: false,
+            skip: !_id
         });
 
   if (errorReport) {
@@ -92,7 +91,6 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
   useEffect(() => {
     if (!loadingReport && dataReport?.report) {
       if (dataReport.report.status) {
-        console.log("ReportDetailScreen @@1 :", dataReport.report.data.current);
         setData(dataReport.report.data);
       }
     }
@@ -122,10 +120,7 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
       {loadingReport && _.isEmpty(data) ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (
-        // <Text>{data ? JSON.stringify(data) : "No data available"}</Text>
         <ScrollView contentContainerStyle={styles.container}>
-          {/* <Image source={{ uri: "https://img.freepik.com/free-vector/cute-woman-teacher-holding-bell-government-uniform-character-cartoon-art-illustration_56104-820.jpg?t=st=1729054635~exp=1729058235~hmac=ec20d8bfd51b0b5196b6f0b2500b40d5c9eaa4dabebdc75a50c94ff388fb112f&w=1060" }} style={styles.image} /> */}
-
           <TouchableOpacity 
             style={styles.avatarContainer}
             onPress={() => {
@@ -136,7 +131,6 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
               }
             }}>
             {data?.current?.images
-              // ? <Image source={{ uri: `http://192.168.1.3:1984/${item.current.images[0].url}` }} style={styles.image} />
               ? <View style={styles.imageContainer}>
                   <Image 
                     source={{ uri: `http://192.168.1.3:1984/${data?.current?.images[0].url}` }} 
@@ -167,14 +161,14 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
             </View>
             <Text style={{fontWeight:'700', fontSize: 16}}>เบอร์โทร/line id</Text>
             {
-              _.map(data?.current?.telNumbers, (value)=>{
-                return <TouchableOpacity><Text style={styles.phone}>- {value.tel}</Text></TouchableOpacity>
+              _.map(data?.current?.telNumbers, (value, index)=>{
+                return <TouchableOpacity key={index}><Text style={styles.phone}>- {value.tel}</Text></TouchableOpacity>
               })
             }
             <Text style={{fontWeight:'700', fontSize: 16}}>บัญชีธนาคาร </Text>
             {
-               _.map(data?.current?.sellerAccounts, (value)=>{
-                return <TouchableOpacity><Text style={styles.phone}>- {value.sellerAccount}/{value.bankName_th}</Text></TouchableOpacity>
+               _.map(data?.current?.sellerAccounts, (value, index)=>{
+                return <TouchableOpacity key={index}><Text style={styles.phone}>- {value.sellerAccount}/{value.bankName_th}</Text></TouchableOpacity>
               })
             }
           </View>

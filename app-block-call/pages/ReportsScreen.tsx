@@ -11,19 +11,16 @@ import { useQuery } from '@apollo/client';
 import _ from "lodash";
 import Share from 'react-native-share';
 import ActionSheet from 'react-native-actions-sheet';
-
 import { RootState, AppDispatch } from '../redux/store';
 import { BlockItem } from "../redux/interface"
-
 import { addBlocks, removeBlock } from "../redux/slices/blockSlice";
-
 import { query_reports } from "../gqlQuery";
 import { getHeaders } from "../utils";
 import handlerError from "../handlerError";
-
 import ImageZoomViewer from "./ImageZoomViewer";
 import CommentActionSheet from "./CommentActionSheet";
 import TabIconWithMenu from "../TabIconWithMenu";
+import { useAppContext } from '../context/DataContext';
 
 type ReportsScreenProps = {
   navigation: any;
@@ -33,8 +30,6 @@ type ReportsScreenProps = {
 
 const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   let { navigation, route, setMenuOpen } = props
-
-  const actionSheetRef = useRef<ActionSheet>(null);
 
   useLayoutEffect(() => {
     const routeName = getFocusedRouteNameFromRoute(route);
@@ -80,6 +75,8 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
     });
   }, [navigation, route]);
   
+  const actionSheetRef = useRef<ActionSheet>(null);
+  let { state, loadingContext } = useAppContext()
   const dispatch: AppDispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
   const [visibleMenuId, setVisibleMenuId] = useState<string | null>(null);
@@ -99,6 +96,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
               fetchPolicy: 'cache-first', 
               nextFetchPolicy: 'network-only', 
               notifyOnNetworkStatusChange: false,
+              skip: loadingContext, // This will skip the query if the condition is true
           });
 
   if(errorReports){
@@ -107,10 +105,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
 
   useEffect(() => {
     if (!loadingReports && dataReports?.reports) {
-      console.log("@@@@@@ ReportsScreen > ", dataReports)
       if(dataReports.reports.status){
-        console.log("dataReports :", dataReports.reports.data[0])
-
         setFilteredData(dataReports.reports.data)
       }
     }
@@ -168,7 +163,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
     return (
       <View
         style={styles.itemContainer}
-        key= {item._id}>
+        key={item._id}>
         <TouchableOpacity 
           style={styles.avatarContainer}
           onPress={() => {
@@ -179,7 +174,6 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
             }
           }}>
           {item.current.images
-            // ? <Image source={{ uri: `http://192.168.1.3:1984/${item.current.images[0].url}` }} style={styles.image} />
             ? <View style={styles.imageContainer}>
                 <Image 
                   source={{ uri: `http://192.168.1.3:1984/${item.current.images[0].url}` }} 
@@ -208,8 +202,8 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
             }
             <Text style={styles.phone}>{item.current.sellingWebsite}</Text>
             {
-              _.map(item.current.telNumbers, (value)=>{
-                return <TouchableOpacity><Text style={styles.phone}>{value.tel}</Text></TouchableOpacity>
+              _.map(item.current.telNumbers, (value, index)=>{
+                return <TouchableOpacity key={index}><Text style={styles.phone}>{value.tel}</Text></TouchableOpacity>
               })
             }
             <Text style={styles.phone}>{item.createdAt}</Text>
@@ -217,10 +211,10 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
          
           {/* Action Buttons */}
           <View style={styles.actionsContainer}>
-            <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle like");/*  */ }}>
+            <TouchableOpacity style={{padding:5}}  onPress={() => { console.log("heart") }}>
               <Icon name="heart-outline" size={16} color="#555" />
             </TouchableOpacity>
-            <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle bookmark");/* handle bookmark */ }}>
+            <TouchableOpacity style={{padding:5}}  onPress={() => { console.log("bookmark") } }>
               <Icon name="bookmark-outline" size={16} color="#555" />
             </TouchableOpacity>
             <TouchableOpacity style={{padding:5}}  onPress={() => { actionSheetRef.current?.show() }}>
@@ -251,7 +245,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   return (
     <View style={styles.container}>
       {
-        filteredData.length === 0 ? (
+        filteredData.length === 0  ? (
           <TouchableOpacity style={styles.emptyContainer} onPress={()=>{}}>
             <Icon name="file-document-outline" size={80} color="#ccc" />
             <Text style={styles.emptyText}>No Reports Found</Text>
@@ -260,7 +254,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
           <FlatList
             data={filteredData}
             renderItem={renderItem}
-            keyExtractor={(item) => item.PHONE_NUMBER}
+            keyExtractor={(item) => item._id}
             initialNumToRender={10}
             windowSize={5}
             removeClippedSubviews={true}

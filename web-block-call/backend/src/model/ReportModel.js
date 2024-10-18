@@ -74,4 +74,3 @@ const reportSchema = new Schema(
 
 const report = mongoose.model('report', reportSchema,'report')
 export default report
-

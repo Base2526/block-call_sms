@@ -83,7 +83,7 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           component={SettingsScreen}
           options={{  
             headerShown: true, 
-            headerTitle: 'Settings', 
+            headerTitle: 'ตั้งค่า', 
           }}/>
         <ReportsStack.Screen
           name="HelpSendFeedback"
@@ -114,7 +114,7 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           component={ProfileScreen}
           options={{  
             headerShown: true, 
-            headerTitle: 'Profile', 
+            headerTitle: 'โปรไฟล์', 
           }}
         />
         <ReportsStack.Screen
