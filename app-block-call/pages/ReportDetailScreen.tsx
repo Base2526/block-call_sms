@@ -10,7 +10,7 @@ import Share from 'react-native-share';
 import { useSelector } from 'react-redux';
 
 import { query_report, mutation_like_report } from "../gqlQuery";
-import { getHeaders } from "../utils";
+import { getHeaders, countTotalComments } from "../utils";
 import handlerError from "../handlerError";
 import { RootState, AppDispatch } from '../redux/store';
 
@@ -107,8 +107,11 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
           {/* <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle bookmark"); }}>
             <Icon name="bookmark-outline" size={30} color="#555" />
           </TouchableOpacity> */}
-          <TouchableOpacity style={{padding:5}}  onPress={() => {  navigation.navigate("Comments",  { _id:  data._id})  }}>
+          <TouchableOpacity 
+            style={{ padding: 5, flexDirection: 'row', alignItems: 'baseline' }} 
+            onPress={() => {  navigation.navigate("Comments",  { _id:  data._id})  }}>
             <Icon name="comment-outline" size={30} color="#555" />
+            <Text>{ data?.comment[0] && countTotalComments(data?.comment[0]?.data) }</Text>
           </TouchableOpacity>
           <TouchableOpacity style={{padding:5}}  onPress={handleShare} >
             <Icon name="share" size={30} color="#555" />

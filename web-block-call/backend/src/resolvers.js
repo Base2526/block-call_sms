@@ -134,6 +134,20 @@ export default {
             preserveNullAndEmptyArrays: true
           }
         },
+        {
+          $lookup: {
+            localField: "_id",
+            from: "comment",
+            foreignField: "reportId",
+            as: "comment"
+          }
+        },
+        {
+          $unwind: {
+            path: "$province",
+            preserveNullAndEmptyArrays: true
+          }
+        },
         // Add the $skip stage to skip documents for pagination
         { 
           $skip: skipSize 
@@ -228,7 +242,15 @@ export default {
                                                       },
                                                       {
                                                         $replaceRoot: { newRoot: "$reportData" }
-                                                      }
+                                                      },
+                                                      {
+                                                        $lookup: {
+                                                          localField: "_id",
+                                                          from: "comment",
+                                                          foreignField: "reportId",
+                                                          as: "comment"
+                                                        }
+                                                      },
                                                     ]);
                                                     
       // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)

@@ -320,7 +320,7 @@ const CommentsScreen: React.FC<CommentsProps> = (props) => {
                 value={message}
                 onChangeText={setMessage}
                 onSubmitEditing={() => {console.log(">")}}
-                placeholder="Add a comment..."
+                placeholder="เพิ่มข้อความ..."
                 multiline
                 style={styles.textInput}
               />
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', // Center the icon horizontally
     alignItems: 'center', // Center the icon vertically
     padding: 10, // Padding around the icon
-    backgroundColor: 'gray'
+    backgroundColor: '#999'
   },
   noCommentsText: {
     fontSize: 28,

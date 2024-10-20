@@ -104,3 +104,15 @@ export const generateObjectId = (): string => {
     random.padStart(6, '0')
   ).slice(0, 24); // Ensure it's a 24-character string
 };
+
+export const countTotalComments = (comments: any[]): number => {
+  let totalCount = 0;
+
+  // Loop through each parent comment
+  comments.forEach((comment) => {
+    totalCount++; // Count the parent comment
+    totalCount += comment.subComments.length; // Add the number of subComments
+  });
+
+  return totalCount;
+};

@@ -80,7 +80,8 @@ const MainComment = ({
           style={[styles.mentionHashtag, 
                   { backgroundColor: reply?.selectId === _id ? 'gray' : constants.colors.WHITE,
                     borderRadius: reply?.selectId === _id ? 5 : 0, 
-                    padding: reply?.selectId === _id ? 5 : 0
+                    padding: reply?.selectId === _id ? 5 : 0,
+                    color: '#000'
                   }
                 ]}
           mentionHashtagPress={(text)=>{console.log(" >", text)}}
