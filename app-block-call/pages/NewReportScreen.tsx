@@ -191,7 +191,7 @@ const NewReportScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={{ padding: 16 }}>
+    <ScrollView style={{ padding: 16, backgroundColor: '#fff' }}>
       <Text style={{ fontSize: 16, fontWeight: '700' }}>ชื่อ</Text>
       <Controller
         control={control}

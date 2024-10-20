@@ -58,7 +58,6 @@ app-block-call/.cxx/
 # node.js
 #
 app-block-call/node_modules
-app-block-call/node_modules
 app-block-call/npm-debug.log
 app-block-call/yarn-error.log
 

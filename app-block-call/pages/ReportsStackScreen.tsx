@@ -150,7 +150,7 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           component={CommentsScreen}
           options={{  
             headerShown: true,
-            headerTitle: 'Comments', 
+            headerTitle: 'คอมเมนต์', 
           }}
         />
       </ReportsStack.Navigator>

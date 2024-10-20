@@ -15,7 +15,7 @@ import { RootState, AppDispatch } from '../redux/store';
 import { BlockItem } from "../redux/interface"
 import { addBlocks, removeBlock } from "../redux/slices/blockSlice";
 import { query_reports, mutation_like_report } from "../gqlQuery";
-import { getHeaders, generateObjectId } from "../utils";
+import { getHeaders, generateObjectId, countTotalComments } from "../utils";
 import handlerError from "../handlerError";
 import ImageZoomViewer from "./ImageZoomViewer";
 import CommentActionSheet from "./CommentActionSheet";
@@ -172,6 +172,8 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
     if (!loadingReports && dataReports?.reports) {
       if(dataReports.reports.status){
         setFilteredData(dataReports.reports.data)
+
+        // console.log("ReportsScreen: ", dataReports.reports.data)
       }
     }
   }, [dataReports, loadingReports]);
@@ -268,6 +270,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   }
 
   const renderItem = useCallback(({ item }: { item: any }) => {
+    // console.log("renderItem :", item?.comment[0]?.data, item?.comment[0] && countTotalComments(item?.comment[0]?.data))
     const isExpanded = expandedItemId === item._id;
     return (
       <View
@@ -326,12 +329,13 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
               <Icon name="bookmark-outline" size={16} color="#555" />
             </TouchableOpacity> 
             */}
-            <TouchableOpacity style={{padding:5}}  
+            <TouchableOpacity style={{padding:5, flexDirection: 'row'}}  
             onPress={() => { 
               navigation.navigate("Comments", { _id:  item._id})
               /*actionSheetRef.current?.show()*/  
             }}>
               <Icon name="comment-outline" size={16} color="#555" />
+              <Text>{ item?.comment[0] && countTotalComments(item?.comment[0]?.data) }</Text>
             </TouchableOpacity>
             <TouchableOpacity style={{padding:5}}  onPress={()=>handleShare(item)}>
               <Icon name="share" size={16} color="#555" />
