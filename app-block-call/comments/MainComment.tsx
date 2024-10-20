@@ -10,26 +10,14 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import moment from 'moment';
+import { useSelector } from 'react-redux';
 
-import constants from './constants';
 import SubComment from './SubComment';
 import MentionHashtag from "./MentionHashtag"
+import constants from './constants';
+import { CommentInterface, StatusInterface, ReplyInterface } from "./interfaces"
 
-interface subcomment {
-    _id: string;
-    comment: string;
-    timestamp: number;
-    username: string;
-    secondReply: string | null;
-}
-interface comment {
-    _id: string;
-    comment: string;
-    timestamp: number;
-    username: string;
-    exposed: boolean;
-    subComments: Array<subcomment>;
-}
+import { RootState } from '../redux/store';
 
 /**
  * Main comment component
@@ -45,128 +33,168 @@ const MainComment = ({
   data,
   deleteComment,
   index,
+  reply,
   deleteInternalComment,
   setExposed,
   setReply
 }: {
-  data: comment;
+  data: CommentInterface;
   deleteComment: Function;
   deleteInternalComment: Function;
   index: number;
+  reply: ReplyInterface;
   setExposed: Function;
   setReply: Function;
 }) => {
   const [date, setDate] = useState(new Date());
-  const {_id, comment, timestamp, username, exposed, subComments} = data;
+  const {_id, text, created, user, exposed, status, subComments} = data;
+  const current_user = useSelector((state: RootState) => state.user.user );
 
   return (
     <>
       <View style={styles.container}>
-        <View style={styles.top}>
-          <TouchableOpacity style={styles.avatar}>
-            <Icon name="account" size={20} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.username}>{username}</Text>
+        <TouchableOpacity 
+          style={[styles.top, {  }]}
+          onPress={()=>{ console.log("profile") }}>
+          {
+          user?.url 
+          ? <TouchableOpacity style={styles.avatar}>
+              <Image 
+              source={{ uri: user?.url  }} 
+              style={styles.avatar}
+              resizeMode="cover" // or 'contain', depending on your needs
+              />
+            </TouchableOpacity>
+          : <TouchableOpacity style={styles.avatar}>
+              <Icon name="account" size={20} color="#333" />
+            </TouchableOpacity>
+          }
+          
+          <Text style={styles.username}>{user.username}</Text>
           <Text style={styles.date}>
-            {moment(new Date(timestamp)).from(date)}
+            {moment(new Date(created)).from(date)}
           </Text>
-        </View>
+        </TouchableOpacity>
         <MentionHashtag
-          style={{marginLeft: 40}}
+          // style={{marginLeft: 40, backgroundColor:'gray', borderRadius: 5, padding: 5}}
+          style={[styles.mentionHashtag, 
+                  { backgroundColor: reply?.selectId === _id ? 'gray' : constants.colors.WHITE,
+                    borderRadius: reply?.selectId === _id ? 5 : 0, 
+                    padding: reply?.selectId === _id ? 5 : 0
+                  }
+                ]}
           mentionHashtagPress={(text)=>{console.log(" >", text)}}
-          mentionHashtagColor={"#007BFF"}
-          >{comment}</MentionHashtag>
-        <View style={styles.detailsContainer}>
-          <View style={styles.optionsArray}>
-            <TouchableOpacity
-              style={styles.reply}
-              onPress={() => {
-                setReply(_id, `@${ username } `);
-              }}>
-              <Text style={styles.replyText}>{'REPLY'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.trash}
-              onPress={() => {
-                  Alert.alert(
-                    'Delete Comment?',
-                    'Do you want to delete this comment',
-                    [
-                      {
-                        text: 'Delete',
-                        style: 'destructive',
-                        onPress: () => {
-                          deleteComment(_id);
-                        },
-                      },
-                      {
-                        text: 'Cancel',
-                      },
-                    ],
-                  );
-              }}>
-              <Icon name="trash-can" size={20} color="#333" />
-            </TouchableOpacity>
-          </View>
-        </View>
+          mentionHashtagColor={"#007BFF"}>{text}</MentionHashtag>
+          {
+            status == StatusInterface.SENT
+            ? <View style={styles.detailsContainer}>
+                <View style={styles.optionsArray}>
+                  <TouchableOpacity
+                    style={styles.reply}
+                    onPress={() => {
+                      setReply(_id, `@${ user.username } `, _id);
+                    }}>
+                    <Text style={styles.replyText}>{'REPLY'}</Text>
+                  </TouchableOpacity>
+                  {
+                    current_user?._id === user.userId
+                    ? <TouchableOpacity
+                        style={styles.trash}
+                        onPress={() => {
+                            Alert.alert(
+                              'Delete Comment?',
+                              'Do you want to delete this comment',
+                              [
+                                {
+                                  text: 'Delete',
+                                  style: 'destructive',
+                                  onPress: () => {
+                                    deleteComment(_id);
+                                  },
+                                },
+                                {
+                                  text: 'Cancel',
+                                },
+                              ],
+                            );
+                        }}>
+                        <Icon name="trash-can" size={20} color="#333" />
+                      </TouchableOpacity>
+                    : <></>
+                  }
+                </View>
+              </View>
+            : status == StatusInterface.SENDING 
+              ? <View style={styles.detailsContainerStutus}> 
+                  <View style={styles.optionsStatus}><Text style={{fontSize: 12, fontWeight: '500'}}>{StatusInterface.SENDING}...</Text></View>
+                </View>
+              : <View style={styles.detailsContainerStutus}> 
+                  <TouchableOpacity >
+                    <Text style={{fontSize: 12, fontWeight: '500', color:'red'}}>{StatusInterface.FAILED}</Text>
+                    {/* <Icon name="account" size={20} color="#333" />  */}
+                  </TouchableOpacity>
+                </View>
+          }
       </View>
       <View style={styles.subs}>
-        {/* <View style={[styles.threadView, {height: threadHeight}]}>
-          {threadHeight !== 0 && <View style={[styles.thread]} />}
-        </View> */}
         <View style={styles.subCommentsView}>
 
             {
                 subComments.length === 0
                 ? <></>
-                : exposed ? <View>
-                                <FlatList
-                                    data={subComments}
-                                    keyExtractor={(item) => item._id}
-                                    initialNumToRender={10}
-                                    maxToRenderPerBatch={10} // Number of items to render per batch
-                                    updateCellsBatchingPeriod={50} // Time (in ms) between batch rendering
-                                    removeClippedSubviews={true}
-                                    //@ts-ignore
-                                    renderItem={({item, index_}: {item: any; index_: number}) => {
-                                    return (
-                                        <SubComment
-                                          key={index_}
-                                          data={item}
-                                          mainIndex={index}
-                                          index={index_}
-                                          setReply={(tags: string)=>{
-                                            console.log("Reply :", _id)
-                                            // setReplyId(_id)
-                                            // setMessage(tags)
-
-                                            setReply(_id, `@${ tags } `);
-                                          }}
-                                          deleteInternalComment={(subCommentId: string) => {
-                                            deleteInternalComment(_id, subCommentId);
-                                          }}
-                                        />
-                                    );
+                : exposed !== undefined && exposed 
+                  ?   <View>
+                          <FlatList
+                              data={subComments}
+                              keyExtractor={(item) => item._id}
+                              initialNumToRender={10}
+                              maxToRenderPerBatch={10} // Number of items to render per batch
+                              updateCellsBatchingPeriod={50} // Time (in ms) between batch rendering
+                              removeClippedSubviews={true}
+                              //@ts-ignore
+                              renderItem={({item, index_}: {item: any; index_: number}) => {
+                              return (
+                                  <SubComment
+                                    key={index_}
+                                    data={item}
+                                    mainIndex={index}
+                                    index={index_}
+                                    reply={reply}
+                                    setReply={(tag: string, selectId: string)=>{
+                                      setReply(_id, `@${ tag } `, selectId);
                                     }}
-                                />
-                                <TouchableOpacity 
-                                    style={{ padding: 5}}
-                                    onPress={()=>{
-                                        setExposed(_id, false)
-                                    }}>
-                                    <Text style={{fontWeight: '500'}}>Hide replies</Text>
-                                </TouchableOpacity>
-                            </View>
-                        :   <TouchableOpacity 
-                                style={{ padding: 5}}
-                                onPress={()=>{
-                                    setExposed(_id, true)
-                                }}>
-                                <Text style={{fontWeight: '500'}}>View { subComments.length } more replies</Text>
-                            </TouchableOpacity>
+                                    deleteInternalComment={(subCommentId: string) => {
+                                      deleteInternalComment(_id, subCommentId);
+                                    }}
+                                  />
+                              );
+                              }}
+                          />
+                          <TouchableOpacity 
+                              style={{ padding: 5 }}
+                              onPress={()=>{
+                                  setExposed(_id, false)
+                              }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <View style={{ width: '10%', height: 1.5, backgroundColor: '#eee', marginRight: 5 }} />
+                                <Text style={{fontWeight: '500'}}>Hide replies</Text>
+                              </View>
+                          </TouchableOpacity>
+                      </View>
+                  :   <TouchableOpacity
+                        style={{ padding: 5 }}
+                        onPress={() => {
+                          setExposed(_id, true);
+                        }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <View style={{ width: '10%', height: 1.5, backgroundColor: '#eee', marginRight: 5 }} />
+                          <Text style={{ fontWeight: '500', color: 'gray' }}>
+                            View {subComments.length} more replies
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
             }
-            
-            
         </View>
       </View>
     </>
@@ -175,14 +203,9 @@ const MainComment = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    // alignItems: 'center',
-    // backgroundColor: 'red',
     backgroundColor: constants.colors.WHITE,
     padding: 5,
-    // paddingVertical: 10,
-    // margin: 5,
-    borderColor:'gray',
-    // borderWidth: .5
+    borderColor:'gray'
   },
   avatar: {
     borderColor: constants.colors.GREY,
@@ -194,36 +217,32 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   top: {
-    // width: '90%',
-    // backgroundColor: 'blue',
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  mentionHashtag:{
+    marginLeft: 40,
   },
   username: {
     fontSize: constants.fontSizes.username,
     fontWeight: '600',
     marginLeft: 10,
-    // top: 5,
   },
   body: {
     fontSize: constants.fontSizes.comment,
     fontWeight: '400',
-    // width: '80%',
     marginVertical: 10,
-    // backgroundColor: 'blue',
     lineHeight: constants.fontSizes.comment + 6,
   },
   detailsContainer: {
-    // width: '80%',
-    // backgroundColor: 'green',
     flexDirection: 'row',
-    // alignItems: 'flex-end',
     justifyContent: 'flex-end',
-    // marginTop: 10,
-    //  marginBottom: 20,
+  },
+  detailsContainerStutus: {
+    flexDirection: 'row',
+    marginLeft: 40,
   },
   date: {
-    // fontWeight: '500',
     fontSize: 12,
     marginLeft: 5,
   },
@@ -233,17 +252,20 @@ const styles = StyleSheet.create({
     marginLeft: 7,
   },
   reply: {
-    // padding: 5,
     flexDirection: 'row',
     alignItems: 'center',
+    marginRight: 10
   },
   optionsArray: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  optionsStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   trash: {
-    // padding: 5,
-    marginLeft: 10,
+    // marginLeft: 10,
   },
   subs: {
     flexDirection: 'row',
@@ -264,4 +286,5 @@ const styles = StyleSheet.create({
     width: '90%',
   },
 });
+
 export default MainComment;

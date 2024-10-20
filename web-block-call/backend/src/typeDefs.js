@@ -23,6 +23,8 @@ export default gql`
     my_reports: JSON
     users: JSON
     banks: JSON
+
+    comment_by_id(input: JSON): JSON
   }  
   
   type Mutation {
@@ -31,6 +33,11 @@ export default gql`
     forgot_password(input: JSON): JSON
     profile(input: JSON): JSON
     report(input: JSON): JSON
+
+    like_report(input: JSON): JSON
+    like_comment(input: JSON): JSON
+
+    comment_by_id(input: JSON): JSON
   }
 
   type Subscription {

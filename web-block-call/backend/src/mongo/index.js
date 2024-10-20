@@ -150,6 +150,42 @@ const modelExists =()=>{
       })
     }
   });
+
+  Model.Comment.find({}, async(err, result)=> {
+    if (result.length > 0) {
+    } else {
+      let newComment = new Model.Comment({
+                                          reportId: new mongoose.Types.ObjectId(),  // Replace with actual report ID if needed
+                                          data: [{
+                                            text: 'This is a comment text',  // The main comment text
+                                            user: {
+                                              userId: '12345',
+                                              username: 'JohnDoe',
+                                              url: 'https://example.com/profile/JohnDoe'
+                                            },
+                                            status: 'SENDING',  // Status, default is 'SENDING'
+                                            created: Date.now(),
+                                            updated: Date.now(),
+                                            subComments: [
+                                              {
+                                                text: 'This is a subcomment text',
+                                                user: {
+                                                  userId: '54321',
+                                                  username: 'JaneDoe',
+                                                  url: 'https://example.com/profile/JaneDoe'
+                                                },
+                                                status: 'SENDING',  // Default is 'SENDING'
+                                                created: Date.now(),
+                                                updated: Date.now()
+                                              }
+                                            ]
+                                          }]
+                                        });
+      
+      await newComment.save();
+      await Model.Comment.deleteMany({})
+    }
+  });
  
 }
 

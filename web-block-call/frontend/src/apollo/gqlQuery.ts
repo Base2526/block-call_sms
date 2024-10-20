@@ -39,7 +39,7 @@ export const queryContentById = gql`query contentById($id: ID!) { contentById(_i
 
 // mutation
 export const mutationCheck_db = gql`mutation check_db { check_db }`;
-export const mutationLogin = gql`mutation login($input: LoginInput) { login(input: $input) }`;
+export const mutationLogin = gql`mutation login($input: JSON) { login(input: $input) }`;
 export const mutationLoginWithSocial = gql`mutation loginWithSocial($input: LoginWithSocialInput) { loginWithSocial(input: $input) }`;
 export const mutation_register = gql`mutation register($input: JSON) { register(input: $input) }`;
 export const mutation_forgot_password = gql`mutation forgot_password($input: JSON) { forgot_password(input: $input) }`;

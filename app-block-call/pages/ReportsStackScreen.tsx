@@ -18,7 +18,7 @@ import SearchScreen from "./SearchScreen";
 import NewReportScreen from "./NewReportScreen";
 import ReportDetailScreen from "./ReportDetailScreen";
 
-import CommentsScreen from "../comments/CommentsScreen"
+import CommentsScreen from "../comments"
 
 const ReportsStack = createStackNavigator();
 
@@ -150,10 +150,9 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           component={CommentsScreen}
           options={{  
             headerShown: true,
-            headerTitle: '', 
+            headerTitle: 'Comments', 
           }}
         />
-
       </ReportsStack.Navigator>
       <DrawerContent isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} navigation={navigation} />
     </>

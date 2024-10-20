@@ -1,54 +1,49 @@
 import { faker } from '@faker-js/faker';
 
-// Define the interfaces
-interface SubComment {
-  _id: string;
-  comment: string;
-  timestamp: number;
-  username: string;
-  secondReply: string | null;
-}
+import { CommentInterface, SubCommentInterface, UserCommentInterface, StatusInterface } from "./interfaces"
 
-interface Comment {
-  _id: string;
-  comment: string;
-  timestamp: number;
-  username: string;
-  exposed: boolean;
-  subComments: Array<SubComment>;
-}
+const generateUserComment = (): UserCommentInterface => {
+  return {
+    userId: faker.string.uuid(),
+    username: faker.internet.userName(),
+    url: faker.image.avatar()
+  };
+};
 
 // Function to generate a single SubComment
-const generateSubComment = (): SubComment => {
+const generateSubComment = (): SubCommentInterface => {
   return {
     _id: faker.string.uuid(),
-    comment: faker.lorem.sentence(),
-    timestamp: Date.now(),
-    username: faker.internet.userName(),
-    secondReply: Math.random() > 0.5 ? faker.lorem.sentence() : null,
+    text: faker.lorem.sentence(),
+    user: generateUserComment(),
+    status: StatusInterface.SENT,
+    created: Date.now(),
+    updated: Date.now(),
   };
 };
 
 // Function to generate multiple SubComments
-const generateSubComments = (count: number): SubComment[] => {
+const generateSubComments = (count: number): SubCommentInterface[] => {
   return Array.from({ length: count }, () => generateSubComment());
 };
 
 // Function to generate a single Comment
-const generateComment = (): Comment => {
+const generateComment = (): CommentInterface => {
   const subCommentCount = Math.floor(Math.random() * 5); // Generate up to 5 sub-comments
   return {
     _id: faker.string.uuid(),
-    comment: faker.lorem.paragraph(),
-    timestamp: Date.now(),
-    username: faker.internet.userName(),
-    exposed: Math.random() > 0.5,
+    text: faker.lorem.paragraph(),
+    created: Date.now(),
+    updated: Date.now(),
+    user: generateUserComment(),
+    status: StatusInterface.SENT,
+    // exposed: Math.random() > 0.5,
     subComments: generateSubComments(subCommentCount),
   };
 };
 
 // Function to generate multiple Comments
-const generateComments = (count: number): Comment[] => {
+const generateComments = (count: number): CommentInterface[] => {
   return Array.from({ length: count }, () => generateComment());
 };
 

@@ -19,6 +19,10 @@ const telNumbersSchema = new Schema({
   tel:  { type: String, required:[true, "Tel is a required field"]}
 });
 
+const likeSchema = new Schema({
+  userId:  { type: Schema.Types.ObjectId, required:[true, "User-ID is a required field"]},
+});
+
 const reportSchema = new Schema(
   {
    current:{
@@ -65,6 +69,7 @@ const reportSchema = new Schema(
     },
     images: { type: [file], default: [] }, 
    },
+   likes: { type: [likeSchema], default: [] },
    history: [historySchema]
   },
   {

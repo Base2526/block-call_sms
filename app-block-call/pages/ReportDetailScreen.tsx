@@ -1,20 +1,22 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { View, TextInput, Text, StyleSheet, ActivityIndicator, Image, ScrollView, TouchableOpacity, Dimensions  } from 'react-native';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation, ApolloError } from '@apollo/client';
 import { useToast } from "react-native-toast-notifications";
 import { RouteProp } from '@react-navigation/native';
 import _ from "lodash";
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { Menu, Divider } from 'react-native-paper';
 import Share from 'react-native-share';
+import { useSelector } from 'react-redux';
 
-import { query_report } from "../gqlQuery";
+import { query_report, mutation_like_report } from "../gqlQuery";
 import { getHeaders } from "../utils";
 import handlerError from "../handlerError";
+import { RootState, AppDispatch } from '../redux/store';
 
 import ImageZoomViewer from "./ImageZoomViewer";
 import CommentActionSheet from "./CommentActionSheet";
-// const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { useMyContext } from '../MyProvider'; 
 
 type ReportDetailProps = {
   navigation: any;
@@ -32,18 +34,80 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
   const [imageUrls, setImageUrls] = useState<{ url: string }[]>([]);
 
   const actionSheetRef = useRef<ActionSheet>(null);
-  
+  const user = useSelector((state: RootState) => state.user.user );
+  const [likeReportId, setLikeReportId] = useState("")
+  const [likedIndex, setLikedIndex] = useState(-1)
+
+  const { openLoginModal } = useMyContext();
+
+  const [onLikeRepost] = useMutation(mutation_like_report, {
+    context: { headers: getHeaders() },
+    update: (cache, { data: { like_report } }) => {
+        let { status, data, likedIndex } = like_report;
+
+        // console.log("onLikeRepost :", like_report);
+        if (status) {
+            const existingReport = cache.readQuery({
+                query: query_report,
+                variables: { id: data.reportId },
+            });
+
+            if (existingReport) {
+                // Use filter to create a new likes array
+                let newLikes;
+
+                if(existingReport.report.data.likes === undefined){
+                  newLikes = [ { _id: (Math.random() + 1).toString(36).substring(7), userId: data.userId } ];
+                }else{
+                  if (likedIndex === -1) {
+                    // User liked the report (not previously liked)
+                    newLikes = [
+                        ...existingReport.report.data.likes,
+                        { _id: (Math.random() + 1).toString(36).substring(7), userId: data.userId }, // Add the new like
+                    ];
+                  } else {
+                      // User unliked the report (previously liked)
+                      newLikes = existingReport.report.data.likes.filter(like => like.userId !== data.userId);
+                  }
+                }
+
+                // Write the updated report back to the cache
+                cache.writeQuery({
+                    query: query_report,
+                    variables: { id: data.reportId },
+                    data: {
+                        report: {
+                            ...existingReport.report,
+                            data: {
+                                ...existingReport.report.data,
+                                likes: newLikes,
+                            },
+                        },
+                    },
+                });
+            }
+        }
+    },
+    onCompleted(data) {
+        // Handle onCompleted actions if necessary
+    },
+    onError(error: ApolloError) {
+        handlerError(props, toast, error);
+    },
+  });
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
-          <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle like"); /*console.log("handle like")*/  }}>
+          {/* <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle like"); }}>
             <Icon name="heart-outline" size={30} color="#555" />
-          </TouchableOpacity>
-          <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle bookmark"); /*console.log("handle bookmark")*/ }}>
+          </TouchableOpacity> */}
+          { !_.isEmpty(data) && renderHeartItem() }
+          {/* <TouchableOpacity style={{padding:5}}  onPress={() => { toast.show("handle bookmark"); }}>
             <Icon name="bookmark-outline" size={30} color="#555" />
-          </TouchableOpacity>
-          <TouchableOpacity style={{padding:5}}  onPress={() => {  navigation.navigate("Comments") /*actionSheetRef.current?.show()*/  }}>
+          </TouchableOpacity> */}
+          <TouchableOpacity style={{padding:5}}  onPress={() => {  navigation.navigate("Comments",  { _id:  data._id})  }}>
             <Icon name="comment-outline" size={30} color="#555" />
           </TouchableOpacity>
           <TouchableOpacity style={{padding:5}}  onPress={handleShare} >
@@ -65,7 +129,7 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
       ),
       headerShown: true, // hide/show header parent
     });
-  }, [navigation, route, visibleMenu]);
+  }, [navigation, route, visibleMenu, data]);
 
   const { loading: loadingReport, 
         data: dataReport, 
@@ -91,13 +155,15 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
   useEffect(() => {
     if (!loadingReport && dataReport?.report) {
       if (dataReport.report.status) {
+
+        // console.log("ReportDetailScreen :", dataReport.report.data)
         setData(dataReport.report.data);
       }
     }
   }, [dataReport, loadingReport]);
 
   const handleActionPress = (action: string) => {
-    console.log(`Selected Action: ${action}`);
+    // console.log(`Selected Action: ${action}`);
     actionSheetRef.current?.hide(); // Hide the action sheet
   };
 
@@ -115,10 +181,45 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
     }
   };
 
+  const renderHeartItem = () =>{
+    let isLiked = data?.likes?.some(like => like.userId === user?._id)
+
+    // console.log("isLiked :", isLiked, data?.likes, user?._id)
+
+    function click(item :any){
+      if(_.isEmpty(user)){
+        openLoginModal()
+      }else{
+        // let likedIndex = item?.likes?.some(like => like.userId === user?._id) ? 1 : -1
+        // setLikeReportId(item._id)
+        // setLikedIndex(likedIndex)
+
+        onLikeRepost({ variables:{ input:{ _id: data._id } } })
+      }
+    } 
+
+    return  <TouchableOpacity 
+              style={{ padding: 5, flexDirection: 'row', alignItems: 'baseline' }} 
+              onPress={() => { click(data) }}>
+              <Icon 
+                name={isLiked ? "heart" : "heart-outline"} 
+                size={30} 
+                color={isLiked ? 'red' : '#555'} 
+              />
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ }}>
+                  {data?.likes?.length > 0 ? data?.likes?.length : ""}
+                </Text>
+              </View>
+            </TouchableOpacity>
+  }
+
   return (
     <View style={styles.container}>
       {loadingReport && _.isEmpty(data) ? (
-        <ActivityIndicator size="large" color="#0000ff" />
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
       ) : (
         <ScrollView contentContainerStyle={styles.container}>
           <TouchableOpacity 
