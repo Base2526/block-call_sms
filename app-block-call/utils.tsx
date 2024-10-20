@@ -89,3 +89,18 @@ export const getHeaders = () => {
 
   return headers;
 };
+
+// Generate a unique identifier that resembles an ObjectId
+export const generateObjectId = (): string => {
+  const timestamp = Math.floor(Date.now() / 1000).toString(16); // 4 bytes
+  const random = Math.floor(Math.random() * 0xFFFFFF).toString(16); // 3 bytes
+  const machineIdentifier = Math.floor(Math.random() * 0xFFFFFF).toString(16); // 3 bytes
+  const pid = Math.floor(Math.random() * 0xFFFF).toString(16); // 2 bytes
+
+  return (
+    timestamp.padStart(8, '0') +
+    machineIdentifier.padStart(6, '0') +
+    pid.padStart(4, '0') +
+    random.padStart(6, '0')
+  ).slice(0, 24); // Ensure it's a 24-character string
+};

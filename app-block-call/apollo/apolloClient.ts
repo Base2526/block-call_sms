@@ -1,6 +1,8 @@
 // apolloClient.ts
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
 import { createUploadLink } from 'apollo-upload-client';
+import { loadErrorMessages, loadDevMessages } from "@apollo/client/dev";
+
 
 
 // Create an upload link
@@ -15,5 +17,11 @@ const client = new ApolloClient({
     link: uploadLink,
     cache: new InMemoryCache(),
 });
+
+
+if (__DEV__) {
+    loadDevMessages();
+    loadErrorMessages();
+}
 
 export default client;

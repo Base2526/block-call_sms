@@ -9,18 +9,12 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import moment from 'moment';
+import { useSelector } from 'react-redux';
 
 import constants from './constants';
 import MentionHashtag from "./MentionHashtag"
-
-interface subcomment {
-  _id: string;
-  comment: string;
-  timestamp: number;
-  username: string;
-  replyToUsername: string;
-  secondReply: string | null;
-}
+import { SubCommentInterface, StatusInterface, ReplyInterface } from "./interfaces"
+import { RootState } from '../redux/store';
 
 /**
  * Subcomment component
@@ -33,110 +27,115 @@ interface subcomment {
 const SubComment = ({
   data,
   index,
+  reply,
   mainIndex,
   deleteInternalComment,
   setReply
 }: {
-  data: subcomment;
+  data: SubCommentInterface;
   index: number;
+  reply: ReplyInterface;
   mainIndex: number;
   deleteInternalComment: Function;
   setReply: Function;
 }) => {
-  // const {setReplyData} = useReply();
-  // const {username: signedInUserName} = useUsername();
   const [date, setDate] = useState(new Date());
-  const {_id, comment, timestamp, username, replyToUsername, secondReply} = data;
+  const {_id, text, created, user, status } = data;
+
+  const current_user = useSelector((state: RootState) => state.user.user );
+
   return (
     <View style={styles.container}>
-      <View style={styles.top}>
-        <TouchableOpacity style={styles.avatar}>
-          <Icon name="account" size={20} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.username}>
-          {username} 
-          {/* <Text style={styles.replyingTo}>{` replying to `}</Text>
-          {replyToUsername}
-          {secondReply && (
-            <>
-              <Text style={styles.replyingTo}>{`\n and `}</Text>
-              {secondReply}
-            </>
-          )} */}
-        </Text>
+      <TouchableOpacity 
+        style={[styles.top, { }]}
+        onPress={()=>{ console.log("profile") }}>
+         {
+          user?.url 
+          ? <TouchableOpacity style={styles.avatar}>
+              <Image 
+              source={{ uri: user?.url  }} 
+              style={styles.avatar}
+              resizeMode="cover" // or 'contain', depending on your needs
+              />
+            </TouchableOpacity>
+          : <TouchableOpacity style={styles.avatar}>
+              <Icon name="account" size={20} color="#333" />
+            </TouchableOpacity>
+          }
+        <Text style={styles.username}>{user.username}</Text>
         <Text style={styles.date}>
-          {moment(new Date(timestamp)).from(date)}
+          {moment(new Date(created)).from(date)}
         </Text>
-      </View>
+      </TouchableOpacity>
       <MentionHashtag
-        style={{marginLeft: 40}}
+        style={[styles.mentionHashtag, 
+          { backgroundColor: reply?.selectId === _id ? 'gray' : constants.colors.WHITE,
+            borderRadius: reply?.selectId === _id ? 5 : 0, 
+            padding: reply?.selectId === _id ? 5 : 0
+          }
+        ]}
         mentionHashtagPress={(text)=>{console.log(" >", text)}}
         mentionHashtagColor={"#007BFF"}
-        >{comment}</MentionHashtag>
-      <View style={styles.detailsContainer}>
-        {/* <Text style={styles.date}>
-          {moment(new Date(timestamp)).from(date)}
-        </Text> */}
-        <View style={styles.optionsArray}>
-          <TouchableOpacity
-            style={styles.reply}
-            onPress={() => {
-              // setReplyData({
-              //   replyToMain: false,
-              //   index: index,
-              //   mainIndex: mainIndex,
-              //   replyToUsername: replyToUsername,
-              //   secondReply: username,
-              // });
-              setReply(username)
-            }}>
-           {/* <Icon name="reply" size={24} color="#333" /> */}
-            <Text style={styles.replyText}>{'REPLY'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.trash}
-            onPress={() => {
-              // if (signedInUserName == username)
-                Alert.alert(
-                  'Delete Comment?',
-                  'Do you want to delete this comment',
-                  [
-                    {
-                      text: 'Delete',
-                      style: 'destructive',
-                      onPress: () => {
-                        deleteInternalComment(_id);
-
-                        // console.log(">> ", _id)
-                      },
-                    },
-                    {
-                      text: 'Cancel',
-                    },
-                  ],
-                );
-              // else
-              //   Alert.alert(
-              //     `Change your username to "${username}" to delete this comment`,
-              //   );
-            }}>
-            <Icon name="trash-can" size={20} color="#333" />
-          </TouchableOpacity>
-        </View>
-      </View>
+        >{text}</MentionHashtag>
+      {
+            status == StatusInterface.SENT
+            ? <View style={styles.detailsContainer}>
+                <View style={styles.optionsArray}>
+                  <TouchableOpacity
+                    style={styles.reply}
+                    onPress={() => {
+                      setReply(`${ user.username } `, _id);
+                    }}>
+                    <Text style={styles.replyText}>{'REPLY'}</Text>
+                  </TouchableOpacity>
+                  {
+                    current_user?._id === user.userId
+                    ? <TouchableOpacity
+                        style={styles.trash}
+                        onPress={() => {
+                            Alert.alert(
+                              'Delete Comment?',
+                              'Do you want to delete this comment',
+                              [
+                                {
+                                  text: 'Delete',
+                                  style: 'destructive',
+                                  onPress: () => {
+                                    deleteInternalComment(_id);
+                                  },
+                                },
+                                {
+                                  text: 'Cancel',
+                                },
+                              ],
+                            );
+                        }}>
+                        <Icon name="trash-can" size={20} color="#333" />
+                      </TouchableOpacity>
+                    : <></>
+                  }
+                  
+                </View>
+              </View>
+            : status == StatusInterface.SENDING 
+              ? <View style={styles.detailsContainerStutus}> 
+                  <View style={styles.optionsStatus}><Text style={{fontSize: 12, fontWeight: '500'}}>{StatusInterface.SENDING}...</Text></View>
+                </View>
+              : <View style={styles.detailsContainerStutus}> 
+                  <TouchableOpacity >
+                    <Text style={{fontSize: 12, fontWeight: '500', color:'red'}}>{StatusInterface.FAILED}</Text>
+                    {/* <Icon name="account" size={20} color="#333" />  */}
+                  </TouchableOpacity>
+                </View>
+          }
     </View>
   );
 };
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    // alignItems: 'center',
     backgroundColor: constants.colors.WHITE,
     padding: 5,
-    // marginTop: 5,
-    // borderLeftWidth: 5,
-    // borderColor:'gray',
-    // borderWidth: .5,
     borderColor: constants.colors.GREY,
   },
   avatar: {
@@ -149,16 +148,16 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   top: {
-    // backgroundColor: 'blue',
-    // width: '90%',
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  mentionHashtag:{
+    marginLeft: 40,
   },
   username: {
     fontSize: constants.fontSizes.username,
     fontWeight: '600',
     marginLeft: 10,
-    // top: 5,
     textAlign: 'right',
   },
   replyingTo: {
@@ -168,21 +167,18 @@ const styles = StyleSheet.create({
   body: {
     fontSize: constants.fontSizes.comment,
     fontWeight: '400',
-    // width: '80%',
     marginVertical: 10,
     lineHeight: constants.fontSizes.comment + 6,
   },
   detailsContainer: {
-    // width: '80%',
-    // backgroundColor: 'blue',
     flexDirection: 'row',
-    // alignItems: 'flex-end',
     justifyContent: 'flex-end',
-    // marginTop: 10,
-    //  marginBottom: 20,
+  },
+  detailsContainerStutus: {
+    flexDirection: 'row',
+    marginLeft: 40,
   },
   date: {
-    // fontWeight: '500',
     fontSize: 12,
     marginLeft: 5,
   },
@@ -192,17 +188,20 @@ const styles = StyleSheet.create({
     marginLeft: 7,
   },
   reply: {
-    // padding: 5,
     flexDirection: 'row',
     alignItems: 'center',
+    marginRight: 10,
   },
   optionsArray: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  optionsStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   trash: {
-    // padding: 5,
-    marginLeft: 10,
+    // marginLeft: 10,
   },
 });
 export default SubComment;

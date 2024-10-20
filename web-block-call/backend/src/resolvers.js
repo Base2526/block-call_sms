@@ -95,41 +95,55 @@ export default {
       // if( role !== Constants.ADMINISTRATOR  && 
       //     role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
 
-      let reports = await Model.Report.aggregate([  {
-                                                      $addFields: {
-                                                        ownerId: "$current.ownerId",
-                                                        provinceId: "$current.provinceId",  // Bring the nested field to the top level
-                                                      }
-                                                    },
-                                                    {
-                                                      $lookup: {
-                                                        localField: "ownerId",
-                                                        from: "user",
-                                                        foreignField: "_id",
-                                                        as: "owner"
-                                                      }
-                                                    },
-                                                    {
-                                                      $unwind: {
-                                                        path: "$owner",
-                                                        preserveNullAndEmptyArrays: true
-                                                      }
-                                                    },
-                                                    {
-                                                      $lookup: {
-                                                        localField: "provinceId",
-                                                        from: "province",
-                                                        foreignField: "_id",
-                                                        as: "province"
-                                                      }
-                                                    },
-                                                    {
-                                                      $unwind: {
-                                                        path: "$province",
-                                                        preserveNullAndEmptyArrays: true
-                                                      }
-                                                    }
-                                                  ]);
+      let limitSize = 10;  // Number of documents to return
+      let page = 1;  // For pagination, which page to retrieve
+      let skipSize = (page - 1) * limitSize;  // Number of documents to skip
+
+      let reports = await Model.Report.aggregate([
+        {
+          $addFields: {
+            ownerId: "$current.ownerId",
+            provinceId: "$current.provinceId",  // Bring the nested field to the top level
+          }
+        },
+        {
+          $lookup: {
+            localField: "ownerId",
+            from: "user",
+            foreignField: "_id",
+            as: "owner"
+          }
+        },
+        {
+          $unwind: {
+            path: "$owner",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $lookup: {
+            localField: "provinceId",
+            from: "province",
+            foreignField: "_id",
+            as: "province"
+          }
+        },
+        {
+          $unwind: {
+            path: "$province",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        // Add the $skip stage to skip documents for pagination
+        { 
+          $skip: skipSize 
+        },
+        // Add the $limit stage to limit the number of returned documents
+        { 
+          $limit: limitSize 
+        }
+      ]);
+
       return {
         status:true,
         data: reports,
@@ -291,6 +305,98 @@ export default {
       return {
         status: true,
         data: banks,
+        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+      }
+    },
+    async comment_by_id(parent, args, context, info) {
+      let start = Date.now()
+      let { req } = context
+      let { input } = args
+
+      console.log("comment_by_id :", input)
+      let { current_user } =  await Utils.checkAuth(req);
+      let role = Utils.checkRole(current_user)
+      // if( role !== Constants.ADMINISTRATOR  && 
+      //     role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+
+      // let report = await Model.Report.aggregate([
+      //                                                 { 
+      //                                                   $match: { _id: mongoose.Types.ObjectId(_id) } 
+      //                                                 },
+      //                                                 {
+      //                                                   $addFields: {
+      //                                                     provinceId: "$current.provinceId",  // Bring the nested field to the top level
+      //                                                   }
+      //                                                 },
+      //                                                 {
+      //                                                   $lookup: {
+      //                                                     from: "province",
+      //                                                     localField: "provinceId",
+      //                                                     foreignField: "_id",
+      //                                                     as: "province"
+      //                                                   }
+      //                                                 },
+      //                                                 {
+      //                                                   $unwind: {
+      //                                                     path: "$province",
+      //                                                     preserveNullAndEmptyArrays: true
+      //                                                   }
+      //                                                 },
+      //                                                 // Unwind sellerAccounts to perform a lookup for each account
+      //                                                 {
+      //                                                   $unwind: {
+      //                                                     path: "$current.sellerAccounts",
+      //                                                     preserveNullAndEmptyArrays: true
+      //                                                   }
+      //                                                 },
+      //                                                 // Lookup bank details for each bankId in sellerAccounts
+      //                                                 {
+      //                                                   $lookup: {
+      //                                                     from: "bank",  // the collection for banks
+      //                                                     localField: "current.sellerAccounts.bankId",
+      //                                                     foreignField: "_id",
+      //                                                     as: "bank"
+      //                                                   }
+      //                                                 },
+      //                                                 // Unwind the bank lookup results to get individual bank details
+      //                                                 {
+      //                                                   $unwind: {
+      //                                                     path: "$bank",
+      //                                                     preserveNullAndEmptyArrays: false
+      //                                                   }
+      //                                                 },
+      //                                                 // Add the bank name_th field into sellerAccounts
+      //                                                 {
+      //                                                   $addFields: {
+      //                                                     "current.sellerAccounts.bankName_th": "$bank.name_th"
+      //                                                   }
+      //                                                 },
+      //                                                 // Group sellerAccounts back into an array after the unwind
+      //                                                 {
+      //                                                   $group: {
+      //                                                     _id: "$_id",
+      //                                                     reportData: { $first: "$$ROOT" },
+      //                                                     sellerAccounts: { $push: "$current.sellerAccounts" }
+      //                                                   }
+      //                                                 },
+      //                                                 // Reconstruct the report with sellerAccounts containing bankName_th
+      //                                                 {
+      //                                                   $addFields: {
+      //                                                     "reportData.current.sellerAccounts": "$sellerAccounts"
+      //                                                   }
+      //                                                 },
+      //                                                 {
+      //                                                   $replaceRoot: { newRoot: "$reportData" }
+      //                                                 }
+      //                                               ]);
+
+      const existingComment = await Model.Comment.findOne({ reportId: input?.id });
+         
+                                                    
+      // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
+      return {
+        status:true,
+        data: existingComment?.data !== undefined ? existingComment?.data : [],
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
@@ -670,9 +776,178 @@ export default {
         status: true,
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
-    }
+    },
+    async like_report(parent, args, context, info) {
+      let start = Date.now();
+      let { input } = args;
+      let { req } = context;
+  
+      let { current_user } = await Utils.checkAuth(req);
+      let role = Utils.checkRole(current_user);
+      
+      if (role !== Constants.ADMINISTRATOR && role !== Constants.AUTHENTICATED) {
+          throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user);
+      }
+  
+      // Start a transaction
+      const session = await mongoose.startSession();
+      session.startTransaction();
+      
+      try {
+          let report = await Model.Report.findById(input?._id).session(session);
+          
+          if (!report) {
+              throw new Error('Report not found');
+          }
+  
+          // Filter out likes from the current user
+          const originalLikesCount = report.likes.length;
+          // Check if the user already liked the report
+          const likedIndex = report.likes.findIndex(like => like.userId.toString() === current_user._id.toString() );
 
-    // 
+          report.likes = report.likes.filter(like => like.userId.toString() !== current_user._id.toString());
+  
+          if (originalLikesCount > report.likes.length) {
+              // The user had liked the report and has been unliked
+              console.log('User unliked the report');
+          } else {
+              // The user has not liked the report yet, so add the like
+              report.likes.push({ userId: current_user._id });
+              console.log('User liked the report');
+          }
+  
+          // Save the updated report
+          await report.save({ session });
+  
+          // Commit the transaction
+          await session.commitTransaction();
+          console.log('Transaction committed successfully');
+  
+          return {
+              status: true,
+              data: { reportId: input?._id, userId: current_user._id },
+              likedIndex,
+              executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
+          };
+      } catch (error) {
+          await session.abortTransaction();
+          throw new AppError(Constants.ERROR, error);
+      } finally {
+          session.endSession();
+      }
+    },
+    async like_comment(parent, args, context, info) {
+      let start     = Date.now()
+      let { input } = args
+      let { req } = context
+
+      let { current_user }=  await Utils.checkAuth(req);
+      let role = Utils.checkRole(current_user)
+      if( role !==Constants.ADMINISTRATOR && role !== Constants.AUTHENTICATED ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+  
+      // Start a transaction
+      const session = await mongoose.startSession();
+      session.startTransaction()
+ 
+      try {
+        // switch(input.mode){
+        //   case "update_image_profile":{
+        //     let avatar  =  await Utils.saveFile(session, current_user, input.file)
+
+        //     let userHistory = await Model.User.findById(current_user?._id)
+        //     await Model.User.updateOne({ _id: current_user?._id }, { "current.avatarId":  avatar[0]._id, history: Utils.createRevision(userHistory) }, { session });
+
+        //     await session.commitTransaction(); 
+
+        //     let user = await getUserById(current_user?._id)
+        //     return {
+        //       status: true,
+        //       data: user[0],
+        //       executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+        //     } 
+        //   }
+        // }
+      }catch(error){
+          await session.abortTransaction();
+
+          throw new AppError(Constants.ERROR, error)
+      }finally {
+          session.endSession();
+      }   
+    },
+    async comment_by_id(parent, args, context, info) {
+      let start = Date.now();
+      let { input } = args;
+      let { req } = context;
+  
+      let { current_user } = await Utils.checkAuth(req);
+      let role = Utils.checkRole(current_user);
+      
+      if (role !== Constants.ADMINISTRATOR && role !== Constants.AUTHENTICATED) {
+          throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user);
+      }
+  
+      // Start a transaction
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      // console.log("input :", input)
+      
+      try {
+        let newComment =  {...input.comment, status: 'SENT'}
+
+        if(input.commentId === undefined){
+          // Check if the Comment with the given reportId exists
+          const existingComment = await Model.Comment.findOne({ reportId: input.reportId }).session(session);
+
+          if (existingComment) {
+            // If it exists, push the new comment into the data array
+            existingComment.data.push(newComment);
+            await existingComment.save({ session });
+          } else {
+            // If it does not exist, create a new Comment document
+            const newCommentDocument = new Model.Comment({
+                reportId: input.reportId,
+                data: [newComment]
+            });
+            await newCommentDocument.save({ session });
+          }
+        }else{
+          // Update subComments if commentId is provided
+          const existingComment = await Model.Comment.findOne({ reportId: input.reportId }).session(session);
+          
+          if (existingComment) {
+            const commentToUpdate = existingComment.data.find(data => data._id.toString() === input.commentId);
+            
+            if (commentToUpdate) {
+              // Add the new comment to subComments
+              commentToUpdate.subComments.push(newComment);
+              await existingComment.save({ session });
+            } else {
+              throw new AppError(Constants.NOT_FOUND, 'Comment not found');
+            }
+          } else {
+            throw new AppError(Constants.NOT_FOUND, 'Comment document not found');
+          }
+        }
+
+        // Commit the transaction
+        await session.commitTransaction();
+        console.log('Transaction committed successfully');
+
+        return {
+            status: true,
+            // data: { reportId: input?._id, userId: current_user._id },
+            // likedIndex,
+            executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
+        };
+      } catch (error) {
+          await session.abortTransaction();
+          throw new AppError(Constants.ERROR, error);
+      } finally {
+          session.endSession();
+      }
+    },
   },
   Subscription:{
     userConnected: {
