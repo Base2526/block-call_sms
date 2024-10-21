@@ -455,25 +455,6 @@ const NewReportScreen: React.FC = () => {
       />
       {errors.transferAmount && <Text style={styles.errorText}>{errors.transferAmount.message}</Text>}
 
-      {/* Transfer Date */}
-      { /*
-      <Text>วันโอนเงิน</Text>
-      <Controller
-        control={control}
-        name="transferDate"
-        defaultValue=""
-        rules={{ required: 'วันโอนเงิน is required' }}
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.textInput}
-            placeholder="YYYY-MM-DD"
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
-      />
-      {errors.transferDate && <Text style={styles.errorText}>{errors.transferDate.message}</Text>}
-      */ }
       <Text style={{ fontSize: 16, fontWeight: '700' }}>วันโอนเงิน</Text>
       <TouchableOpacity
         style={styles.textInput}
