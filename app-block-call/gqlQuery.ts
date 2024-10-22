@@ -23,3 +23,5 @@ export const mutation_follow       = gql`mutation follow($input: JSON) { follow(
 
 export const query_comment = gql`query comment_by_id($input: JSON) { comment_by_id(input: $input) }`;
 export const mutation_comment  = gql`mutation comment_by_id($input: JSON) { comment_by_id(input: $input) }`;
+
+export const subscription_user_connected  =  gql`subscription userConnected { userConnected } `

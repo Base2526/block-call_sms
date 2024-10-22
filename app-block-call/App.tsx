@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { NativeModules, Platform } from 'react-native';
+import { NativeModules, Platform, Text} from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { Provider } from 'react-redux';
 import { Provider as ProviderPaper } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
-import { ApolloProvider, useQuery } from '@apollo/client';
+import { ApolloProvider, useQuery, useSubscription } from '@apollo/client';
 import SplashScreen from 'react-native-splash-screen';
 import { ToastProvider } from 'react-native-toast-notifications'
 
@@ -25,7 +25,7 @@ import client from './apollo/apolloClient';
 import { AppProvider as AppDataContextProvider } from './context/DataContext';
 import { MyProvider } from './MyProvider';
 
-import { query_test } from "./gqlQuery";
+import { query_test, subscription_user_connected } from "./gqlQuery";
 import { getHeaders } from "./utils";
 
 const Tab = createBottomTabNavigator();
@@ -34,6 +34,12 @@ const { DatabaseHelper } = NativeModules;
 export const AppNavigator: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const dispatch: AppDispatch = useDispatch();
+
+  const { data, loading: loadingUserConnected, error } = useSubscription(subscription_user_connected);
+
+  console.log("useSubscription :", data, loadingUserConnected, error)
+  // if (loading) return <Text>Loading...</Text>;
+  // if (error) return <Text>Error: {error.message}</Text>;
 
   const fetchCallLogs = async () => {
     try {
@@ -198,15 +204,15 @@ export const App: React.FC = () => {
 
   return (
     <AppDataContextProvider>
-    <ToastProvider>
-      <ApolloProvider client={client}>
-        <Provider store={store}>
-          <ProviderPaper>
-            <AppNavigator />
-          </ProviderPaper>
-        </Provider>
-      </ApolloProvider>
-    </ToastProvider>
+      <ToastProvider>
+        <ApolloProvider client={client}>
+          <Provider store={store}>
+            <ProviderPaper>
+              <AppNavigator />
+            </ProviderPaper>
+          </Provider>
+        </ApolloProvider>
+      </ToastProvider>
     </AppDataContextProvider>
   );
 };

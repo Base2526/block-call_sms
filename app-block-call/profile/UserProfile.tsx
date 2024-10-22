@@ -44,7 +44,7 @@ const UserProfile: React.FC<ProfileProps> = (props) => {
       { key: '1', title: 'Reports', count: 31 },
       { key: '2', title: 'Like', count: 86 },
       { key: '3', title: 'Following', count: 95 },
-      { key: '4', title: 'Followers', count: '1.3 K' },
+      { key: '4', title: 'Followers', count: 0 },
     ],
   });
 
@@ -125,7 +125,6 @@ const UserProfile: React.FC<ProfileProps> = (props) => {
       }
   
       const userId = variables.input._id;
-  
       let updatedFollows = current_user.follows ? current_user.follows.filter(f => f.userId !== userId) : [];
   
       if (followIndex === 1) {
@@ -162,9 +161,9 @@ const UserProfile: React.FC<ProfileProps> = (props) => {
     handlerError(props, toast, errorUser);
   }
 
-  useEffect(()=>{
-    console.log("Current user :", current_user)
-  }, [current_user])
+  // useEffect(()=>{
+  //   console.log("Current user :", current_user)
+  // }, [current_user])
 
   useEffect(() => {
     if (!_.isEmpty(_id)) {
@@ -174,8 +173,25 @@ const UserProfile: React.FC<ProfileProps> = (props) => {
 
   useEffect(() => {
     if (!loadingUser && dataUser?.user) {
-      if (dataUser.user.status) {
+      if (dataUser.user.status && dataUser.user.data !== null ) {
         setData(dataUser.user.data);
+
+        let { followers, follows }  = dataUser.user.data
+        if(followers !== undefined){
+          setTabs((prevTabs) => ({
+            ...prevTabs,
+            routes: prevTabs.routes.map(route => {
+              if (route.key === '3') {
+                return { ...route, count: follows?.length };
+              }
+              if (route.key === '4') {
+                return { ...route, count: followers?.length };
+              }
+              return route; // Return unchanged route
+            }),
+          }));
+        }
+        
       }
     }
   }, [dataUser, loadingUser]);

@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useLayoutEffect, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, 
         TouchableOpacity, Alert, Image, 
-        RefreshControl, FlatList, Modal, Dimensions } from 'react-native';
+        RefreshControl, FlatList, Modal, Dimensions, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useSelector, useDispatch } from 'react-redux';
 import { Menu, Divider } from 'react-native-paper';
@@ -401,6 +401,12 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
     );
   }, [user, visibleMenuId, expandedItemId]);
 
+
+  if(loadingReports){
+    return  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator size="large" color="#0000ff" />
+            </View>
+  }
   return (
     <View style={styles.container}>
       {
