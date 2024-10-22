@@ -10,6 +10,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import moment from 'moment';
 import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 
 import constants from './constants';
 import MentionHashtag from "./MentionHashtag"
@@ -39,6 +40,8 @@ const SubComment = ({
   deleteInternalComment: Function;
   setReply: Function;
 }) => {
+  const navigation = useNavigation();
+
   const [date, setDate] = useState(new Date());
   const {_id, text, created, user, status } = data;
 
@@ -47,8 +50,10 @@ const SubComment = ({
   return (
     <View style={styles.container}>
       <TouchableOpacity 
-        style={[styles.top, { }]}
-        onPress={()=>{ console.log("profile") }}>
+        style={[styles.top, {  }]}
+        onPress={()=>{ 
+          navigation.navigate("UserProfile" ,  { _id:  user?._id }  ) 
+        }}>
          {
           user?.url 
           ? <TouchableOpacity style={styles.avatar}>
@@ -142,9 +147,9 @@ const styles = StyleSheet.create({
   avatar: {
     borderColor: constants.colors.GREY,
     borderWidth: .5,
-    height: 30,
-    width: 30,
-    borderRadius: 40,
+    height: 25,
+    width: 25,
+    borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center'
   },

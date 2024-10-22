@@ -39,7 +39,7 @@ const SMSScreen: React.FC<SMSProps> = ({ navigation, route, setMenuOpen }) => {
     navigation.setOptions({
       headerLeft: () => (
         <TouchableOpacity onPress={() => { setMenuOpen() }} style={styles.menuButton}>
-          <Icon name="menu" size={24} />
+          <Icon name="menu" size={30} />
         </TouchableOpacity>
       ),
       headerRight: () => (
@@ -47,16 +47,18 @@ const SMSScreen: React.FC<SMSProps> = ({ navigation, route, setMenuOpen }) => {
           <TouchableOpacity 
             style={{ padding:5, marginRight: 5 }} 
             onPress={()=>{ navigation.navigate("Search") }}>
-            <Icon name="magnify" size={25} color="#333" />
+            <Icon name="magnify" size={30} color="#333" />
           </TouchableOpacity>
-          {/* <TouchableOpacity 
+          {/* 
+          <TouchableOpacity 
             style={{ padding:5, marginRight: 5 }} 
             onPress={()=>{ 
 
               isAvailableSmsRole()
             }}>
             <Icon name="access-point" size={25} color="#333" />
-          </TouchableOpacity> */}
+          </TouchableOpacity> 
+          */}
           <TabIconWithMenu 
             iconName="dots-vertical"
             menuItems={[

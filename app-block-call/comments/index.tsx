@@ -36,7 +36,7 @@ const CommentsScreen: React.FC<CommentsProps> = (props) => {
   const toast = useToast();
   const current_user = useSelector((state: RootState) => state.user.user );
 
-  console.log("CommentsScreen :", _id)
+  // console.log("CommentsScreen :", _id)
 
   const [onComment] = useMutation(mutation_comment, {
     context: { headers: getHeaders() },
@@ -124,7 +124,7 @@ const CommentsScreen: React.FC<CommentsProps> = (props) => {
   }
 
   useEffect(() => {
-    console.log("comments :", comments)
+    // console.log("comments :", comments)
   }, [comments]);
 
   useEffect(() => {

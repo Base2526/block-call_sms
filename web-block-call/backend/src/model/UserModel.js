@@ -9,6 +9,10 @@ const historySchema = new Schema({
     updatedAt: Date
 });
 
+const followSchema = new Schema({
+    userId:  { type: Schema.Types.ObjectId, required:[true, "User-ID is a required field"]},
+});
+
 const userSchema = new Schema({
     current: {
         // parentId: { type: Schema.Types.ObjectId, required:[true, "Parent ID Request is a required field"]  },
@@ -48,6 +52,8 @@ const userSchema = new Schema({
         },
         lastAccess : { type : Date, default: Date.now },
     },
+    follows: { type: [followSchema], default: [] },
+    followers: { type: [followSchema], default: [] },
     history: [historySchema]
 },
 {

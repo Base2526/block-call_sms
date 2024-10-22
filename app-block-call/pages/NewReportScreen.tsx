@@ -8,6 +8,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useToast } from "react-native-toast-notifications";
 import _ from "lodash"
 import {ReactNativeFile} from 'apollo-upload-client';
+import DatePicker from 'react-native-date-picker'
 
 import { query_banks, guery_provinces, mutation_report } from "../gqlQuery";
 
@@ -84,6 +85,11 @@ const NewReportScreen: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
 
   const { state, contextAddBanks, contextAddProvinces } = useAppContext();
+
+  // New state for transferDate
+  const [transferDate, setTransferDate] = useState<Date>(new Date());
+  const [openDatePicker, setOpenDatePicker] = useState(false); // Control date picker modal visibility
+
 
   // console.log("NewReportScreen @@@@ :", state.banks, state.provinces)
 
@@ -449,23 +455,27 @@ const NewReportScreen: React.FC = () => {
       />
       {errors.transferAmount && <Text style={styles.errorText}>{errors.transferAmount.message}</Text>}
 
-      {/* Transfer Date */}
-      <Text>วันโอนเงิน</Text>
-      <Controller
-        control={control}
-        name="transferDate"
-        defaultValue=""
-        rules={{ required: 'วันโอนเงิน is required' }}
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.textInput}
-            placeholder="YYYY-MM-DD"
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
-      />
+      <Text style={{ fontSize: 16, fontWeight: '700' }}>วันโอนเงิน</Text>
+      <TouchableOpacity
+        style={styles.textInput}
+        onPress={() => setOpenDatePicker(true)} // Open the date picker modal
+      >
+        <Text>{transferDate.toDateString()}</Text>
+      </TouchableOpacity>
       {errors.transferDate && <Text style={styles.errorText}>{errors.transferDate.message}</Text>}
+
+      {/* Date picker modal */}
+      <DatePicker
+        modal
+        open={openDatePicker}
+        date={transferDate}
+        mode="date"
+        onConfirm={(date) => {
+          setOpenDatePicker(false);
+          setTransferDate(date); // Set the selected date
+        }}
+        onCancel={() => setOpenDatePicker(false)}
+      />
 
       {/* Selling Website */}
       <Text>เว็บประกาศขายของ</Text>

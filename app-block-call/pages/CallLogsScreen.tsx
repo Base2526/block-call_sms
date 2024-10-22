@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, RefreshControl, FlatList, NativeModules, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, RefreshControl, FlatList, NativeModules, Linking } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useSelector, useDispatch } from 'react-redux';
 import { Menu, Divider } from 'react-native-paper';
@@ -53,7 +53,7 @@ const CallLogsScreen: React.FC<CallLogsProps> = ({ navigation, route, setMenuOpe
     navigation.setOptions({
       headerLeft: () => (
         <TouchableOpacity onPress={() => { setMenuOpen() }} style={styles.menuButton}>
-          <Icon name="menu" size={24} />
+          <Icon name="menu" size={30} />
         </TouchableOpacity>
       ),
       headerRight: () => (
@@ -61,7 +61,7 @@ const CallLogsScreen: React.FC<CallLogsProps> = ({ navigation, route, setMenuOpe
           <TouchableOpacity 
             style={{ padding:5, marginRight: 5 }} 
             onPress={()=>{ navigation.navigate("Search") }}>
-            <Icon name="magnify" size={25} color="#333" />
+            <Icon name="magnify" size={30} color="#333" />
           </TouchableOpacity>
           <TabIconWithMenu 
             iconName="dots-vertical"
@@ -86,6 +86,7 @@ const CallLogsScreen: React.FC<CallLogsProps> = ({ navigation, route, setMenuOpe
   const [blockReasonModal, setBlockReasonModal] = useState<ItemCall | null>(null);
 
   const toast = useToast();
+  let [openItemId, setOpenItemId] = useState<string | null>(null);
 
   const fetchCallLogs = async () => {
     try {
@@ -165,6 +166,10 @@ const CallLogsScreen: React.FC<CallLogsProps> = ({ navigation, route, setMenuOpe
     }
   }
 
+  const toggleExpand = (id: string) => {
+    setOpenItemId(prevId =>{ return (prevId === id ? null : id) });
+  };
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setRefreshing(false);
@@ -185,63 +190,199 @@ const CallLogsScreen: React.FC<CallLogsProps> = ({ navigation, route, setMenuOpe
     }
   };
 
-  const renderItem = useCallback(({ item }: { item: CallLog }) => {
+  const renderItem2 = useCallback(({ item }: { item: CallLog }) => {
     const itemCall: ItemCall = item.callLogs[0];
+
+    console.log("openItemId ", openItemId, item.number)
     return (
       <TouchableOpacity
-        style={styles.itemContainer}
-        onPress={() => { navigation.navigate("CallLogsDetail", { itemId: itemCall.number }); }}
+        // style={[styles.itemContainer, { backgroundColor: 'blue', flexDirection: 'row' }]}
+        onPress={() => { 
+          // navigation.navigate("CallLogsDetail", { itemId: itemCall.number }); 
+          toggleExpand(item.number)
+        }}
         onLongPress={() => Alert.alert("onLongPress")}>
-        <View style={styles.avatarContainer}>
-          {
-          itemCall.photoUri
-            ? <Image source={{ uri: itemCall.photoUri }} style={styles.image} />
-            : <Icon name="account" size={30} />
-            // square
-          }
-          {
-            _.find(blockList, (v: BlockNumberItem)=>v.PHONE_NUMBER === item.number) 
-            ? <Icon style={styles.addIconContainer} name="cancel" size={30} color="red" />
-            : "" 
-          }
-        </View>
-        <TouchableOpacity style={styles.detailsContainer} >
-          <Text style={styles.name}>{itemCall.name}</Text>
-          <Text style={styles.phone}>{item.number}</Text>
-        </TouchableOpacity>
-        <View style={styles.timeContainer}>
-          <Menu
-            visible={visibleMenuId === item.number}
-            onDismiss={closeMenu}
-            anchor={
-              <TouchableOpacity onPress={() => openMenu(item.number)}>
-                <Icon name="dots-vertical" size={24} color="#555" />
-              </TouchableOpacity>
-            }>
-            { 
-              _.find(blockList, (v: BlockNumberItem)=>v.PHONE_NUMBER === item.number) 
-              ? <Menu.Item 
-              onPress={() => { handleUnblock(itemCall) }} title="Unblock" />
-              : <Menu.Item 
-              onPress={() => {
-                openBlockReasonModal(itemCall);
-                closeMenu();
-              }} title="Block" />
+        <View 
+          style={{
+            flexDirection: 'row', 
+            marginVertical: 5,
+            padding: 10,
+            backgroundColor: '#f8f8f8',
+            borderRadius: 5,
+            borderWidth: 1,
+            borderColor: '#ddd',}}>
+          <View style={[styles.avatarContainer, { backgroundColor :'yellow' }]}>
+            {
+            itemCall.photoUri
+              ? <Image source={{ uri: itemCall.photoUri }} style={styles.image} />
+              : <Icon name="account" size={30} />
+              // square
             }
-            <Menu.Item 
-              onPress={() => {
-                removeCallLogByNumber(itemCall);
-                closeMenu();
-              }} title="Delete" />
-          </Menu>
-          <View style={styles.timeAndIconContainer}>
-            {renderItemCall(itemCall.type)}
-            <Text style={styles.time}>{getDate(Number(itemCall.date))}</Text>
+            {
+              _.find(blockList, (v: BlockNumberItem)=>v.PHONE_NUMBER === item.number) 
+              ? <Icon style={styles.addIconContainer} name="cancel" size={30} color="red" />
+              : "" 
+            }
           </View>
+          <View style={[styles.detailsContainer, { backgroundColor: 'red' }]} >
+            <Text style={styles.name}>{itemCall.name}</Text>
+            <Text style={styles.phone}>{item.number}</Text>
+          </View>
+          <View style={[styles.timeContainer, {borderLeftColor: 'blue'}]}>
+            <Menu
+              visible={visibleMenuId === item.number}
+              onDismiss={closeMenu}
+              anchor={
+                <TouchableOpacity
+                  style={{backgroundColor :'yellow'}}
+                  onPress={() => openMenu(item.number)}>
+                  <Icon name="dots-vertical" size={24} color="#555" />
+                </TouchableOpacity>
+              }>
+              { 
+                _.find(blockList, (v: BlockNumberItem)=>v.PHONE_NUMBER === item.number) 
+                ? <Menu.Item 
+                onPress={() => { handleUnblock(itemCall) }} title="Unblock" />
+                : <Menu.Item 
+                onPress={() => {
+                  openBlockReasonModal(itemCall);
+                  closeMenu();
+                }} title="Block" />
+              }
+              <Menu.Item 
+                onPress={() => {
+                  removeCallLogByNumber(itemCall);
+                  closeMenu();
+                }} title="Delete" />
+            </Menu>
+            <View style={[styles.timeAndIconContainer, { backgroundColor:'green' }]}>
+              {renderItemCall(itemCall.type)}
+              <Text style={styles.time}>{getDate(Number(itemCall.date))}</Text>
+            </View>
+          </View>
+
+          {/* Check if this item is the open one */}
+          {openItemId === item.number && (
+            <View style={styles.contentContainer}>
+              <Text style={styles.content}>{"item.content"}</Text>
+            </View>
+          )}
         </View>
       </TouchableOpacity>
     );
-  }, [visibleMenuId, blockList]);
+  }, [visibleMenuId, blockList, openItemId]);
+
+  const fetchSmsThreadIdLogs = async (number: string) => {
+    try {
+      console.log("fetchSmsThreadIdLogs :", number)
+      const response = await DatabaseHelper.fetchSmsThreadIdLogs(number);
+      if (response.status) {
+        navigation.navigate('SMSDetail', { thread_id: response.data[0], number });
+      } else {
+        navigation.navigate('SMSDetail', { thread_id: undefined, number });
+      }
+    } catch (error) {
+      console.error("Error fetchSmsThreadIdLogs :", error);
+    }
+  };
+
+  const renderItem = ({ item }: { item: CallLog }) => {
+    const isExpanded = openItemId === item.number;
+    const itemCall: ItemCall = item.callLogs[0];
+    return (
+      <View style={styles.itemContainer}>
+        <TouchableOpacity 
+          style={[styles.row, { }]} 
+          onPress={() => toggleExpand(item.number)}>
+           <View style={[styles.avatarContainer, {  }]}>
+            {
+            itemCall.photoUri
+              ? <Image source={{ uri: itemCall.photoUri }} style={styles.image} />
+              : <Icon name="account" size={30} />
+              // square
+            }
+            {
+              _.find(blockList, (v: BlockNumberItem)=>v.PHONE_NUMBER === item.number) 
+              ? <Icon style={styles.addIconContainer} name="cancel" size={30} color="red" />
+              : "" 
+            }
+          </View>
+          <View style={[styles.detailsContainer, { }]} >
+            <Text style={styles.name}>{itemCall.name}</Text>
+            <Text style={styles.phone}>{item.number}</Text>
+          </View>
+          {/* <View style={[styles.timeContainer, {borderLeftColor: 'blue'}]}>
+            <Menu
+              visible={visibleMenuId === item.number}
+              onDismiss={closeMenu}
+              anchor={
+                <TouchableOpacity
+                  style={{backgroundColor :'yellow'}}
+                  onPress={() => openMenu(item.number)}>
+                  <Icon name="dots-vertical" size={24} color="#555" />
+                </TouchableOpacity>
+              }>
+              { 
+                _.find(blockList, (v: BlockNumberItem)=>v.PHONE_NUMBER === item.number) 
+                ? <Menu.Item 
+                onPress={() => { handleUnblock(itemCall) }} title="Unblock" />
+                : <Menu.Item 
+                onPress={() => {
+                  openBlockReasonModal(itemCall);
+                  closeMenu();
+                }} title="Block" />
+              }
+              <Menu.Item 
+                onPress={() => {
+                  removeCallLogByNumber(itemCall);
+                  closeMenu();
+                }} title="Delete" />
+            </Menu>
+            
+          </View> */}
+          <View style={[styles.timeAndIconContainer, { marginRight: 10 }]}>
+              {renderItemCall(itemCall.type)}
+              <Text style={styles.time}>{getDate(Number(itemCall.date))}</Text>
+            </View>
+        </TouchableOpacity>
+        {isExpanded && (
+          <View style={[styles.expandedContent, { backgroundColor:'#FFF' }]}>
+            <Divider />
+            <TouchableOpacity 
+              style={{ padding:10, marginRight: 10 }} 
+              onPress={()=>{ 
+                Linking.openURL(`tel:${itemCall?.number}`) 
+              }}>
+              <Icon name="phone" size={25} color="#999" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={{ padding:10, marginRight: 10 }} 
+              onPress={async ()=>{ 
+                fetchSmsThreadIdLogs(itemCall?.number || '')
+              }}>
+              <Icon name="message" size={25} color="#999" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={{ padding:10, marginRight: 10 }} 
+              onPress={()=>{  
+                navigation.navigate("CallLogsDetail", { itemId: itemCall.number });  
+              }}>
+              <Icon name="information" size={25} color="#999" />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={{ padding:10, marginRight: 10 }} 
+              onPress={()=>{  
+                // navigation.navigate("CallLogsDetail", { itemId: itemCall.number });  
+              }}>
+                
+              <Icon name="phone-lock" size={25} color={ _.find(blockList, (v: BlockNumberItem)=>v.PHONE_NUMBER === item.number) ? 'red' : '#999' } />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -275,25 +416,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  itemContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-  },
+  // itemContainer: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   // padding: 10,
+  // },
   avatarContainer: {
     width: 60,
     height: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 35,
+    borderRadius: 30,
     backgroundColor: '#eee',
-    marginRight: 15,
-    position: 'relative', 
+    marginLeft: 10,
+    marginRight: 5,
+    // position: 'relative', 
+    // padding: 10
   },
   image: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 35,
+    // width: '200',
+    // height: '200',
+    // borderRadius: 35,
   },
   addIconContainer: {
     position: 'absolute',
@@ -303,7 +446,7 @@ const styles = StyleSheet.create({
   },
   detailsContainer: {
     flex: 1,
-    backgroundColor: 'red'
+    // height: '100%'
   },
   name: {
     fontWeight: 'bold',
@@ -317,14 +460,14 @@ const styles = StyleSheet.create({
   },
   timeAndIconContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   time: {
     color: '#888',
-    marginLeft: 5,
+    // marginLeft: 5,
   },
   icon: {
-    marginRight: 5,
+    // marginRight: 5,
   },
   emptyContainer: {
     flex: 1,
@@ -338,7 +481,43 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     marginLeft: 10,
-  }
+  },
+  contentContainer: {
+    // padding: 15,
+    // backgroundColor: '#f9f9f9',
+
+  },
+  content: {
+    fontSize: 14,
+    color: '#333',
+  },
+
+
+
+  itemContainer: {
+    // marginVertical: 5,
+    // paddingHorizontal: 10,
+    // borderBottomWidth: 1,
+    // borderColor: '#ccc',
+    // paddingLeft: 5,
+    // paddingRight: 5,
+
+    // backgroundColor: 'red'
+  },
+  row: {
+    flexDirection: 'row',  // This ensures horizontal layout
+    justifyContent: 'space-between',
+    paddingVertical: 15,
+  },
+  title: {
+    fontSize: 16,
+  },
+  expandedContent: {
+    // paddingVertical: 10,
+    // paddingLeft: 10,
+    flexDirection: 'row',
+    justifyContent: 'center'
+  },
 });
 
 export default CallLogsScreen;

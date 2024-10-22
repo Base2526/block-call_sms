@@ -11,7 +11,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import moment from 'moment';
 import { useSelector } from 'react-redux';
-
+import { useNavigation } from '@react-navigation/native';
 import SubComment from './SubComment';
 import MentionHashtag from "./MentionHashtag"
 import constants from './constants';
@@ -46,16 +46,20 @@ const MainComment = ({
   setExposed: Function;
   setReply: Function;
 }) => {
+  const navigation = useNavigation();
+  
   const [date, setDate] = useState(new Date());
   const {_id, text, created, user, exposed, status, subComments} = data;
   const current_user = useSelector((state: RootState) => state.user.user );
 
   return (
-    <>
+    <View>
       <View style={styles.container}>
         <TouchableOpacity 
-          style={[styles.top, {  }]}
-          onPress={()=>{ console.log("profile") }}>
+          style={[styles.top, { }]}
+          onPress={()=>{ 
+            navigation.navigate("UserProfile" ,  { _id:  user?._id }  ) 
+          }}>
           {
           user?.url 
           ? <TouchableOpacity style={styles.avatar}>
@@ -70,7 +74,7 @@ const MainComment = ({
             </TouchableOpacity>
           }
           
-          <Text style={styles.username}>{user.username}</Text>
+          <Text style={[styles.username, { }]}>{user.username}</Text>
           <Text style={styles.date}>
             {moment(new Date(created)).from(date)}
           </Text>
@@ -198,9 +202,10 @@ const MainComment = ({
             }
         </View>
       </View>
-    </>
+    </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     width: '100%',
@@ -211,9 +216,9 @@ const styles = StyleSheet.create({
   avatar: {
     borderColor: constants.colors.GREY,
     borderWidth: .5,
-    height: 30,
-    width: 30,
-    borderRadius: 40,
+    height: 25,
+    width: 25,
+    borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center'
   },
