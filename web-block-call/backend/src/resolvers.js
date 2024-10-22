@@ -180,6 +180,7 @@ export default {
                                                       },
                                                       {
                                                         $addFields: {
+                                                          ownerId: "$current.ownerId",
                                                           provinceId: "$current.provinceId",  // Bring the nested field to the top level
                                                         }
                                                       },
@@ -189,6 +190,21 @@ export default {
                                                           localField: "provinceId",
                                                           foreignField: "_id",
                                                           as: "province"
+                                                        }
+                                                      },
+                                                      {
+                                                        $unwind: {
+                                                          path: "$province",
+                                                          preserveNullAndEmptyArrays: true
+                                                        }
+                                                      },
+
+                                                      {
+                                                        $lookup: {
+                                                          from: "user",
+                                                          localField: "ownerId",
+                                                          foreignField: "_id",
+                                                          as: "owner"
                                                         }
                                                       },
                                                       {

@@ -8,6 +8,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Menu, Divider } from 'react-native-paper';
 import Share from 'react-native-share';
 import { useSelector } from 'react-redux';
+import moment from 'moment';
 
 import { query_report, mutation_like_report } from "../gqlQuery";
 import { getHeaders, countTotalComments } from "../utils";
@@ -38,8 +39,9 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
   const [likeReportId, setLikeReportId] = useState("")
   const [likedIndex, setLikedIndex] = useState(-1)
 
-  const { openLoginModal } = useMyContext();
+  const now = new Date();
 
+  const { openLoginModal } = useMyContext();
   const [onLikeRepost] = useMutation(mutation_like_report, {
     context: { headers: getHeaders() },
     update: (cache, { data: { like_report } }) => {
@@ -158,9 +160,9 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
   useEffect(() => {
     if (!loadingReport && dataReport?.report) {
       if (dataReport.report.status) {
-
-        // console.log("ReportDetailScreen :", dataReport.report.data)
         setData(dataReport.report.data);
+
+        console.log("dataReport.report.data :", dataReport.report.data)
       }
     }
   }, [dataReport, loadingReport]);
@@ -186,19 +188,8 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
 
   const renderHeartItem = () =>{
     let isLiked = data?.likes?.some(like => like.userId === user?._id)
-
-    // console.log("isLiked :", isLiked, data?.likes, user?._id)
-
     function click(item :any){
-      if(_.isEmpty(user)){
-        openLoginModal()
-      }else{
-        // let likedIndex = item?.likes?.some(like => like.userId === user?._id) ? 1 : -1
-        // setLikeReportId(item._id)
-        // setLikedIndex(likedIndex)
-
-        onLikeRepost({ variables:{ input:{ _id: data._id } } })
-      }
+      _.isEmpty(user) ? openLoginModal() : onLikeRepost({ variables:{ input:{ _id: data._id } } })
     } 
 
     return  <TouchableOpacity 
@@ -248,9 +239,38 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
                 </View>
               : <Icon name="account" size={30} />}
           </TouchableOpacity>
+          <View style={{}}>
+              {/* <Text style={{color:'white', fontSize: 18}}>{ data?.owner[0].current.displayName }</Text> */}
+            <TouchableOpacity 
+              style={{  flexDirection: 'row', alignItems: 'center',}}
+              onPress={()=>{ 
+                console.log("@1")
+                navigation.navigate("UserProfile" /*,  { _id:  data._id}*/ ) 
+              }}>
+              {
+              // data?.owner[0]
+              // ? <TouchableOpacity style={styles.avatar}>
+              //     <Image 
+              //     source={{ uri: user?.url  }} 
+              //     style={styles.avatar}
+              //     resizeMode="cover" // or 'contain', depending on your needs
+              //     />
+              //   </TouchableOpacity>
+              // : 
+              <TouchableOpacity style={styles.avatar}>
+                  <Icon name="account" size={20} color="#333" />
+                </TouchableOpacity>
+              }
+              <View style={{paddingLeft: 10}}>
+                <Text style={{fontSize: 18}}>{ data?.owner[0].current.displayName }</Text>
+                <Text style={styles.date}>
+                  {moment(new Date(data?.owner[0].createdAt)).from(now)}
+                </Text> 
+              </View>
+            </TouchableOpacity>
+          </View>
           <View style={styles.detailsContainer}>
             <Text style={styles.title}>ชื่อ-นามสกุล {data?.current?.sellerFirstName} {data?.current?.sellerLastName}</Text>
-            
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
               <Text style={{fontWeight:'700', fontSize: 16}}>รายละเอียด </Text>
               <Text style={styles.description}>{data?.current?.additionalInfo}</Text>
@@ -281,8 +301,6 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
         </ScrollView>
       )}
     </View>
-
-    
   );
 };
 
@@ -386,6 +404,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#efefef',
     borderRadius: 50,
     alignItems: 'center',
+  },
+  avatar: {
+    borderColor: 'gray',
+    borderWidth: .5,
+    height: 35,
+    width: 35,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  username: {
+    fontSize: 'gray',
+    fontWeight: '600',
+    marginLeft: 10,
+  },
+  date: {
+    // fontSize: 12,
+    // marginLeft: 5,
   },
 });
 

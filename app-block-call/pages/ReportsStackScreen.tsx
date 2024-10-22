@@ -9,7 +9,7 @@ import SettingsScreen from "./SettingsScreen";
 import CallLogsDetailScreen from "./CallLogsDetailScreen";
 import HelpSendFeedbackScreen from "./HelpSendFeedbackScreen";
 import AboutScreen from './AboutScreen';
-import ProfileScreen from "./ProfileScreen";
+import MyProfileScreen from "./ProfileScreen";
 import DrawerContent from "../DrawerContent";
 import Reposts from './ReportsScreen';
 import PrivatePolicy from "./PrivatePolicy";
@@ -19,6 +19,8 @@ import NewReportScreen from "./NewReportScreen";
 import ReportDetailScreen from "./ReportDetailScreen";
 
 import CommentsScreen from "../comments"
+
+import UserProfileScreen from '../profile';
 
 const ReportsStack = createStackNavigator();
 
@@ -43,7 +45,8 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           routeName === 'Search' ||
           routeName === 'NewRepost' ||
           routeName === 'ReportDetail' ||
-          routeName === 'Comments'
+          routeName === 'Comments' ||
+          routeName === 'UserProfile'
       ) {
       navigation.setOptions({ tabBarStyle: { display: 'none' } });
     } else {
@@ -114,7 +117,7 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
         />
         <ReportsStack.Screen
           name="Profile"
-          component={ProfileScreen}
+          component={MyProfileScreen}
           options={{  
             headerShown: true, 
             headerTitle: 'โปรไฟล์', 
@@ -151,6 +154,16 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           options={{  
             headerShown: true,
             headerTitle: 'คอมเมนต์', 
+          }}
+        />
+        {/*  */}
+
+        <ReportsStack.Screen
+          name="UserProfile"
+          component={UserProfileScreen}
+          options={{  
+            headerShown: true,
+            headerTitle: 'โปรไฟร์', 
           }}
         />
       </ReportsStack.Navigator>

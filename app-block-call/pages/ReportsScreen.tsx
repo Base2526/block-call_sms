@@ -51,7 +51,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
     navigation.setOptions({
       headerLeft: () => (
           <TouchableOpacity onPress={() => {  setMenuOpen()  }} style={styles.menuButton}>
-            <Icon name="menu" size={24} />
+            <Icon name="menu" size={30} />
           </TouchableOpacity>
       ),
       headerRight: () => (
@@ -315,7 +315,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
             <Text style={styles.phone}>{item.current.sellingWebsite}</Text>
             {
               _.map(item.current.telNumbers, (value, index)=>{
-                return <TouchableOpacity key={index}><Text style={styles.phone}>{value.tel}</Text></TouchableOpacity>
+                return <View key={index}><Text style={styles.phone}>{value.tel}</Text></View>
               })
             }
             <Text style={styles.phone}>{item.createdAt}</Text>
