@@ -153,7 +153,7 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           component={CommentsScreen}
           options={{  
             headerShown: true,
-            headerTitle: 'คอมเมนต์', 
+            headerTitle: '', 
           }}
         />
         {/*  */}
@@ -163,7 +163,7 @@ const ReportsStackScreen: React.FC<ReportsStackScreenProps> = ({ navigation, rou
           component={UserProfileScreen}
           options={{  
             headerShown: true,
-            headerTitle: 'โปรไฟร์', 
+            headerTitle: '', 
           }}
         />
       </ReportsStack.Navigator>

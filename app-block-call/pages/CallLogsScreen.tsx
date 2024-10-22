@@ -346,27 +346,28 @@ const CallLogsScreen: React.FC<CallLogsProps> = ({ navigation, route, setMenuOpe
             </View>
         </TouchableOpacity>
         {isExpanded && (
-          <View style={[styles.expandedContent, { backgroundColor:'#999' }]}>
+          <View style={[styles.expandedContent, { backgroundColor:'#FFF' }]}>
+            <Divider />
             <TouchableOpacity 
               style={{ padding:10, marginRight: 10 }} 
               onPress={()=>{ 
                 Linking.openURL(`tel:${itemCall?.number}`) 
               }}>
-              <Icon name="phone" size={25} color="#333" />
+              <Icon name="phone" size={25} color="#999" />
             </TouchableOpacity>
             <TouchableOpacity 
               style={{ padding:10, marginRight: 10 }} 
               onPress={async ()=>{ 
                 fetchSmsThreadIdLogs(itemCall?.number || '')
               }}>
-              <Icon name="message" size={25} color="#333" />
+              <Icon name="message" size={25} color="#999" />
             </TouchableOpacity>
             <TouchableOpacity 
               style={{ padding:10, marginRight: 10 }} 
               onPress={()=>{  
                 navigation.navigate("CallLogsDetail", { itemId: itemCall.number });  
               }}>
-              <Icon name="information" size={25} color="#333" />
+              <Icon name="information" size={25} color="#999" />
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -375,7 +376,7 @@ const CallLogsScreen: React.FC<CallLogsProps> = ({ navigation, route, setMenuOpe
                 // navigation.navigate("CallLogsDetail", { itemId: itemCall.number });  
               }}>
                 
-              <Icon name="phone-lock" size={25} color={ _.find(blockList, (v: BlockNumberItem)=>v.PHONE_NUMBER === item.number) ? 'red' : '#333' } />
+              <Icon name="phone-lock" size={25} color={ _.find(blockList, (v: BlockNumberItem)=>v.PHONE_NUMBER === item.number) ? 'red' : '#999' } />
             </TouchableOpacity>
           </View>
         )}

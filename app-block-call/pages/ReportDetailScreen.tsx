@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { View, TextInput, Text, StyleSheet, ActivityIndicator, Image, ScrollView, TouchableOpacity, Dimensions  } from 'react-native';
+import { View, TextInput, Text, StyleSheet, 
+        ActivityIndicator, Image, ScrollView, 
+        TouchableOpacity, Dimensions  } from 'react-native';
 import { useQuery, useMutation, ApolloError } from '@apollo/client';
 import { useToast } from "react-native-toast-notifications";
 import { RouteProp } from '@react-navigation/native';
@@ -18,6 +20,8 @@ import { RootState, AppDispatch } from '../redux/store';
 import ImageZoomViewer from "./ImageZoomViewer";
 import CommentActionSheet from "./CommentActionSheet";
 import { useMyContext } from '../MyProvider'; 
+
+import UserProfileActionSheet from "../profile/UserProfileActionSheet"
 
 type ReportDetailProps = {
   navigation: any;
@@ -161,8 +165,6 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
     if (!loadingReport && dataReport?.report) {
       if (dataReport.report.status) {
         setData(dataReport.report.data);
-
-        console.log("dataReport.report.data :", dataReport.report.data)
       }
     }
   }, [dataReport, loadingReport]);
@@ -239,38 +241,57 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
                 </View>
               : <Icon name="account" size={30} />}
           </TouchableOpacity>
-          <View style={{}}>
-              {/* <Text style={{color:'white', fontSize: 18}}>{ data?.owner[0].current.displayName }</Text> */}
-            <TouchableOpacity 
-              style={{  flexDirection: 'row', alignItems: 'center',}}
-              onPress={()=>{ 
-                console.log("@1")
-                navigation.navigate("UserProfile" /*,  { _id:  data._id}*/ ) 
-              }}>
-              {
-              // data?.owner[0]
-              // ? <TouchableOpacity style={styles.avatar}>
-              //     <Image 
-              //     source={{ uri: user?.url  }} 
-              //     style={styles.avatar}
-              //     resizeMode="cover" // or 'contain', depending on your needs
-              //     />
-              //   </TouchableOpacity>
-              // : 
-              <TouchableOpacity style={styles.avatar}>
-                  <Icon name="account" size={20} color="#333" />
-                </TouchableOpacity>
-              }
-              <View style={{paddingLeft: 10}}>
-                <Text style={{fontSize: 18}}>{ data?.owner[0].current.displayName }</Text>
-                <Text style={styles.date}>
-                  {moment(new Date(data?.owner[0].createdAt)).from(now)}
-                </Text> 
-              </View>
-            </TouchableOpacity>
-          </View>
+          {/*
+          <TouchableOpacity 
+            style={{  flexDirection: 'row', alignItems: 'center',}}
+            onPress={()=>{ 
+              navigation.navigate("UserProfile" ,  { _id:  data._id} ) 
+              // actionSheetRef.current?.show();
+            }}>
+            {
+            // data?.owner[0]
+            // ? <TouchableOpacity style={styles.avatar}>
+            //     <Image 
+            //     source={{ uri: user?.url  }} 
+            //     style={styles.avatar}
+            //     resizeMode="cover" // or 'contain', depending on your needs
+            //     />
+            //   </TouchableOpacity>
+            // : 
+            <TouchableOpacity style={styles.avatar}>
+                <Icon name="account" size={20} color="#333" />
+              </TouchableOpacity>
+            }
+            <View style={{paddingLeft: 10}}>
+              <Text style={{fontSize: 18, fontWeight: '500'}}>{ data?.owner[0].current.displayName }</Text>
+              <Text style={styles.date}>
+                {moment(new Date(data?.owner[0].createdAt)).from(now)}
+              </Text> 
+            </View>
+          </TouchableOpacity>
+          */ }
+
+          <TouchableOpacity 
+            style={styles.postRow}
+            onPress={()=>{ 
+              navigation.navigate("UserProfile" ,  { _id:  data?.owner[0]._id }  ) 
+            }}>
+            <View style={styles.userImage}>
+              <Icon name='account' size={25}/>
+            </View>
+            <View>
+              <Text style={{fontWeight: '500', fontSize: 14}}>{ data?.owner[0].current.displayName }</Text>
+              <Text style={{fontSize: 10}}>
+              {moment(new Date(data?.owner[0].createdAt)).from(now)}
+              </Text>
+            </View>
+          </TouchableOpacity>
+          <Divider />
           <View style={styles.detailsContainer}>
-            <Text style={styles.title}>ชื่อ-นามสกุล {data?.current?.sellerFirstName} {data?.current?.sellerLastName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              <Text style={{fontWeight:'700', fontSize: 16}}>ชื่อ-นามสกุล </Text>
+              <Text style={styles.description}>{data?.current?.sellerFirstName} {data?.current?.sellerLastName}</Text>
+            </View>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
               <Text style={{fontWeight:'700', fontSize: 16}}>รายละเอียด </Text>
               <Text style={styles.description}>{data?.current?.additionalInfo}</Text>
@@ -297,7 +318,9 @@ const ReportDetailScreen: React.FC<ReportDetailProps> = (props) => {
             }
           </View>
           { isImageViewerVisible &&  <ImageZoomViewer images={imageUrls} isVisible={isImageViewerVisible} onClose={()=>setImageViewerVisible(false)}/> }
-          <CommentActionSheet actionSheetRef={actionSheetRef} />
+          {/* <CommentActionSheet actionSheetRef={actionSheetRef} /> */}
+
+          {/* <UserProfileActionSheet actionSheetRef={actionSheetRef}/> */}
         </ScrollView>
       )}
     </View>
@@ -315,7 +338,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 300,
     borderRadius: 10,
-    marginBottom: 16,
+    marginBottom: 5,
   },
   imageContainer: {
     position: 'relative',
@@ -330,10 +353,10 @@ const styles = StyleSheet.create({
     // backgroundColor:'blue'
   },
   detailsContainer: {
-    // paddingHorizontal: 10,
+    marginTop: 10
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
     // backgroundColor:'blue'
@@ -351,7 +374,7 @@ const styles = StyleSheet.create({
     bottom: 5,
     right: 5,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 10,
+    borderRadius: 5,
     padding: 5,
   },
   imageCountText: {
@@ -422,6 +445,27 @@ const styles = StyleSheet.create({
   date: {
     // fontSize: 12,
     // marginLeft: 5,
+  },
+
+  postRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingBottom: 6,
+    paddingLeft: 5,
+    paddingRight: 15,
+    paddingTop: 6,
+    width: Dimensions.get('window').width * 1,
+  },
+  postImage: {
+    backgroundColor: 'rgba(0, 0, 0, 0.075)',
+    height: 200,
+  },
+  userImage: {
+    marginRight: 10,
+    borderColor: 'gray',
+    borderWidth: .5,
+    borderRadius: 5,
+    padding: 3
   },
 });
 

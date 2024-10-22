@@ -330,6 +330,23 @@ export default {
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
+    async user(parent, args, context, info) {
+      let start = Date.now()
+      let { req } = context
+
+      let { input } = args
+
+      let { current_user } =  await Utils.checkAuth(req);
+      let role = Utils.checkRole(current_user)
+      // if( role !== Constants.ADMINISTRATOR ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+      let user = await Model.User.findById(input?._id)
+
+      return {
+        status: true,
+        data: user,
+        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+      }
+    },
     async banks(parent, args, context, info) {
       let start = Date.now()
       let { req } = context
@@ -912,6 +929,81 @@ export default {
       }finally {
           session.endSession();
       }   
+    },
+    async follow(parent, args, context, info) {
+      let start = Date.now();
+      let { input } = args;
+      let { req } = context;
+  
+      let { current_user } = await Utils.checkAuth(req);
+      let role = Utils.checkRole(current_user);
+      
+      if (role !== Constants.ADMINISTRATOR && role !== Constants.AUTHENTICATED) {
+          throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user);
+      }
+      // console.log("follow :", current_user._id, input._id)
+  
+      // Start a transaction
+      const session = await mongoose.startSession();
+      session.startTransaction();
+      try {
+          
+          // ---------- Update MySelf
+          const originalFollowsCount = current_user.follows.length;
+          let followIndex = 1;
+          current_user.follows = current_user.follows.filter(follow => follow.userId.toString() !== input?._id.toString());
+  
+          if (originalFollowsCount > current_user.follows.length) {
+              // The user had liked the report and has been unliked
+              followIndex = -1;
+              console.log('User unfollow the user');
+          } else {
+              // The user has not liked the report yet, so add the like
+              current_user.follows.push({ userId: input?._id });
+              console.log('User follow the user');
+          }
+  
+          // Save the updated report
+          await current_user.save({ session });
+          // ---------- Update MySelf
+
+          // ---------- Update Follower
+          let userFollowers = await Model.User.findById(input?._id).session(session);
+          if (!userFollowers) {
+            throw new Error('User not found');
+          }
+
+          if(followIndex === 1){
+            let checkUserFollowers =  userFollowers.followers.find(follower => follower.userId.toString() === current_user._id.toString());
+            if(!checkUserFollowers){
+              userFollowers.followers.push({ userId: current_user?._id })
+            }
+
+            console.log('User Follower the user');
+          }else{
+            userFollowers.followers = userFollowers.followers.filter(follower => follower.userId.toString() !== current_user._id.toString());
+            console.log('User unfollower the user');
+          }
+          // Save the updated user followers
+          await userFollowers.save({ session });
+          // ---------- Update Follower
+
+
+          // Commit the transaction
+          await session.commitTransaction();
+          
+          // console.log('Transaction committed successfully');
+          return {
+              status: true,
+              followIndex,
+              executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
+          };
+      } catch (error) {
+          await session.abortTransaction();
+          throw new AppError(Constants.ERROR, error);
+      } finally {
+          session.endSession();
+      }
     },
     async comment_by_id(parent, args, context, info) {
       let start = Date.now();

@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useLayoutEffect, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, 
         TouchableOpacity, Alert, Image, 
-        RefreshControl, FlatList, Modal } from 'react-native';
+        RefreshControl, FlatList, Modal, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { useSelector, useDispatch } from 'react-redux';
 import { Menu, Divider } from 'react-native-paper';
@@ -11,6 +11,8 @@ import { useQuery, useMutation, ApolloError } from '@apollo/client';
 import _ from "lodash";
 import Share from 'react-native-share';
 import ActionSheet from 'react-native-actions-sheet';
+import moment from 'moment';
+
 import { RootState, AppDispatch } from '../redux/store';
 import { BlockItem } from "../redux/interface"
 import { addBlocks, removeBlock } from "../redux/slices/blockSlice";
@@ -97,6 +99,8 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
   const [likedIndex, setLikedIndex] = useState(-1)
 
   const [isMutating, setIsMutating] = useState(false); // Track mutation state
+
+  const now = new Date();
 
   const [onLikeRepost] = useMutation(mutation_like_report, {
     context: { headers: getHeaders() },
@@ -274,9 +278,9 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
     const isExpanded = expandedItemId === item._id;
     return (
       <View
-        style={styles.itemContainer}
+        // style={styles.itemContainer}
         key={item._id}>
-        <TouchableOpacity 
+        {/* <TouchableOpacity 
           style={styles.avatarContainer}
           onPress={() => {
             // Show ImageViewer when image is pressed
@@ -298,62 +302,100 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
                 </View>
               </View>
             : <Icon name="account" size={30} />}
-        </TouchableOpacity>
-        <View style={styles.detailsContainer} >
-          <TouchableOpacity onPress={()=>{ navigation.navigate("ReportDetail", { _id:  item._id}) }} >
-            <Text style={styles.name}>{item.current.sellerFirstName} {item.current.sellerLastName}</Text> 
-            {
-              item.current.additionalInfo.length > 200 
-              ? <Text style={styles.name}>
-                  {isExpanded ? item.current.additionalInfo : `${item.current.additionalInfo.substring(0, 200)}...`}
-                  <TouchableOpacity onPress={() => setExpandedItemId(isExpanded ? null : item._id)}>
-                    <Text style={styles.readMoreLess}>{isExpanded ? '' : ' Read More'}</Text>
-                  </TouchableOpacity>
-                </Text>
-              : <Text style={styles.name}>{item.current.additionalInfo}</Text> 
-            }
-            <Text style={styles.phone}>{item.current.sellingWebsite}</Text>
-            {
-              _.map(item.current.telNumbers, (value, index)=>{
-                return <View key={index}><Text style={styles.phone}>{value.tel}</Text></View>
-              })
-            }
-            <Text style={styles.phone}>{item.createdAt}</Text>
+        </TouchableOpacity> */}
+
+        <View style={{flexDirection :'row', justifyContent:'space-between'}}>
+          <TouchableOpacity 
+              style={styles.postRow}
+              onPress={()=>{ 
+                navigation.navigate("UserProfile" ,  { _id:  item.owner._id }  ) 
+              }}>
+              <View style={styles.userImage}>
+                <Icon name='account' size={25}/>
+              </View>
+              <View>
+                <Text style={{fontWeight: '500', fontSize: 14}}>{ item.owner.current.displayName }</Text>
+                <Text style={{fontSize: 10}}>{moment(new Date(item.createdAt)).from(now)}</Text>
+              </View>
           </TouchableOpacity>
-         
-          {/* Action Buttons */}
-          <View style={styles.actionsContainer}>
-            { renderHeartItem(item) }
-            {/* 
-            <TouchableOpacity style={{padding:5}}  onPress={() => { console.log("bookmark") } }>
-              <Icon name="bookmark-outline" size={16} color="#555" />
-            </TouchableOpacity> 
-            */}
-            <TouchableOpacity style={{padding:5, flexDirection: 'row'}}  
-            onPress={() => { 
-              navigation.navigate("Comments", { _id:  item._id})
-              /*actionSheetRef.current?.show()*/  
-            }}>
-              <Icon name="comment-outline" size={16} color="#555" />
-              <Text>{ item?.comment[0] && countTotalComments(item?.comment[0]?.data) }</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={{padding:5}}  onPress={()=>handleShare(item)}>
-              <Icon name="share" size={16} color="#555" />
-            </TouchableOpacity>
+          <View style={[styles.menuContainer, {justifyContent:'center',  paddingRight:10}]}>
+            <Menu
+              visible={visibleMenuId === item._id}
+              onDismiss={closeMenu}
+              anchor={
+                <TouchableOpacity onPress={()=>openMenu(item._id)}>
+                  <Icon name="dots-vertical" size={24} color="#555" />
+                </TouchableOpacity>
+              }
+            >
+              <Menu.Item onPress={() => { handleUnblock(item) }} title="Unblock" />
+            </Menu>
           </View>
         </View>
-        <View style={styles.menuContainer}>
-          <Menu
-            visible={visibleMenuId === item._id}
-            onDismiss={closeMenu}
-            anchor={
-              <TouchableOpacity onPress={()=>openMenu(item._id)}>
-                <Icon name="dots-vertical" size={24} color="#555" />
-              </TouchableOpacity>
-            }
-          >
-            <Menu.Item onPress={() => { handleUnblock(item) }} title="Unblock" />
-          </Menu>
+        <View style={{flexDirection:'row'}}>
+          <TouchableOpacity 
+            style={styles.avatarContainer}
+            onPress={() => {
+              // Show ImageViewer when image is pressed
+              if(item.current.images) {
+                setImageUrls(item.current.images.map((img: any) => ({ url: `http://192.168.1.3:1984/${img.url}` })));
+                setImageViewerVisible(true);
+              }
+            }}>
+            {item.current.images
+              ? <View style={styles.imageContainer}>
+                  <Image 
+                    source={{ uri: `http://192.168.1.3:1984/${item.current.images[0].url}` }} 
+                    style={styles.image} 
+                  />
+                  <View style={styles.imageCountContainer}>
+                    <Text style={styles.imageCountText}>
+                      {item.current.images.length}
+                    </Text>
+                  </View>
+                </View>
+              : <Icon name="account" size={30} />}
+          </TouchableOpacity> 
+          <View style={[styles.detailsContainer, { }]} >
+            <TouchableOpacity onPress={()=>{ navigation.navigate("ReportDetail", { _id:  item._id}) }} >
+              <Text style={styles.name}>{item.current.sellerFirstName} {item.current.sellerLastName}</Text> 
+              {
+                item.current.additionalInfo.length > 200 
+                ? <Text style={styles.name}>
+                    {isExpanded ? item.current.additionalInfo : `${item.current.additionalInfo.substring(0, 200)}...`}
+                    <TouchableOpacity onPress={() => setExpandedItemId(isExpanded ? null : item._id)}>
+                      <Text style={styles.readMoreLess}>{isExpanded ? '' : ' Read More'}</Text>
+                    </TouchableOpacity>
+                  </Text>
+                : <Text style={styles.name}>{item.current.additionalInfo}</Text> 
+              }
+              <Text style={styles.phone}>{item.current.sellingWebsite}</Text>
+              {
+                _.map(item.current.telNumbers, (value, index)=>{
+                  return <View key={index}><Text style={styles.phone}>{value.tel}</Text></View>
+                })
+              }
+              <Text style={styles.phone}>{item.createdAt}</Text>
+            </TouchableOpacity>          
+          </View>
+        </View>
+        <View style={[styles.actionsContainer, { }]}>
+          { renderHeartItem(item) }
+          {/* 
+          <TouchableOpacity style={{padding:5}}  onPress={() => { console.log("bookmark") } }>
+            <Icon name="bookmark-outline" size={16} color="#555" />
+          </TouchableOpacity> 
+          */}
+          <TouchableOpacity style={{padding:5, flexDirection: 'row'}}  
+          onPress={() => { 
+            navigation.navigate("Comments", { _id:  item._id})
+          }}>
+            <Icon name="comment-outline" size={16} color="#555" />
+            <Text>{ item?.comment[0] && countTotalComments(item?.comment[0]?.data) }</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{padding:5}}  onPress={()=>handleShare(item)}>
+            <Icon name="share" size={16} color="#555" />
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -416,10 +458,11 @@ const styles = StyleSheet.create({
     // justifyContent: 'center',
     // alignItems: 'center',
     // backgroundColor: 'red',
-    borderWidth: .5,
-    borderColor: 'gray',
-    borderRadius: 5, 
-    margin: 5, 
+    // borderWidth: .5,
+    // borderColor: 'gray',
+    // borderRadius: 5, 
+    marginLeft: 5, 
+    marginRight: 5, 
     // padding: 2,
   },
   image: {
@@ -431,7 +474,7 @@ const styles = StyleSheet.create({
     flex: 9,
     // backgroundColor: 'yellow'
     // backgroundColor: 'red',
-    paddingTop: 10,
+    // paddingTop: 10,
   },
   name: {
     fontWeight: 'bold',
@@ -440,12 +483,12 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   menuContainer: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    position:'absolute',
-    top:0,
-    right:0,
-    padding:10
+    // alignItems: 'flex-end',
+    // justifyContent: 'center',
+    // position:'absolute',
+    // top:0,
+    // right:0,
+    // padding:10
   },
   menuButton: {
     marginLeft: 15
@@ -460,7 +503,7 @@ const styles = StyleSheet.create({
     bottom: 5,
     right: 5,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 10,
+    borderRadius: 5,
     padding: 5,
   },
   imageCountText: {
@@ -477,6 +520,27 @@ const styles = StyleSheet.create({
     color: 'blue',
     marginLeft: 5,
     textDecorationLine: 'underline',
+  },
+
+  postRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingBottom: 6,
+    paddingLeft: 5,
+    paddingRight: 15,
+    paddingTop: 6,
+    // width: Dimensions.get('window').width * 1,
+  },
+  postImage: {
+    backgroundColor: 'rgba(0, 0, 0, 0.075)',
+    height: 200,
+  },
+  userImage: {
+    marginRight: 10,
+    borderColor: 'gray',
+    borderWidth: .5,
+    borderRadius: 5,
+    padding: 3
   },
 });
 

@@ -14,8 +14,8 @@ const styles = StyleSheet.create({
   postContainer: {
     justifyContent: 'space-between',
     marginBottom: 5,
-    marginLeft: 12,
-    marginRight: 12,
+    // marginLeft: 12,
+    // marginRight: 12,
     marginTop: 10,
     padding: 0,
     borderWidth: 0,
@@ -47,22 +47,34 @@ class Posts extends Component {
   }
 
   render() {
+    const min = 1;
+    const max = 100;
+    const key =Math.floor(Math.random() * (max - min + 1)) + min;
+    // console.log("this.props.posts :", this.props.posts)
     return (
-      <FlatList
-        scrollEnabled={false}
-        removeClippedSubviews={false}
-        contentContainerStyle={[styles.container, this.props.containerStyle]}
-        data={this.props.posts}
-        renderItem={list => {
-          return (
-            <Post
-              key={`post-${list.item.id}`}
-              containerStyle={styles.postContainer}
-              {...list.item}
-            />
-          )
-        }}
-      />
+        this.props.posts.map((v, index)=>{
+            return <Post
+                        key={index}
+                        containerStyle={styles.postContainer}
+                        {...v}
+                        />
+        })
+    //   <FlatList
+    //     scrollEnabled={false}
+    //     removeClippedSubviews={false}
+    //     contentContainerStyle={[styles.container, this.props.containerStyle]}
+    //     data={this.props.posts}
+    //     listKey={`list-${key}`}
+    //     renderItem={list => {
+    //       return (
+    //         <Post
+    //           key={`post-${list.item.id}`}
+    //           containerStyle={styles.postContainer}
+    //           {...list.item}
+    //         />
+    //       )
+    //     }}
+    //   />
     )
   }
 }

@@ -21,6 +21,7 @@ export default gql`
     reports: JSON
     report(_id: ID): JSON
     my_reports: JSON
+    user(input: JSON): JSON
     users: JSON
     banks: JSON
 
@@ -36,6 +37,7 @@ export default gql`
 
     like_report(input: JSON): JSON
     like_comment(input: JSON): JSON
+    follow(input: JSON): JSON
 
     comment_by_id(input: JSON): JSON
   }

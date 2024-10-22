@@ -10,11 +10,12 @@ const styles = StyleSheet.create({
   container: {
     borderWidth: 0,
     justifyContent: 'space-between',
-    marginBottom: 5,
-    marginLeft: 12,
-    marginRight: 12,
-    marginTop: 10,
+    // marginBottom: 5,
+    // marginLeft: 12,
+    // marginRight: 12,
+    // marginTop: 10,
     padding: 0,
+    // backgroundColor: 'red'
   },
   date: {
     color: 'gray',
@@ -35,6 +36,10 @@ const styles = StyleSheet.create({
   },
   userImage: {
     marginRight: 12,
+    borderColor: 'gray',
+    borderRadius: 5,
+    borderWidth: .5,
+    padding: 5
   },
   wordRow: {
     marginBottom: 10,
@@ -53,14 +58,7 @@ const Post = ({ containerStyle, user, image, createdDate, sentences }) => (
   <View style={[styles.container, containerStyle]}>
     <View style={styles.postRow}>
       <View style={styles.userImage}>
-        {/* <Avatar
-          rounded
-          size="medium"
-          source={{
-            uri: user.avatar,
-          }}
-        /> */}
-        <Icon name='account' size={35}/>
+        <Icon name='account' size={25}/>
       </View>
       <View>
         <Text>{user.name}</Text>

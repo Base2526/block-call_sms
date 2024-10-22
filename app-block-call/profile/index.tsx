@@ -3,9 +3,9 @@ import PropTypes from 'prop-types'
 
 import contactData from './contact.json'
 
-import Profile from './Profile'
+import Profile from './UserProfile'
 
-const ProfileScreen = () => <Profile {...contactData} />
+const ProfileScreen = (props) => <Profile {...props} {...contactData} />
 
 ProfileScreen.navigationOptions = () => ({
   header: null,
