@@ -1,12 +1,5 @@
 import mongoose, { Document, Schema, Model } from 'mongoose';
-
-// Define the interface for the document
-interface IDblog extends Document {
-  level: string;
-  meta: Record<string, any>;
-  message: Record<string, any>;
-  timestamp: Date;
-}
+import { IDblog } from "../utils/Interface"
 
 // Define the schema
 const dblogSchema: Schema<IDblog> = new Schema(

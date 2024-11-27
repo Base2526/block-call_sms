@@ -6,7 +6,7 @@ import { useMutation } from "@apollo/client";
 import { useNavigate } from 'react-router-dom';
 import QRCode from 'react-qr-code';
 
-import { mutationProfile } from "@/apollo/gqlQuery";
+import { mutation_profile } from "@/apollo/gqlQuery";
 import { getHeaders } from "@/utils";
 import { updateProfile } from '@/stores/user.store';
 import "@/pages/profile/index.less";
@@ -27,7 +27,7 @@ const ProfilePage: FC = () => {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [onUpdateProfile] = useMutation(mutationProfile, {
+  const [onUpdateProfile] = useMutation(mutation_profile, {
     context: { headers: getHeaders(location) },
     update: (cache, { data: { profile } }) => {
       if (profile.status) {

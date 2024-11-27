@@ -177,7 +177,7 @@ const ReportsScreen: React.FC<ReportsScreenProps> = (props) => {
       if(dataReports.reports.status){
         setFilteredData(dataReports.reports.data)
 
-        // console.log("ReportsScreen: ", dataReports.reports.data)
+        console.log("ReportsScreen: ", dataReports.reports.data)
       }
     }
   }, [dataReports, loadingReports]);

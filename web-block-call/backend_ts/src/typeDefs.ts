@@ -1,5 +1,7 @@
 import gql from 'graphql-tag';
 
+import { GraphQLUpload, FileUpload } from 'graphql-upload-ts';
+
 // Define custom scalar types
 export const typeDefs = gql`
   scalar DATETIME
@@ -7,6 +9,7 @@ export const typeDefs = gql`
   scalar Date
   scalar JSON
   scalar Upload
+  
 
   type Query {
     test(input: JSON): JSON
@@ -14,7 +17,7 @@ export const typeDefs = gql`
     reports: JSON
     report(_id: ID): JSON
     my_reports: JSON
-    user(input: JSON): JSON
+    user(_id: ID!): JSON
     users: JSON
     banks: JSON
     comment_by_id(input: JSON): JSON

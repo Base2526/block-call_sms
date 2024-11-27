@@ -91,7 +91,9 @@ const CallLogsScreen: React.FC<CallLogsProps> = ({ navigation, route, setMenuOpe
   const fetchCallLogs = async () => {
     try {
       const response = await DatabaseHelper.fetchCallLogs();
+      console.log("fetchCallLogs :", response)
       if (response.status) {
+        
         dispatch(addMultipleCallLogs(response.data));
       }
     } catch (error) {

@@ -12,8 +12,11 @@ import path from 'path';
 import bodyParser from "body-parser";
 import _ from "lodash";
 // import { graphqlUploadExpress, GraphQLUpload } from 'graphql-upload';
-import { processRequest } from 'graphql-upload-ts';
+// import { processRequest } from 'graphql-upload-ts';
 import { json } from 'body-parser';
+
+import { GraphQLUpload, graphqlUploadExpress } from 'graphql-upload-ts';
+
 
 
 import typeDefs from "./typeDefs";
@@ -30,6 +33,8 @@ import pubsub from './pubsub';
 // import './cron-jobs';
 
 import './mongo';
+
+// const { graphqlUploadExpress } = require('graphql-upload');
 
 // Create an executable schema
 const schema = makeExecutableSchema({ typeDefs, resolvers });
@@ -82,19 +87,42 @@ const server = new ApolloServer({
 server.start().then(() => {
   // app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }));
   // app.use(graphqlUploadExpress()); // Enable file uploads
-  // Custom middleware to handle request processing
-  app.use(
-    json(),
-    async (req: Request, res: Response, next: NextFunction) => {
-      if (req.is('multipart/form-data')) {
-        // Handle file uploads using `graphql-upload`
-        await processRequest(req, res); // Parses and processes the request
-      }
-      next(); // Proceed to the next middleware
-    }
-  );
 
-  app.use('/images', express.static(path.join(__dirname, '/app/uploads')));
+  // Add graphqlUploadExpress middleware to handle file uploads
+  // app.use(graphqlUploadExpress()); 
+
+  // Custom middleware to handle request processing
+  // app.use(
+  //   json(),
+  //   async (req: Request, res: Response, next: NextFunction) => {
+  //     // console.log("app.use :", req.is('multipart/form-data'))
+  //     // if (req.is('multipart/form-data')) {
+  //     //   // Handle file uploads using `graphql-upload`
+  //     //   await processRequest(req, res); // Parses and processes the request
+  //     // }
+
+  //     if (req.is('multipart/form-data')) {
+  //       try {
+  //         // Process multipart/form-data before passing the request to Apollo Server
+  //         console.log("Process multipart/form-data before passing the request to Apollo Server :", req, res)
+  //         await processRequest(req, res);
+  //       } catch (error) {
+  //         console.error("Error processing upload:", error);
+  //         res.status(400).send("Invalid file upload request");
+  //         return;
+  //       }
+  //     }
+
+  //     next(); // Proceed to the next middleware
+  //   }
+  // );
+
+  app.use(graphqlUploadExpress());
+
+  console.log("path.join(__dirname, '/app/uploads')", path.join(__dirname, '/app/uploads'), __dirname)
+
+  // 
+  app.use('/images', express.static('/app/uploads'));
 
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: false }));
@@ -127,7 +155,7 @@ server.start().then(() => {
 
   app.use('/graphql', expressMiddleware(server, {
     context: async ({ req }: { req: Request }) =>{
-      console.log('/graphql')
+      // console.log('/graphql')
       return ({ req: req.headers })
     } ,
   }));

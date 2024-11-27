@@ -7,14 +7,14 @@ import { getMainDefinition } from '@apollo/client/utilities';
 
 // Create an HTTP link for queries and mutations
 const uploadLink = createUploadLink({
-  uri: 'http://192.168.1.3:1984/graphql', // Your GraphQL endpoint
+  uri: 'http://192.168.1.3:4000/graphql', // Your GraphQL endpoint
 });
 
 // Create a WebSocket link for subscriptions with correct properties
 const wsLink = new GraphQLWsLink(
   createClient({
-    url: 'ws://192.168.1.3:1984/graphql', // Replace with your WebSocket endpoint
-    reconnect: true, // Enable reconnection
+    url: 'ws://192.168.1.3:4000/graphql', // Replace with your WebSocket endpoint
+    // reconnect: true, // Enable reconnection
     lazy: true, // Connect only when needed
     retryAttempts: 10, // Number of retry attempts after disconnection
     connectionParams: {

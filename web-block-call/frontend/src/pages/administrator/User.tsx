@@ -1,13 +1,15 @@
 // src/UserForm.tsx
-import React, { useState, useEffect } from 'react';
-import { Form, Input, Upload, Button, Select, Switch, DatePicker, Row, Col, message, Image, GetProp, UploadProps} from 'antd';
+import React, { useState, useEffect, useRef } from 'react';
+import { Form, Input, Space, Button, Select, Switch, DatePicker, Row, Col, message, Image, Avatar, GetProp, UploadProps} from 'antd';
 import moment from 'moment';
-import { UploadOutlined, LoadingOutlined, PlusOutlined } from '@ant-design/icons';
+import { UploadOutlined, LoadingOutlined, PlusOutlined, EditOutlined, UserOutlined } from '@ant-design/icons';
 import type { RcFile, UploadChangeParam } from 'antd/es/upload/interface';
 import { useQuery, useMutation } from "@apollo/client";
+import { useLocation } from 'react-router-dom';
+import _ from "lodash"
 
-import { mutationProfile } from "../../apollo/gqlQuery"
-import { getHeaders } from "../../utils"
+import { mutation_profile, query_user } from "@/apollo/gqlQuery"
+import { getHeaders } from "@/utils"
 
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
@@ -39,45 +41,83 @@ const getBase64 = (img: FileType, callback: (url: string) => void) => {
     reader.readAsDataURL(img);
 };
 
+const { REACT_APP_HOST_GRAPHAL }  = process.env
 const User: React.FC = () => {
-    const [user, setUser] = useState<UserTypes>({
-        username: '',
-        password: '',
-        email: '',
-        displayName: '',
-        roles: [0], // Default role
-        isActive: 0,
-        lockAccount: {
+  const [form] = Form.useForm();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  let { mode, _id } = location.state || { mode: searchParams.get('mode'), _id: searchParams.get('v') };
+  const [image, setImage] = useState<File | any>();
+
+  console.log('User : ', searchParams, mode, _id)
+  const [user, setUser] = useState<UserTypes>({
+      username: '',
+      password: '',
+      email: '',
+      displayName: '',
+      roles: [0], // Default role
+      isActive: 0,
+      lockAccount: {
         lock: false,
         date: new Date(),
-        },
-        lastAccess: new Date(),
-    });
+      },
+      lastAccess: new Date(),
+  });
 
-    const [mode, setMode] = useState<'view' | 'edit'>('view'); // Set default mode to view
-    const [avatar, setAvatar] = useState<File | null>(null); // State for uploaded avatar
+  // const [mode, setMode] = useState<'view' | 'edit'>('view'); // Set default mode to view
+  // const [avatar, setAvatar] = useState<File | null>(null); // State for uploaded avatar
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [imageUrl, setImageUrl] = useState<string>("https://cloudflare-ipfs.com/ipfs/Qmd3W5DuhgHirLHGVixi6V76LhCkZUz6pnFt5AJBiyvHye/avatar/698.jpg");
+  const [loading, setLoading] = useState(false);
 
-    const [imageUrl, setImageUrl] = useState<string>("https://cloudflare-ipfs.com/ipfs/Qmd3W5DuhgHirLHGVixi6V76LhCkZUz6pnFt5AJBiyvHye/avatar/698.jpg");
-    const [loading, setLoading] = useState(false);
-  
-    const [onMutationProfile, resultProfile] = useMutation(mutationProfile, {
-        context: { headers: getHeaders(location) },
-        update: (cache, {data: {profile}}) => {
-            console.log("update :", profile)
-        },
-        onCompleted(data) {
-            console.log("onCompleted :", data)
-        },
-        onError(error){
-            console.log("onError :", error)
-        }
-    });
+  const [onProfile] = useMutation(mutation_profile, {
+      context: { headers: getHeaders({})
+      },
+      update: (cache, {data: {profile}}) => {
+          console.log("update :", profile)
+      },
+      onCompleted(data) {
+          console.log("onCompleted :", data)
+      },
+      onError(error){
+          console.log("onError :", error)
+      }
+  });
+
+  const { loading: loadingUser, data: dataUser, refetch: refetchUser } = useQuery(query_user, {
+    context: { headers: getHeaders(location) },
+    fetchPolicy: 'no-cache',
+    nextFetchPolicy: 'network-only',
+    skip: _.isEmpty(_id) || mode === 'added'
+  });
+
+  useEffect(() => {
+    if (_id) {
+      refetchUser({ id: _id });
+    }
+  }, [_id, refetchUser]);
 
   useEffect(()=>{
-    setMode("edit")
-  }, [])
-  
+    console.log("image :", image, REACT_APP_HOST_GRAPHAL)
+  }, [image])
 
+  useEffect(() => {
+    if (!loadingUser && !_.isEmpty(dataUser?.user) ) {
+      const { status, data } = dataUser?.user;
+      if (status) {
+        console.log("dataUser :", status, data )
+        form.setFieldsValue({
+          username: data.current.username,
+          displayName: data.current.displayName,
+          email: data.current.email,
+          // positionId: getPositionId(data.current.positionIds) 
+        });
+
+        data.current.avatar ? setImage(data.current.avatar) : ""
+      }
+    }
+  }, [dataUser, loadingUser]);
+  
   const beforeUpload = (file: FileType) => {
     const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
     if (!isJpgOrPng) {
@@ -136,6 +176,21 @@ const User: React.FC = () => {
     // Here you would usually send the user data to your backend
   };
 
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return; 
+    const file = e.target.files?.[0]; // Access the first file (if any)
+    if (file) {
+      // setImage(file)
+      onProfile({variables:{ input:  { mode: "update_image_profile", userId: _id,  file } }});
+    }
+  };
+
+  const handleClick = () => {
+    if (inputRef.current) {
+      inputRef.current.click();
+    }
+  };
+
   const uploadButton = (
     <button style={{ border: 0, background: 'none' }} type="button">
       {loading ? <LoadingOutlined /> : <PlusOutlined />}
@@ -145,76 +200,64 @@ const User: React.FC = () => {
 
   const customRequest = async (options: any) => {
     const { file, onSuccess, onError } = options;
-    onMutationProfile({ variables: { input: { file } } })
+    // onProfile({ variables: { input: { file } } })
+    onProfile({variables:{ input:  { mode: "update_image_profile",  file } }});
   };
   
   return (
-    <Form onSubmitCapture={handleSubmit} layout="vertical">
-        <Form.Item label="Avatar">
-            {/* {user.avatar ? (
-              <Image
-                width={100}
-                src={user.avatar.url}
-                preview={false}
-              />
-            ) : (
-              <div>No avatar uploaded</div>
-            )} */}
-            {/* {mode === 'edit' && (  
-            //   <Upload
-            //     name="avatar"
-            //     action="https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload" // Replace with your upload URL
-            //     showUploadList={false}
-            //     onChange={handleFileChange}
-            //   >
-            //     <Button icon={<UploadOutlined />}>Upload Avatar</Button>
-            //   </Upload> 
-            */} 
-                <Upload
-                    name="avatar"
-                    listType="picture-card"
-                    className="avatar-uploader"
-                    showUploadList={false}
-                    // action="https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload"
-                    customRequest={customRequest}
-                    beforeUpload={beforeUpload}
-                    onChange={handleFileChange}
-                >
-                    {imageUrl ? <img src={imageUrl} alt="avatar" style={{ width: '100%' }} /> : uploadButton}
-                </Upload>
-            {/* )} */}
-          </Form.Item>
-      <Form.Item label="Username" required>
-        <Input
-          name="username"
-          value={user.username}
-          onChange={handleChange}
-          disabled={mode === 'view'}
-        />
+    <Form 
+      form={form}
+      onSubmitCapture={handleSubmit} 
+      layout="vertical">
+       <Space style={{ position: "relative", width: 100, height: 100 }}>
+        {/* Image */}
+        {
+          <Avatar 
+            className="user-avator" 
+            shape="square"
+            size={100} 
+            icon={<UserOutlined />}
+            src={ image instanceof File? URL.createObjectURL(image) : `http://${REACT_APP_HOST_GRAPHAL}/${ image?.url }` } />
+        }
+        {/* Edit button */}
+        <div
+          className="edit"
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 3,
+            padding: "2px",
+          }}
+        >
+          <input
+            type="file"
+            id="contained-button-file"
+            ref={inputRef}
+            style={{ display: "none" }}
+            multiple={false}
+            accept="image/*"
+            onChange={onFileChange}
+          />
+          <Button icon={<EditOutlined />} type="link" onClick={handleClick} />
+        </div>
+      </Space>
+      <Form.Item 
+        label="Username" 
+        name="username"
+        rules={[{ required: true, message: 'Username' }]}>
+        <Input />
       </Form.Item>
-      <Form.Item label="Password" required>
-        <Input.Password
-          name="password"
-          value={user.password}
-          onChange={handleChange}
-          disabled={mode === 'view'}
-        />
+      <Form.Item 
+        label="Email" 
+        name="email"
+        rules={[{ required: true, message: 'email' }]}>
+        <Input/>
       </Form.Item>
-      <Form.Item label="Email" required>
-        <Input
-          name="email"
-          value={user.email}
-          onChange={handleChange}
-          disabled={mode === 'view'}
-        />
-      </Form.Item>
-      <Form.Item label="Display Name" required>
-        <Input
-          name="displayName"
-          value={user.displayName}
-          onChange={handleChange}
-          disabled={mode === 'view'}
-        />
+      <Form.Item
+        label="ชื่อ"
+        name="displayName"
+        rules={[{ required: true, message: 'กรุณากรอกชื่อ' }]}>
+        <Input />
       </Form.Item>
       <Form.Item label="Roles" required>
         <Select
@@ -251,7 +294,7 @@ const User: React.FC = () => {
       <Row gutter={16}>
         <Col>
           {mode === 'view' ? (
-            <Button type="primary" onClick={() => setMode('edit')}>
+            <Button type="primary" onClick={() => {}}>
               Edit
             </Button>
           ) : (
@@ -259,7 +302,7 @@ const User: React.FC = () => {
               <Button type="primary" htmlType="submit">
                 Submit
               </Button>
-              <Button onClick={() => setMode('view')} style={{ marginLeft: '8px' }}>
+              <Button onClick={() => {}} style={{ marginLeft: '8px' }}>
                 Cancel
               </Button>
             </>

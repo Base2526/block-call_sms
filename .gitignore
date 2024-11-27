@@ -3,6 +3,11 @@ web-block-call/backend/node_modules
 web-block-call/backend/uploads
 web-block-call/backend/src/logs
 
+web-block-call/backend_ts/package-lock.json
+web-block-call/backend_ts/node_modules
+web-block-call/backend_ts/uploads
+web-block-call/backend_ts/src/logs
+
 web-block-call/frontend/node_modules
 
 web-block-call/mongo/data1

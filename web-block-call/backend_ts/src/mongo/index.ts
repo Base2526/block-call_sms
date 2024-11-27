@@ -1,14 +1,32 @@
 import mongoose, { Types, ConnectOptions, model } from 'mongoose';
+import _ from "lodash"
 import * as Model from "../model"; 
 import * as utils from "../utils"; 
-import { init_admin, init_node, init_position } from "./init_data";
+import { init_admin, provinces_data, banks_data } from "./init_data";
 import logger from "../utils/logger"; 
+import { IBank, IProvince } from '../utils/Interface';
 
 const modelExists = async (): Promise<void> => {
+  // Bank
+  const bankResult = await Model.models.Bank.find({}).exec();
+  if (bankResult.length === 0) {
+    _.map(banks_data, async(bank: IBank)=>{
+      const prov = new Model.models.Bank({ name_th: bank.name_th,  name_en: bank.name_en });
+      await prov.save();
+    })
+  }
+
+  /*
+   _.map(provinces_data, async(province: IProvince)=>{
+      const prov = new Model.models.Province({ _id: new mongoose.Types.ObjectId(province._id),  name_th: province.value,  name_en: province.label });
+      await prov.save();
+    })
+  */
+
   // Check for Socket model
   const socketResult = await Model.models.Socket.find({}).exec();
   if (socketResult.length === 0) {
-    const newSocket = new Model.models.Socket({});
+    const newSocket = new Model.models.Socket({ socketId:"1234", userId: new mongoose.Types.ObjectId()  });
     await newSocket.save();
     await Model.models.Socket.deleteMany({});
   }
@@ -17,7 +35,7 @@ const modelExists = async (): Promise<void> => {
   const sessionResult = await Model.models.Session.find({}).exec();
   if (sessionResult.length === 0) {
     const newSession = new Model.models.Session({
-      userId: new Types.ObjectId(),
+      userId: new mongoose.Types.ObjectId(),
       token: "token",
       expired: new Date(),
     });
@@ -27,18 +45,15 @@ const modelExists = async (): Promise<void> => {
 
   // LogUserAccess
   const logUserAccessResult = await Model.models.LogUserAccess.find({}).exec();
-  if (logUserAccessResult.length > 0) {
-  } else {
+  if (logUserAccessResult.length === 0) {
     let newLogUserAccess = new Model.models.LogUserAccess({current:{ websocketKey: "test", userId: new mongoose.Types.ObjectId() }});
-    
     await newLogUserAccess.save();
     await Model.models.LogUserAccess.deleteMany({})
   }
 
   // File 
   const fileResult = await Model.models.File.find({}).exec();
-  if (fileResult.length > 0) {
-  } else {
+  if (fileResult.length === 0) {
     let newFile = new Model.models.File({ userId: new mongoose.Types.ObjectId() });
     
     await newFile.save();
@@ -47,38 +62,36 @@ const modelExists = async (): Promise<void> => {
 
   // Dblog
   const dblogResult = await Model.models.Dblog.find({}).exec();
-  if (dblogResult.length > 0) {
-    // console.log('Found Model.Dblog');
-  } else {
-    let newDblog = new Model.models.Dblog({});
+  if (dblogResult.length === 0) {
+    let newDblog = new Model.models.Dblog({
+                                            level: "1", // Add 'required' if appropriate
+                                            meta: {}, // Handle dynamic objects
+                                            message: {},
+                                            timestamp: Date.now(),
+                                          });
     await newDblog.save();
     await Model.models.Dblog.deleteMany({})
   }
 
   // Transition
   const transitionResult = await Model.models.Transition.find({}).exec();
-  if (transitionResult.length > 0) {
-    // console.log('Found Model.BasicContent');
-  } else {
+  if (transitionResult.length === 0) {
     let newTransition = new Model.models.Transition({ refId: new mongoose.Types.ObjectId(),
                                                       userId: new mongoose.Types.ObjectId() });
     await newTransition.save();
     await Model.models.Transition.deleteMany({})
   }
 
-  // Transition
+  // User
   const userResult = await Model.models.User.find({}).exec();
-  if (userResult.length > 0) {
-  } else {
-    let newUser = new Model.models.User();
+  if (userResult.length === 0) {
+    let newUser = new Model.models.User(init_admin);
     await newUser.save();
   }
 
   // Report
   const reportResult = await Model.models.Report.find({}).exec();
-  if (reportResult.length > 0) {
-    // console.log('Found Model.Report');
-  } else {
+  if (reportResult.length === 0) {
     let newReport = new Model.models.Report({
       current:{
         ownerId: new mongoose.Types.ObjectId(),
@@ -98,7 +111,14 @@ const modelExists = async (): Promise<void> => {
     await newReport.save();
     await Model.models.Report.deleteMany({})
   }
-  
+
+  const provinceResult = await Model.models.Province.find({}).exec();
+  if (provinceResult.length === 0) {
+    _.map(provinces_data, async(province: IProvince)=>{
+      const prov = new Model.models.Province({ _id: new mongoose.Types.ObjectId(province._id),  name_th: province.value,  name_en: province.label });
+      await prov.save();
+    })
+  }
 };
 
 
@@ -115,11 +135,11 @@ if (!mongoUri) {
 // MongoDB connection options
 const options: ConnectOptions = {
   useNewUrlParser: true,
-  useFindAndModify: false, // optional
-  useCreateIndex: true,    // optional
+  useFindAndModify: false,          // optional
+  useCreateIndex: true,             // optional
   useUnifiedTopology: true,
   serverSelectionTimeoutMS: 100000, // Defaults to 30000 (30 seconds)
-  poolSize: 100,            // Set the maximum number of connections in the connection pool
+  poolSize: 100,                    // Set the maximum number of connections in the connection pool
 };
 
 mongoose.connect(mongoUri, options).catch((err) => {

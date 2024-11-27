@@ -7,7 +7,7 @@ import _ from "lodash"
 import { DownOutlined, PlusOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 
-import { guery_reports } from "@/apollo/gqlQuery"
+import { query_reports } from "@/apollo/gqlQuery"
 import { getHeaders, isValidUrl } from "@/utils"
 
 import handlerError from '@/utils/handlerError';
@@ -148,7 +148,7 @@ const ReportList: React.FC = (props) => {
 
     const { loading: loadingReports, 
             data: dataReports, 
-            error: errorReports  } =  useQuery( guery_reports, {
+            error: errorReports  } =  useQuery( query_reports, {
                                                 context: { headers: getHeaders(location) },
                                                 fetchPolicy: 'cache-first', 
                                                 nextFetchPolicy: 'network-only', 

@@ -19,7 +19,6 @@ interface ILockAccount {
   date: Date;
 }
 
-
 // History schema
 const historySchema = new Schema<IHistory>({
   version: { type: Number },

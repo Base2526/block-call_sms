@@ -5,6 +5,9 @@ import { GraphQLResolveInfo } from 'graphql';
 import _ from "lodash";
 import mongoose from 'mongoose';
 import cryptojs from "crypto-js";
+import * as fs from "fs";
+import { GraphQLUpload, FileUpload } from 'graphql-upload-ts';
+
 
 import AppError from "./utils/AppError"
 import * as utils from "./utils"
@@ -32,6 +35,9 @@ const resolvers: IResolvers = {
 
       let { current_user }=  await utils.checkAuth(req);
       let role = utils.checkRole(current_user)
+
+      console.log('@@@@@@@@@@@ provinces :', role)
+
       if( role !== constants.Role.ADMINISTRATOR  &&
           role !== constants.Role.AUTHENTICATED 
           ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied')
@@ -47,7 +53,7 @@ const resolvers: IResolvers = {
       let start = Date.now()
       let { req } = context
 
-      let { current_user } =  await utils.checkAuth(req);
+      // let { current_user } =  await utils.checkAuth(req);
       // let role = utils.checkRole(current_user)
 
       // if( role !== Constants.ADMINISTRATOR  && 
@@ -271,11 +277,44 @@ const resolvers: IResolvers = {
 
       let { current_user } =  await utils.checkAuth(req);
       let role = utils.checkRole(current_user)
+
+      console.log("users :", role)
       if( role !== constants.Role.ADMINISTRATOR ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
 
-      let users = await model.models.User.aggregate([ {
+      let users = await model.models.User.aggregate([ 
+                                              {
                                                 $match: {
                                                   "current.roles": { $ne: 1 } // Matches documents where 'roles' does not contain 1
+                                                }
+                                              },
+                                              {
+                                                $addFields: {
+                                                  avatarId: "$current.avatarId",  // Bring the nested field to the top level
+                                                }
+                                              },
+                                              {
+                                                $lookup: {
+                                                  localField: "avatarId",
+                                                  from: "file",
+                                                  foreignField: "_id",
+                                                  as: "avatar"
+                                                }
+                                              },
+                                              {
+                                                $unwind: {
+                                                  path: "$avatar",
+                                                  preserveNullAndEmptyArrays: true
+                                                }
+                                              },
+                                              {
+                                                $addFields: {
+                                                  "current.avatar": "$avatar"  // Set 'current.avatar' field
+                                                }
+                                              },
+                                              {
+                                                $project: {
+                                                  avatarId: 0,                // Hide 'avatarId' field if not needed
+                                                  avatar: 0                   // Optionally remove 'avatar' after mapping
                                                 }
                                               }]);
       return {
@@ -287,17 +326,50 @@ const resolvers: IResolvers = {
     user: async(parent, args, context): Promise<any> => {
       let start = Date.now()
       let { req } = context
-
-      let { input } = args
-
+      let { _id } = args
+      console.log("user : ", _id)
       let { current_user } =  await utils.checkAuth(req);
       // let role = utils.checkRole(current_user)
       // if( role !== Constants.ADMINISTRATOR ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
-      let user = await model.models.User.findById(input?._id)
+      
+      // let user = await model.models.User.findById(_id)
+
+      let user = await model.models.User.aggregate([  { $match: { _id: mongoose.Types.ObjectId(_id) }  },
+        {
+          $addFields: {
+            avatarId: "$current.avatarId",  // Bring the nested field to the top level
+          }
+        },
+        {
+          $lookup: {
+            localField: "avatarId",
+            from: "file",
+            foreignField: "_id",
+            as: "avatar"
+          }
+        },
+        {
+          $unwind: {
+            path: "$avatar",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $addFields: {
+            "current.avatar": "$avatar"  // Set 'current.avatar' field
+          }
+        },
+        {
+          $project: {
+            avatarId: 0,                // Hide 'avatarId' field if not needed
+            avatar: 0                   // Optionally remove 'avatar' after mapping
+          }
+        }
+      ]);
 
       return {
         status: true,
-        data: user,
+        data: user.length > 0 ? user[0] : "",
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
@@ -307,6 +379,8 @@ const resolvers: IResolvers = {
 
       let { current_user } =  await utils.checkAuth(req);
       let role = utils.checkRole(current_user)
+      console.log('@@@@@@@@@@@ banks :', role)
+
       if( role !== constants.Role.ADMINISTRATOR  &&
           role !== constants.Role.AUTHENTICATED ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
 
@@ -345,6 +419,9 @@ const resolvers: IResolvers = {
       let username = input.username.toLowerCase()
     
       let user = await  model.models.User.findOne( {"current.email": username}  );
+
+      console.log("login :", input, REACT_APP_JWT_SECRET)
+
       if(utils.emailValidate().test(username)){
         if( _.isNull(user) ){
           throw new AppError(constants.Status.USER_NOT_FOUND, 'USER NOT FOUND')
@@ -376,7 +453,7 @@ const resolvers: IResolvers = {
       let start     = Date.now()
       let { input } = args
       let { req } = context
-      
+      console.log("register :", input)
       if(!_.isNull( await utils.getUser({
                                             "$and": [{
                                                 "current.username": input.username
@@ -399,6 +476,7 @@ const resolvers: IResolvers = {
       const session = await mongoose.startSession();
       session.startTransaction();
       try {
+        // avatarId
         await model.models.User.create([newInput], { session });
 
         // Commit the transaction
@@ -457,35 +535,33 @@ const resolvers: IResolvers = {
       let { input } = args
       let { req } = context
 
-       // Start a transaction
-     const session = await mongoose.startSession();
-     session.startTransaction()
- 
-     try {
+      console.log("profile :", input)
+
+      // Start a transaction
+      const session = await mongoose.startSession();
+      session.startTransaction()
+  
+      try {
         let { current_user }=  await utils.checkAuth(req);
         let role = utils.checkRole(current_user)
-        if( role !==constants.Role.ADMINISTRATOR && role !== constants.Role.AUTHENTICATED ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
+        if( role !== constants.Role.ADMINISTRATOR && role !== constants.Role.AUTHENTICATED ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
   
+        let user = await utils.getUser({ "_id": input.userId }); 
         switch(input.mode){
           case "update_image_profile":{
-            // let avatar  =  await utils.saveFile(session, current_user, input.file)
-
-            // let userHistory = await model.models.User.findById(current_user?._id)
-            // await model.models.User.updateOne({ _id: current_user?._id }, { "current.avatarId":  avatar[0]._id, history: utils.createRevision(userHistory) }, { session });
-
             // Ensure the saveFile method returns a typed value
-            const avatar: IFile[] = await utils.saveFile(session, current_user, input.file);
+            const avatar: IFile[] = await utils.saveFile(session, user, input.file);
             if (!avatar || !avatar[0]?.userId) throw new AppError(constants.Status.ERROR, 'Invalid avatar data');
 
             // Fetch the user history
-            const userHistory: IUser | null = await model.models.User.findById(current_user?._id).session(session);
+            const userHistory: IUser | null = await model.models.User.findById(input.userId).session(session);
             if (!userHistory) throw new AppError(constants.Status.NOT_FOUND, 'User history not found');
 
             // Update the user document
             await model.models.User.updateOne(
-              { _id: current_user?._id },
+              { _id: input.userId },
               {
-                'current.avatarId': avatar[0].userId,
+                'current.avatarId': avatar[0]?._id,
                 history: utils.createRevision(userHistory),
               },
               { session }
@@ -493,10 +569,11 @@ const resolvers: IResolvers = {
 
             await session.commitTransaction(); 
 
-            let user = await utils.getUserById(current_user?._id)
+            console.log("current_user?._id, avatar :", input.userId, avatar)
+            // let user = await utils.getUserById(current_user?._id)
             return {
               status: true,
-              data: user[0],
+              // data: user[0],
               executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
             } 
           }
@@ -510,110 +587,209 @@ const resolvers: IResolvers = {
       }  
     },
     report: async(parent, args, context): Promise<any> => {
-      let start = Date.now()
-      let { req } = context
-      let { _id } = args
+      let start     = Date.now()
+      let { req }   = context
+      let { input } = args
 
-      // let { current_user } =  await utils.checkAuth(req);
-      // let role = utils.checkRole(current_user)
+      let { current_user } =  await utils.checkAuth(req);
+      let role = utils.checkRole(current_user)
+      if( role !==constants.Role.ADMINISTRATOR &&
+          role !==constants.Role.AUTHENTICATED ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
+          
+      console.log("report : ", input)
+      
+      switch(input.mode){
+        case 'added':{
+          const session = await mongoose.startSession();
+          session.startTransaction();
+          try {
+            let promises = []; 
+            if(!_.isEmpty(input.images)){
+              for (let i = 0; i < input.images.length; i++) {
+                const { createReadStream, filename, encoding, mimetype } = (await input.images[i]).file //await input.files[i];
+      
+                const stream = createReadStream();
+                const assetUniqName = utils.fileRenamer(filename);
+                let pathName = `/app/uploads/${assetUniqName}`;
+      
+                const output = fs.createWriteStream(pathName)
+                stream.pipe(output);
+      
+                const promise = await new Promise(function (resolve, reject) {
+                  // output.on('close', () => {
+                  //   resolve("close");
+                  // });
 
-      let report = await model.models.Report.aggregate([
-                                                      { 
-                                                        $match: { _id: mongoose.Types.ObjectId(_id) } 
-                                                      },
-                                                      {
-                                                        $addFields: {
-                                                          ownerId: "$current.ownerId",
-                                                          provinceId: "$current.provinceId",  // Bring the nested field to the top level
-                                                        }
-                                                      },
-                                                      {
-                                                        $lookup: {
-                                                          from: "province",
-                                                          localField: "provinceId",
-                                                          foreignField: "_id",
-                                                          as: "province"
-                                                        }
-                                                      },
-                                                      {
-                                                        $unwind: {
-                                                          path: "$province",
-                                                          preserveNullAndEmptyArrays: true
-                                                        }
-                                                      },
-                                                      {
-                                                        $lookup: {
-                                                          from: "user",
-                                                          localField: "ownerId",
-                                                          foreignField: "_id",
-                                                          as: "owner"
-                                                        }
-                                                      },
-                                                      {
-                                                        $unwind: {
-                                                          path: "$province",
-                                                          preserveNullAndEmptyArrays: true
-                                                        }
-                                                      },
-                                                      // Unwind sellerAccounts to perform a lookup for each account
-                                                      {
-                                                        $unwind: {
-                                                          path: "$current.sellerAccounts",
-                                                          preserveNullAndEmptyArrays: true
-                                                        }
-                                                      },
-                                                      // Lookup bank details for each bankId in sellerAccounts
-                                                      {
-                                                        $lookup: {
-                                                          from: "bank",  // the collection for banks
-                                                          localField: "current.sellerAccounts.bankId",
-                                                          foreignField: "_id",
-                                                          as: "bank"
-                                                        }
-                                                      },
-                                                      // Unwind the bank lookup results to get individual bank details
-                                                      {
-                                                        $unwind: {
-                                                          path: "$bank",
-                                                          preserveNullAndEmptyArrays: false
-                                                        }
-                                                      },
-                                                      // Add the bank name_th field into sellerAccounts
-                                                      {
-                                                        $addFields: {
-                                                          "current.sellerAccounts.bankName_th": "$bank.name_th"
-                                                        }
-                                                      },
-                                                      // Group sellerAccounts back into an array after the unwind
-                                                      {
-                                                        $group: {
-                                                          _id: "$_id",
-                                                          reportData: { $first: "$$ROOT" },
-                                                          sellerAccounts: { $push: "$current.sellerAccounts" }
-                                                        }
-                                                      },
-                                                      // Reconstruct the report with sellerAccounts containing bankName_th
-                                                      {
-                                                        $addFields: {
-                                                          "reportData.current.sellerAccounts": "$sellerAccounts"
-                                                        }
-                                                      },
-                                                      {
-                                                        $replaceRoot: { newRoot: "$reportData" }
-                                                      },
-                                                      {
-                                                        $lookup: {
-                                                          localField: "_id",
-                                                          from: "comment",
-                                                          foreignField: "reportId",
-                                                          as: "comment"
-                                                        }
-                                                      },
-                                                    ]);
-                                                    
+                  output.on('finish', async () => {
+                    try {
+                        // Save data to MongoDB after the stream has finished writing
+                        // await saveDataToMongoDB(data, dbUrl, dbName, collectionName);
+                        // console.log("finish : ", { url: `images/${assetUniqName}`, filename, encoding, mimetype })
+                        
+                        // let newInput ={current: { parentId: input?.parentId, childs: [{childId: current_user?._id}]}}  
+                        let file = await model.models.File.insertMany([{userId:current_user?._id, url: `images/${assetUniqName}`, filename, encoding, mimetype }], {session});
+                        // console.log("file ", file)
+                        resolve(file !== null ? file[0] : undefined );
+                    } catch (error: any) {
+                        reject(`Failed to save data to MongoDB: ${error.message}`);
+                    }
+                  });
+            
+                  output.on('error', async(err) => {
+                    await utils.loggerError(req, err.toString());
+      
+                    reject(err);
+                  });
+                });
+                promises.push(promise);
+              }
+            }
+
+            let images = await Promise.all(promises);
+            console.log("All files processed: ", images );
+
+            const newInput = _.omit(input, ['mode']);
+            let current  = {...newInput, images, ownerId: current_user?._id }
+            
+            console.log("@@@2 Report current : ", current)
+            
+            await model.models.Report.insertMany([{ current }], { session });
+            // Commit the transaction
+            await session.commitTransaction();
+
+            // await session.abortTransaction();
+          }catch(error: any){
+              console.log("error @@@@@@@1 :", error)
+              await session.abortTransaction();
+          
+              throw new AppError(constants.Status.ERROR, error)
+          }finally {
+              session.endSession();
+              console.log("finally @@@@@@@1 :")
+          }  
+
+          break;
+        }
+
+        case 'edited':{
+          const session = await mongoose.startSession();
+          session.startTransaction();
+          try {
+            let promises = []; 
+            let newFiles: unknown[] = [];
+            if(!_.isEmpty(input.images)){
+              for (let i = 0; i < input.images.length; i++) {
+                try{
+                  let fileObject = (await input.images[i]).file
+    
+                  if(!_.isEmpty(fileObject)){
+                    const { createReadStream, filename, encoding, mimetype } = fileObject //await input.files[i];
+      
+                    const stream = createReadStream();
+                    const assetUniqName = utils.fileRenamer(filename);
+                    let pathName = `/app/uploads/${assetUniqName}`;
+          
+                    const output = fs.createWriteStream(pathName)
+                    stream.pipe(output);
+          
+                    const promise = await new Promise(function (resolve, reject) {
+                      // output.on('close', () => {
+                      //   resolve("close");
+                      // });
+
+                      output.on('finish', async () => {
+                        console.log('@finish');
+                        try {
+                            // Save data to MongoDB after the stream has finished writing
+                            // await saveDataToMongoDB(data, dbUrl, dbName, collectionName);
+                            // console.log("finish : ", { url: `images/${assetUniqName}`, filename, encoding, mimetype })
+                            
+                            // let newInput ={current: { parentId: input?.parentId, childs: [{childId: current_user?._id}]}}  
+                            let file = await model.models.File.insertMany([{userId:current_user?._id, url: `images/${assetUniqName}`, filename, encoding, mimetype }], {session});
+                            // console.log("file ", file)
+                            resolve(file !== null ? file[0] : undefined );
+                        } catch (error: any) {
+                            reject(`Failed to save data to MongoDB: ${error.message}`);
+                        }
+                      });
+                
+                      output.on('error', async(err) => {
+                        console.log('@error');
+                        await utils.loggerError(req, err.toString());
+          
+                        reject(err);
+                      });
+                    });
+                    promises.push(promise);
+
+                  }else{
+                    if(input.images[i].delete){
+                      let pathUnlink = '/app/uploads/' + input.images[i].url.split('/').pop()
+                      fs.unlink(pathUnlink, async(err: any)=>{
+                          if (err) {
+                            await utils.loggerError(req, err);
+                          }else{
+                            // if no error, file has been deleted successfully
+                            console.log('File has been deleted successfully ', pathUnlink);
+                          }
+                      });
+                    }else{
+                      newFiles = [...newFiles, input.images[i]]
+                    }
+                  }
+                } catch(err: any) {
+                  await utils.loggerError(req, err.toString());
+
+                  console.log("@error :", err)
+                }
+              }
+            }
+            let images = await Promise.all(promises);
+          
+            let newInput = _.omit(input, ['_id', 'mode']);
+          
+            let history = await model.models.Report.findOne({ _id: mongoose.Types.ObjectId(input._id) })
+            let result = await model.models.Report.updateOne({ _id: input._id }, { $set: { current: {...newInput, images: [...images, ...newFiles], ownerId: current_user?._id}, history: utils.createRevision(history) } }, { session });
+
+            console.log("All files processed @@@ : ", result, input._id, newInput );
+            // Commit the transaction
+            await session.commitTransaction();
+          }catch(error: any){
+            console.log("error @@@@@@@1 :", error)
+            await session.abortTransaction();
+        
+            throw new AppError(constants.Status.ERROR, error)
+          }finally {
+            session.endSession();
+            console.log("finally @@@@@@@1 :")
+          }  
+
+          break;
+        }
+
+        case 'deleted':{
+          const session = await mongoose.startSession();
+          session.startTransaction();
+          try {
+            await model.models.Report.deleteOne({ _id: input._id }, { session });
+
+            // Commit the transaction
+            await session.commitTransaction();
+          }catch(error: any){
+            console.log("error @@@@@@@1 :", error)
+            await session.abortTransaction();
+        
+            throw new AppError(constants.Status.ERROR, error)
+          }finally {
+            session.endSession();
+            console.log("finally @@@@@@@1 :")
+          } 
+
+          break;
+        }
+      }
       return {
-        status:true,
-        data: report.length > 0 ? report[0] : undefined,
+        status: true,
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
@@ -909,6 +1085,7 @@ const resolvers: IResolvers = {
     },
   },
   JSON: GraphQLJSON, // Use the JSON scalar type from `graphql-type-json`
+  Upload: GraphQLUpload,
 };
 
 export default resolvers;

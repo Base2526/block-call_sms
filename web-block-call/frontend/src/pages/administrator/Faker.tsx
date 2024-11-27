@@ -151,7 +151,6 @@ const Faker: React.FC = (props) => {
         }
     });
 
-    
     const [onReport] = useMutation(mutation_report, {
         context: { headers: getHeaders(location) },
         update: (cache, { data: { report } }) => {
@@ -224,7 +223,7 @@ const Faker: React.FC = (props) => {
         console.log('onFinishUser Received values:', values);
         // Here you can handle form submission (e.g., send data to an API)
 
-        for ( var i = 0; i < 1000; i++ ) {
+        for ( var i = 0; i < 10; i++ ) {
             let name = faker.name.firstName().toLowerCase()
 
             let newInput =  {
@@ -457,7 +456,7 @@ const Faker: React.FC = (props) => {
       };
 
     const onFinishReport=  async(values: any) => {
-        for ( var i = 0; i < 500; i++ ) {
+        for ( var i = 0; i < 10; i++ ) {
 
             const fileCount = Math.floor(Math.random() * 8) + 1; // Define the number of files you want to generate
             const images = await createMultiplePngFiles(fileCount); // Call the function to create multiple files

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Input, Tag, Avatar, Space, Dropdown, Image } from 'antd';
+import { Table, Input, Tag, Avatar, Menu, Space, Dropdown, Image, Button } from 'antd';
 import moment from "moment";
 import { useQuery, useMutation } from "@apollo/client";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import _ from "lodash"
-import { DownOutlined } from '@ant-design/icons';
+import { DownOutlined, UserOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 
 import { query_users } from "@/apollo/gqlQuery"
@@ -25,14 +25,25 @@ const items = [
     { key: '2', label: 'Delete' },
 ];
 
+const { REACT_APP_HOST_GRAPHAL }  = process.env
+
 const columns = (navigate: ReturnType<typeof useNavigate>) => [
     {
         title: 'Avatar',
-        dataIndex: 'avatar',
+        dataIndex: ['current', 'avatar'],
         render:(avatar: any)=>{
-            return isValidUrl(avatar) 
-                    ? <Image  width={100} src={avatar} /> 
-                    : <Image  width={100} src={"http://localhost:4000/" + avatar} /> 
+            console.log('avatar :', avatar)
+            // return isValidUrl(avatar) 
+            //         ? <Image  width={100} src={avatar} /> 
+            //         : <Image  width={100} src={"http://localhost:4000/" + avatar} /> 
+
+            return _.isEmpty(avatar) 
+                    ? <Avatar 
+                        className="user-avator" 
+                        shape="square"
+                        size={100} 
+                        icon={<UserOutlined />}/>
+                    : <Image  width={100} src={`http://${REACT_APP_HOST_GRAPHAL}/` + avatar.url} /> 
         }
     },
     {
@@ -72,8 +83,8 @@ const columns = (navigate: ReturnType<typeof useNavigate>) => [
         title: 'Action',
         key: 'action',
         sorter: true,
-        render: (data: any) => {
-            console.log("Action :", data)
+        render: (item: any) => {
+            console.log("Action :", item)
 
             // if(data.roles.includes(1)){
             //     return  <Space size="middle">
@@ -93,8 +104,30 @@ const columns = (navigate: ReturnType<typeof useNavigate>) => [
                         <a onClick={()=>{
                             navigate("/administrator/userlist/tree")
                         }}>Tree</a>
-                        <Dropdown menu={{ items }}>
+                        {/* <Dropdown menu={{ items }}>
                             <a>More <DownOutlined /></a>
+                        </Dropdown> */}
+                        <Dropdown
+                            overlay={() => (
+                                <Menu
+                                    onClick={(e) => {
+                                        if (e.key === '1') {
+                                            navigate(`/administrator/userlist/user?mode=edited&v=${item._id}`, { state: { mode: 'edited', _id: item._id } });
+                                        } else if (e.key === '2') {
+                                            // onDelete(data);
+                                        }
+                                    }}
+                                >
+                                    {items.map((item) => (
+                                        <Menu.Item key={item.key}>{item.label}</Menu.Item>
+                                    ))}
+                                </Menu>
+                            )}
+                            trigger={['hover']}
+                        >
+                            <Button type="link">
+                                More <DownOutlined />
+                            </Button>
                         </Dropdown>
                     </Space>
         }

@@ -11,7 +11,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import { addCart, removeCart } from '@/stores/user.store';
 import HomeCard from "@/pages/home/HomeCard"
 import { ProductItem } from "@/interface/user/user"
-import { guery_reports } from '@/apollo/gqlQuery';
+import { query_reports } from '@/apollo/gqlQuery';
 import { getHeaders } from '@/utils';
 import handlerError from '@/utils/handlerError';
 
@@ -49,7 +49,7 @@ const ProductList: React.FC = (props) => {
   const { loading: loadingReports, 
           data: dataReports, 
           error: errorReports, 
-          refetch: refetchReports } = useQuery(guery_reports, {
+          refetch: refetchReports } = useQuery(query_reports, {
     context: { headers: getHeaders(location) },
     fetchPolicy: 'no-cache',
     nextFetchPolicy: 'network-only',

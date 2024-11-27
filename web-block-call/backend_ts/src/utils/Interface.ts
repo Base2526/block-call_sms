@@ -124,6 +124,7 @@ export interface IUser extends Document {
 
 // Define an interface for the File document
 export interface IFile extends Document {
+    _id: mongoose.Types.ObjectId;
     userId: mongoose.Types.ObjectId;
     url?: string;
     filename?: string;
@@ -165,4 +166,38 @@ export interface IReport extends Document {
   };
   likes: ILike[];
   history: IHistory[];
+}
+
+// Define the interface for the document
+export interface IDblog extends Document {
+  level: string;
+  meta: Record<string, any>;
+  message: Record<string, any>;
+  timestamp: Date;
+}
+
+export interface IProvince {
+  _id: any;
+  value: string; // Thai name
+  label: string; // English name
+}
+
+// Define interfaces for data structures
+export interface IAdminUser {
+  _id?: string;
+  current: {
+    username?: string;
+    password?: string;
+    displayName?: string;
+    email?: string;
+    tel: string;
+    idCard: string;
+    roles: number[];
+  };
+}
+
+// Define an interface for the bank object
+export interface IBank {
+  name_th: string;
+  name_en: string;
 }

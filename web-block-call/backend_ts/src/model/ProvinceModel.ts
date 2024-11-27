@@ -1,14 +1,14 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-// Define an interface representing a document in MongoDB
-interface IProvince extends Document {
-    name_th: string;
-    name_en: string;
-}
+import { IProvince } from '../utils/Interface';
 
 // Create the schema for a province
 const ProvinceSchema: Schema<IProvince> = new Schema(
     {
+        _id: {
+            type: mongoose.Types.ObjectId,
+            required: true,
+        },
         name_th: {
             type: String,
             required: true,

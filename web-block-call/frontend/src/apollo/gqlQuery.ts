@@ -6,8 +6,10 @@ export const queryPing = gql`query ping { ping }`;
 export const querySuppliers = gql`query suppliers($input: SearchInput) { suppliers(input: $input) }`;
 export const querySupplierById = gql`query supplierById($id: ID!) { supplierById(_id: $id) }`;
 export const queryMe = gql`query me { me }`;
-export const queryUserById = gql`query userById($id: ID!) { userById(_id: $id) }`;
+
+export const query_user = gql`query user($id: ID!) { user(_id: $id) }`;
 export const query_users = gql`query users { users }`;
+
 export const queryRoleByIds = gql`query roleByIds($input: [String]) { roleByIds(input: $input) }`;
 export const query_banks = gql`query banks { banks }`;
 export const queryBankById = gql`query bankById($id: ID!) { bankById(_id: $id) }`;
@@ -106,7 +108,7 @@ export const userConnected = gql`subscription userConnected { userConnected }`;
 
 export const mutationTest_upload = gql`mutation test_upload($input: JSON) { test_upload(input: $input) }`;
 
-export const mutationProfile = gql`mutation profile($input: JSON) { profile(input: $input) }`;
+export const mutation_profile = gql`mutation profile($input: JSON) { profile(input: $input) }`;
 
 export const faker_agent        = gql`mutation faker_agent($input: JSON) { faker_agent(input: $input) }`;
 export const faker_insurance    = gql`mutation faker_insurance($input: JSON) { faker_insurance(input: $input) }`;
@@ -135,9 +137,11 @@ export const mutation_tree_by_node_id   = gql`mutation tree_by_node_id($input: J
 
 export const guery_purchases  = gql`query purchases { purchases }`;
 
-export const guery_reports    = gql`query reports { reports }`;
+export const query_reports    = gql`query reports { reports }`;
 export const guery_report     = gql`query report($id: ID!) { report(_id: $id) }`;
      
 export const guery_my_reports = gql`query my_reports { my_reports }`;
 export const guery_provinces  = gql`query provinces { provinces }`;
 export const mutation_report  = gql`mutation report($input: JSON) { report(input: $input) }`;
+
+export const mutation_uploadFile  = gql`mutation uploadFile($input: JSON) { uploadFile(input: $input) }`;

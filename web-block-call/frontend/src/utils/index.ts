@@ -34,13 +34,15 @@ export const getHeaders = (params: Params): Record<string, string> => {
 
     const headers: Record<string, string> = {
         "apollo-require-preflight": "true",
-        "content-Type": "application/json",
+        "Content-Type": "application/json",
+        // "Content-Type": "multipart/form-data",
         "authorization": !_.isUndefined(usidaCookie) ? `Bearer ${usidaCookie}` : '',
         "custom-location": JSON.stringify(params),
         "custom-authorization": !_.isUndefined(usidaCookie) ? `Bearer ${usidaCookie}` : '',
         "custom-x": `--1-- ${usidaCookie}`
     };
 
+    // console.log("getHeaders :", headers, params)
     return headers;
 };
 

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
+  Linking
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import moment from 'moment';
@@ -88,8 +89,19 @@ const MainComment = ({
                     color: '#000'
                   }
                 ]}
-          mentionHashtagPress={(text)=>{console.log(" >", text)}}
-          mentionHashtagColor={"#007BFF"}>{text}</MentionHashtag>
+          mentionHashtagPress={(text)=>{console.log("MentionHashtag Press: ", text)}}
+          mentionHashtagColor={"#007BFF"}
+          urlColor="#1E90FF"
+          urlPress={async(url) => {
+            const supported = await Linking.canOpenURL(url);
+
+            if (supported) {
+              // Open the URL in the default browser
+              await Linking.openURL(url);
+            } else {
+              Alert.alert(`Don't know how to open this URL: ${url}`);
+            }
+          }}>{text}</MentionHashtag>
           {
             status == StatusInterface.SENT
             ? <View style={styles.detailsContainer}>

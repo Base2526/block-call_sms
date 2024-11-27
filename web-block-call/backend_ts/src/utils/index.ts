@@ -73,12 +73,12 @@ export const formatDate = (date: any) => {
 export const getSession = async(userId: string, input: any) => {  
     await model.models.Session.deleteOne({userId})
 
-    const { MONGO_PASSWORD_SECRET } = process.env as { MONGO_PASSWORD_SECRET: string; };
+    const { REACT_APP_JWT_SECRET } = process.env as { REACT_APP_JWT_SECRET: string; };
     let session = await model.models.Session.create({  ...input, 
                                                 userId, 
-                                                token: jwt.sign(userId.toString(), MONGO_PASSWORD_SECRET)});
+                                                token: jwt.sign(userId.toString(), REACT_APP_JWT_SECRET)});
   
-    return cryptojs.AES.encrypt(session?._id.toString(), MONGO_PASSWORD_SECRET).toString() 
+    return cryptojs.AES.encrypt(session?._id.toString(), REACT_APP_JWT_SECRET).toString() 
 }
 
 // export const getMember = async( query: any ) =>{
@@ -109,14 +109,14 @@ export const getUser = async(query: any) =>{
 
 export const checkAuth = async(req: any) => {
     console.log("@1 checkAuth :", req) // authorization
-    const { MONGO_PASSWORD_SECRET } = process.env as { MONGO_PASSWORD_SECRET: string; };
+    const { REACT_APP_JWT_SECRET } = process.env as { REACT_APP_JWT_SECRET: string; };
 
     if (req && req["authorization"]) {
         const auth    = req["authorization"];
         const parts   = auth.split(" ");
         const bearer  = parts[0];
         try{
-            const sessionId   = cryptojs.AES.decrypt(parts[1], MONGO_PASSWORD_SECRET).toString(cryptojs.enc.Utf8);
+            const sessionId   = cryptojs.AES.decrypt(parts[1], REACT_APP_JWT_SECRET).toString(cryptojs.enc.Utf8);
             if (bearer === "Bearer") {
                 let session = await model.models.Session.findOne({_id: sessionId});
                 if(!_.isEmpty(session)){
@@ -128,7 +128,7 @@ export const checkAuth = async(req: any) => {
                     //  0 : anonymums
                     //  1 : OK
                     if(expiredDays >= 0){
-                        let userId  = jwt.verify(session.token, MONGO_PASSWORD_SECRET);
+                        let userId  = jwt.verify(session.token, REACT_APP_JWT_SECRET);
                         let current_user = await getUser({_id: userId}) 
 
                         if(!_.isNull(current_user)){
@@ -174,14 +174,16 @@ export const generateRandomPassword = (length = 8) => {
 };
 
 export const saveFile = async (session: any, user: any, file: any): Promise<IFile[]> => {
+    console.log("@0 saveFile")
     const { createReadStream, filename, encoding, mimetype } = await file?.file;
     const stream = createReadStream();
     const assetUniqName = fileRenamer(filename);
     let pathName = `/app/uploads/${assetUniqName}`;
   
     const output = fs.createWriteStream(pathName);
+    console.log("@1 saveFile")
     stream.pipe(output);
-  
+    console.log("@2 saveFile")
     const resultFile = await new Promise<IFile[]>((resolve, reject) => {
       output.on('finish', async () => {
         try {
@@ -198,6 +200,7 @@ export const saveFile = async (session: any, user: any, file: any): Promise<IFil
             { session }
           );
           resolve(file as IFile[]); // Type assertion
+
         } catch (error: any) {
           reject(`Failed to save data to MongoDB: ${error.message}`);
         }
@@ -209,6 +212,7 @@ export const saveFile = async (session: any, user: any, file: any): Promise<IFil
       });
     });
   
+    console.log("@3 saveFile :", resultFile)
     return resultFile;
 };
   

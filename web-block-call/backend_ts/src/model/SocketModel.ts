@@ -10,7 +10,7 @@ interface ISocket extends Document {
 const SocketSchema: Schema<ISocket> = new Schema(
   {
     socketId: { type: String, required: true },
-    userId: { type: String, required: true },
+    userId: { type: mongoose.Types.ObjectId, required: true },
   },
   {
     timestamps: true, // Automatically add createdAt and updatedAt fields
