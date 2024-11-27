@@ -43,6 +43,6 @@ export default gql`
   }
 
   type Subscription {
-    userConnected: String
+    userConnected: JSON
   }
 `;

@@ -37,17 +37,7 @@ const modelExists =()=>{
       await newUser.save();
     }
   });
-
-  Model.Mail.find({}, async(err, result)=> {
-    if (result.length > 0) {
-      // console.log('Found Model.Mail');
-    } else {
-      let newMails = new Model.Mail({});
-      await newMails.save();
-      await Model.Mail.deleteMany({})
-    }
-  });
-
+  
   Model.Report.find({}, async(err, result)=> {
     if (result.length > 0) {
       // console.log('Found Model.Report');
@@ -99,25 +89,6 @@ const modelExists =()=>{
       let newNotification = new Model.Notification({ user_to_notify: new mongoose.Types.ObjectId(), user_id_approve: new mongoose.Types.ObjectId() });
       await newNotification.save();
       await Model.Notification.deleteMany({})
-    }
-  });
-
-  Model.BasicContent.find({}, async(err, result)=> {
-    if (result.length > 0) {
-    } else {
-      let newBasicContent = new Model.BasicContent({title: "text"});
-      await newBasicContent.save();
-      await Model.BasicContent.deleteMany({})
-    }
-  });
-
-  Model.ContactUs.find({}, async(err, result)=> {
-    if (result.length > 0) {
-    } else {
-      let newContactUs = new Model.ContactUs({  title: "title",
-                                          description: "description" });
-      await newContactUs.save();
-      await Model.ContactUs.deleteMany({})
     }
   });
 
@@ -184,6 +155,18 @@ const modelExists =()=>{
       
       await newComment.save();
       await Model.Comment.deleteMany({})
+    }
+  });
+
+  Model.Role.find({},async(err, result) =>{
+    if (result.length > 0) {
+      // console.log('Found Model.Role');
+    } else {
+      // console.log('Not found Model.Role, creating');
+      let newRole = new Model.Role({name: "test"});
+      await newRole.save();
+
+      await Model.Role.deleteMany({})
     }
   });
  

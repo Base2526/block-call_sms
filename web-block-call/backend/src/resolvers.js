@@ -469,9 +469,9 @@ export default {
         if( _.isNull(user) ){
           throw new AppError(Constants.USER_NOT_FOUND, 'USER NOT FOUND')
         }
-        if(!_.isEqual(cryptojs.AES.decrypt(user?.current?.password, process.env.JWT_SECRET).toString(cryptojs.enc.Utf8), input.password)){
+        if(!_.isEqual(cryptojs.AES.decrypt(user?.current?.password, process.env.REACT_APP_JWT_SECRET).toString(cryptojs.enc.Utf8), input.password)){
           
-          // console.log("e :", user?.current?.password, input?.password, cryptojs.AES.decrypt(user?.current?.password, process.env.JWT_SECRET).toString(cryptojs.enc.Utf8))
+          // console.log("e :", user?.current?.password, input?.password, cryptojs.AES.decrypt(user?.current?.password, process.env.REACT_APP_JWT_SECRET).toString(cryptojs.enc.Utf8))
           throw new AppError(Constants.PASSWORD_WRONG, 'PASSWORD WRONG')
         }
       }else{
@@ -480,8 +480,8 @@ export default {
         if( _.isNull(user) ){
           throw new AppError(Constants.USER_NOT_FOUND, 'USER NOT FOUND')
         }
-        if(!_.isEqual(cryptojs.AES.decrypt(user?.current?.password, process.env.JWT_SECRET).toString(cryptojs.enc.Utf8), input.password)){
-          // console.log("e :", user?.current?.password, input?.password, cryptojs.AES.decrypt(user?.current?.password, process.env.JWT_SECRET).toString(cryptojs.enc.Utf8))
+        if(!_.isEqual(cryptojs.AES.decrypt(user?.current?.password, process.env.REACT_APP_JWT_SECRET).toString(cryptojs.enc.Utf8), input.password)){
+          // console.log("e :", user?.current?.password, input?.password, cryptojs.AES.decrypt(user?.current?.password, process.env.REACT_APP_JWT_SECRET).toString(cryptojs.enc.Utf8))
           throw new AppError(Constants.PASSWORD_WRONG, 'PASSWORD WRONG')
         }
       }
@@ -514,7 +514,7 @@ export default {
       
       let newInput =  {current: { ...input,  
                                   username: input.username?.toLowerCase(),
-                                  password: cryptojs.AES.encrypt( input.password, process.env.JWT_SECRET).toString(),
+                                  password: cryptojs.AES.encrypt( input.password, process.env.REACT_APP_JWT_SECRET).toString(),
                                   displayName: input.username ,
                                   lastAccess: Date.now(), 
                                   isOnline: true}
@@ -564,7 +564,7 @@ export default {
       session.startTransaction();
       try {
         let password = generateRandomPassword(8);
-        await Model.User.updateOne({ _id: current_user?._id }, { "current.password":  cryptojs.AES.encrypt( password, process.env.JWT_SECRET).toString() }, { session });
+        await Model.User.updateOne({ _id: current_user?._id }, { "current.password":  cryptojs.AES.encrypt( password, process.env.REACT_APP_JWT_SECRET).toString() }, { session });
 
         // Commit the transaction
         await session.commitTransaction();
@@ -989,6 +989,14 @@ export default {
           // ---------- Update Follower
 
 
+          pubsub.publish("USER_CONNECTED", {
+            userConnected: {
+              mutation: "CREATED"
+            },
+          });
+
+          // pubsub.publish('MESSAGE_ADDED', { mutation: "CREATED" });
+
           // Commit the transaction
           await session.commitTransaction();
           
@@ -1082,6 +1090,7 @@ export default {
   Subscription:{
     userConnected: {
       resolve: (payload) =>{
+        console.log("@@@ resolve :", payload)
         return payload.userConnected
       },
       subscribe: withFilter((parent, args, context, info) => {
