@@ -8,34 +8,13 @@ import _ from "lodash"
 import { useQuery } from '@apollo/client';
 import { PlusOutlined } from '@ant-design/icons';
 
-import { addCart, removeCart } from '@/stores/user.store';
 import HomeCard from "@/pages/home/HomeCard"
-import { ProductItem } from "@/interface/user/user"
 import { query_reports } from '@/apollo/gqlQuery';
 import { getHeaders } from '@/utils';
 import handlerError from '@/utils/handlerError';
+import { reportItem } from "@/utils/Interface" 
 
-interface reportItem {
-  _id: string;
-  current:{
-    sellerFirstName: string;
-    sellerLastName: string;
-    idCard: string;
-    telNumbers: any[],
-    sellerAccount: string;
-    bank: string;
-    product: string;
-    transferAmount: number;
-    transferDate: string; // ISO string
-    sellingWebsite: string;
-    province: string; // Province ID
-    additionalInfo?: string;
-    images: any[]; // URLs or file paths
-  }
-  updatedAt: string
-}
-
-const { Option } = Select;
+// const { Option } = Select;
 const { Search } = Input;
 
 const ProductList: React.FC = (props) => {
@@ -57,7 +36,7 @@ const ProductList: React.FC = (props) => {
   });
 
   if (errorReports) {
-      handlerError(props, errorReports);
+    handlerError(props, errorReports);
   }
 
   useEffect(() => {
