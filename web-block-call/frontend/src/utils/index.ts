@@ -56,18 +56,18 @@ export const isValidUrl = (urlString: string): boolean => {
 };
 
 export const checkRole = (user: any) => {
-  if (user?.current?.roles) {
+  if (user?.roles) {
     // Ensure VITE_USER_ROLES is a string before using it
     const { REACT_APP_USER_ROLES } = process.env;
     
     if (typeof REACT_APP_USER_ROLES === 'string') {
       const rolesArray = REACT_APP_USER_ROLES.split(',');
 
-      if (_.includes(user.current.roles, parseInt(rolesArray[0]))) {
+      if (_.includes(user.roles, parseInt(rolesArray[0]))) {
         return Constants.ADMINISTRATOR;
-      } else if (_.includes(user.current.roles, parseInt(rolesArray[2]))) {
+      } else if (_.includes(user.roles, parseInt(rolesArray[2]))) {
         return Constants.SELLER;
-      } else if (_.includes(user.current.roles, parseInt(rolesArray[1]))) {
+      } else if (_.includes(user.roles, parseInt(rolesArray[1]))) {
         return Constants.AUTHENTICATED;
       }
     } else {

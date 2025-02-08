@@ -73,7 +73,9 @@ const ViewProduct: React.FC = (props) => {
     useEffect(() => {
         if (!loadingProduct && dataProduct?.product) {
             if (dataProduct.product.status) {
-                setData(dataProduct.product.data);
+
+                console.log("DataProduct :", dataProduct)
+                // setData(dataProduct.product.data);
             }
         }
     }, [dataProduct, loadingProduct]);
@@ -139,10 +141,10 @@ const ViewProduct: React.FC = (props) => {
 
                      {/* Add to Cart and Buy Now Buttons */}
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        <Button type="primary" onClick={handleAddToCart}>
+                        <Button type="primary" onClick={()=>{}}>
                         {inCart ? "Delete from cart" : "Add to cart"}
                         </Button>
-                        <Button type="default" onClick={()=>{navigate("/cart"); }}>
+                        <Button type="default" onClick={()=>{}}>
                         Buy Now
                         </Button>
                     </div>

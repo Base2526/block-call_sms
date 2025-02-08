@@ -46,6 +46,9 @@ export const mutationLoginWithSocial = gql`mutation loginWithSocial($input: Logi
 export const mutation_register = gql`mutation register($input: JSON) { register(input: $input) }`;
 export const mutation_forgot_password = gql`mutation forgot_password($input: JSON) { forgot_password(input: $input) }`;
 
+
+export const mutation_test = gql`mutation test($input: JSON) { test(input: $input) }`;
+
 export const mutationMe = gql`mutation me($input: JSON) { me(input: $input) }`;
 export const mutationBook = gql`mutation book($input: BookInput) { book(input: $input) }`;
 export const mutationBuy = gql`mutation buy($id: ID!) { buy(_id: $id) }`;
@@ -104,7 +107,7 @@ export const queryMlmById = gql`query mlmById($id: ID!) { mlmById(_id: $id) }`;
 export const mutationTest_addmember = gql`mutation test_addmember($input: MemberInput) { test_addmember(input: $input) }`;
 export const mutationMlm = gql`mutation test_addmlm($input: MLMInput) { test_addmlm(input: $input) }`;
 
-export const userConnected = gql`subscription userConnected { userConnected }`;
+export const heart_beat = gql`subscription heart_beat($input: JSON) { heart_beat(input: $input) }`;
 
 export const mutationTest_upload = gql`mutation test_upload($input: JSON) { test_upload(input: $input) }`;
 
@@ -137,11 +140,11 @@ export const mutation_tree_by_node_id   = gql`mutation tree_by_node_id($input: J
 
 export const guery_purchases  = gql`query purchases { purchases }`;
 
-export const query_reports    = gql`query reports { reports }`;
-export const guery_report     = gql`query report($id: ID!) { report(_id: $id) }`;
+export const query_reports    = gql`query reports($input: JSON) { reports(input: $input) }`;
+export const query_report     = gql`query report($id: ID) { report(_id: $id) }`;
      
 export const guery_my_reports = gql`query my_reports { my_reports }`;
-export const guery_provinces  = gql`query provinces { provinces }`;
+export const query_provinces  = gql`query provinces { provinces }`;
 export const mutation_report  = gql`mutation report($input: JSON) { report(input: $input) }`;
 
 export const mutation_uploadFile  = gql`mutation uploadFile($input: JSON) { uploadFile(input: $input) }`;

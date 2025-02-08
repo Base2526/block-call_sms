@@ -1,7 +1,10 @@
 import { ApolloError } from '@apollo/client';
 import _ from 'lodash';
 import { message } from 'antd';
+import { Dispatch } from "redux";
+
 import * as constants from '@/constants'; // Adjust the import path to your constants
+
 
 interface GraphQLErrorExtensions {
     code?: string;
@@ -20,7 +23,7 @@ const handlerError = (props: any, error: ApolloError) => {
     if (error.networkError) {
         // Handle network errors
         message.error('Network error occurred'); // Replace with your own error message
-        console.error('Network error:', error.networkError);
+        console.error('Network error:', error);
         return;
     }
 
@@ -31,6 +34,8 @@ const handlerError = (props: any, error: ApolloError) => {
             case constants.FORCE_LOGOUT: {
                 const { logout } = props;
                 message.error('Force logout required'); // Replace with your own error message
+
+                console.log(props);
                 logout && logout();
                 break;
             }

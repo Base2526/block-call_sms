@@ -54,4 +54,10 @@ export const Role = {
     STATUS_DELIVERED: 51,
     STATUS_FAILED: 52,
   } as const;
+
+
+  // HEART_BEAT Subscription
+  export const Subscription = {
+    HEART_BEAT: "HEART_BEAT"
+  } as const;
   

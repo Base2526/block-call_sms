@@ -6,9 +6,11 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import _ from "lodash"
 import { useQuery } from '@apollo/client';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, OrderedListOutlined, TableOutlined} from '@ant-design/icons';
 
-import HomeCard from "@/pages/home/HomeCard"
+
+import HomeGrid from "@/pages/home/HomeGrid";
+import HomeList from "@/pages/home/HomeList";
 import { query_reports } from '@/apollo/gqlQuery';
 import { getHeaders } from '@/utils';
 import handlerError from '@/utils/handlerError';
@@ -22,41 +24,62 @@ const ProductList: React.FC = (props) => {
   const dispatch = useDispatch();
   const [reports, setReports] = useState<reportItem[]>([]);
   const [filteredReports, setFilteredReports] = useState<reportItem[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20); 
+  const [pageSizeOptions, setPageSizeOptions] = useState([20, 50, 100])
+  const [pagination, setPagination] = useState({ current: 1, pageSize: pageSizeOptions[0] });
+  const [totalCount, setTotalCount] = useState(0);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [searchText, setSearchText] = useState('');
+  const [loadingDatas, setloadingDatas] = useState(true);
 
   const { loading: loadingReports, 
           data: dataReports, 
           error: errorReports, 
           refetch: refetchReports } = useQuery(query_reports, {
-    context: { headers: getHeaders(location) },
-    fetchPolicy: 'no-cache',
-    nextFetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: false,
-  });
+                                                context: { headers: getHeaders(location) },
+                                                variables: { input: {
+                                                    searchText,
+                                                    page: pagination.current, 
+                                                    pageSize: pagination.pageSize
+                                                  }
+                                                },
+                                                fetchPolicy: 'no-cache',
+                                                nextFetchPolicy: 'network-only',
+                                                notifyOnNetworkStatusChange: false,
+                                              });
 
   if (errorReports) {
+    console.log("errorReports :", errorReports)
     handlerError(props, errorReports);
   }
 
+  useEffect(()=>{
+    refetchReports({input: { searchText, page: pagination.current, pageSize: pagination.pageSize }})
+  }, [ searchText, pagination ])
+
   useEffect(() => {
     if (!loadingReports && dataReports?.reports) {
-
-      console.log("loadingReports :", dataReports)
-
-      setReports([]);
-      setFilteredReports([]);
-      if (dataReports.reports.status) {
-        _.map(dataReports.reports.data, (e) => {
-          setReports((prevItems) => Array.isArray(prevItems) ? [...prevItems, e] : [e]);
-          setFilteredReports((prevItems) => Array.isArray(prevItems) ? [...prevItems, e] : [e]);
-        });
+      const { status, data, totalCount } = dataReports.reports;
+      if (status) {
+        // If data is already an array, you can set it directly.
+        setReports(data);
+        setFilteredReports(data);
+        setTotalCount(totalCount);
+      } else {
+        setReports([]);
+        setFilteredReports([]);
+        setTotalCount(0);
       }
+      setloadingDatas(false);
     }
   }, [dataReports, loadingReports]);
-
+  
   const handleSearch = (value: string) => {
-    // const searchValue = value.toLowerCase();
+    if(value.trim() === ''){
+      return;
+    }
+    const searchValue = value.trim().toLowerCase();
+
+    console.log("searchValue :", searchValue)
     // const filtered = products.filter(product =>
     //   product.current.name.toLowerCase().includes(searchValue)
     // );
@@ -79,14 +102,9 @@ const ProductList: React.FC = (props) => {
 
   // Function to handle page number and page size changes
   const handlePaginationChange = (page: number, pageSize: number) => {
-    setCurrentPage(page);
-    setPageSize(pageSize);
+    setPagination({current: page, pageSize})
   };
 
-  const paginatedProducts = filteredReports.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
 
   const handleNewReport = () => {
     navigate('/report?mode=added', { state: { mode: "added" } });
@@ -98,63 +116,72 @@ const ProductList: React.FC = (props) => {
     <div>
       <div style={{ marginBottom: 16, display: 'flex', gap: '10px' }}>
         <Search
-          placeholder="Search report name"
+          placeholder="Search"
+          onChange={(e) => setSearchText(e.target.value)}
           onSearch={handleSearch}
           style={{ width: 300 }}
-        />
-        {/* <Select
-          placeholder="Filter by plan"
-          onChange={handleFilterChange}
+          enterButton
           allowClear
-          style={{ width: 150 }}
-        >
-          <Option value="1">Plan front</Option>
-          <Option value="2">Plan back</Option>
-        </Select> */}
-        <Button type="primary" onClick={handleNewReport} icon={<PlusOutlined />}>
-          New Report
-        </Button>
-      </div>
-
-      <Skeleton loading={loadingReports} active>
-        <List
-          grid={{ gutter: 16, column: 5 }}
-          dataSource={paginatedProducts}
-          renderItem={item => (
-            <List.Item  className={`list-item-product-card`}>
-              <HomeCard
-                report= {item}
-                onClick={()=>{
-                  navigate(`/view?v=${item._id}`, { state: { _id: item._id } });
-                }}
-                // onAddToCart={()=>{
-                //   dispatch(addCart(item));
-                //   message.success('Add to cart!');
-                // }}
-                // onDeleteForCart={()=>{
-                //   dispatch(removeCart(item._id));
-                //   message.warning('Delete from cart!');
-                // }}
-                // onBuy={()=>{
-                //   navigate("/cart"); 
-                // }}
-              />
-            </List.Item>
-          )}
         />
+        <Button type="primary" onClick={handleNewReport} icon={<PlusOutlined />}>New</Button>
+        <div style={{ display: "flex", gap: "5px" }}>
+          <Button
+            type={viewMode === "list" ? "primary" : "default"}
+            icon={<OrderedListOutlined />}
+            onClick={() => setViewMode("list")}
+          />
+          <Button
+            type={viewMode === "grid" ? "primary" : "default"}
+            icon={<TableOutlined />}
+            onClick={() => setViewMode("grid")}
+          />
+        </div>
+      </div>
+      <Skeleton loading={loadingDatas} active>
+      {
+        viewMode === "list" 
+        ? <List
+            grid={{ gutter: 16, column: 2 }}
+            dataSource={filteredReports}
+            renderItem={(item) => (
+              <List.Item className="list-item-product-card">
+                <HomeList
+                  report={item}
+                  onClick={() => {
+                    navigate(`/view?v=${item.report_id}`, { state: { _id: item.report_id } });
+                  }}
+                />
+              </List.Item>
+            )}
+          />
+        : <List
+            grid={{ gutter: 16, column: 5 }}
+            dataSource={filteredReports}
+            renderItem={item => (
+              <List.Item  className={`list-item-product-card`}>
+                <HomeGrid
+                  report= {item}
+                  onClick={()=>{
+                    navigate(`/view?v=${item.report_id}`, { state: { _id: item.report_id } });
+                  }}
+                />
+              </List.Item>
+            )}
+          />
+      }
       </Skeleton>
-
       { 
-        filteredReports.length > 20 &&
+        totalCount > 20 &&
         <Pagination
-          current={currentPage}
-          pageSize={pageSize}
-          total={filteredReports.length}
+          current={pagination.current}
+          pageSize={pagination.pageSize}
+          pageSizeOptions={pageSizeOptions}
+          total={totalCount}
+          showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
           onChange={handlePaginationChange}
           style={{ marginTop: 20, marginBottom: 20}}
         />
       }
-      
     </div>
   );
 };

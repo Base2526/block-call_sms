@@ -1,93 +1,125 @@
 # version: '3.8'
 services:
-  mongo1:
-    image: mongo:6.0
-    container_name: mongo1
-    hostname: mongo1
-    # command: ["mongod", "--replSet", "rs0"]
-    command: ["mongod", "--replSet", "rs0", "--bind_ip", "0.0.0.0"]
-    ports:
-      - "49824:27017"
-    volumes:
-      - ./mongo/mongo1-data:/data/db
-      # - ./mongo/backups:/app/backups
-    networks:
-      - blockcall-network
+  # mongo1:
+  #   image: mongo:6.0
+  #   container_name: mongo1
+  #   hostname: mongo1
+  #   # command: ["mongod", "--replSet", "rs0"]
+  #   command: ["mongod", "--replSet", "rs0", "--bind_ip", "0.0.0.0"]
+  #   ports:
+  #     - "49824:27017"
+  #   volumes:
+  #     - ./mongo/mongo1-data:/data/db
+  #     # - ./mongo/backups:/app/backups
+  #   networks:
+  #     - blockcall-network
 
-  mongo2:
-    image: mongo:6.0
-    container_name: mongo2
-    hostname: mongo2
-    # command: ["mongod", "--replSet", "rs0"]
-    command: ["mongod", "--replSet", "rs0", "--bind_ip", "0.0.0.0"]
-    ports:
-      - 27018:27017
-    volumes:
-      - ./mongo/mongo2-data:/data/db
-    networks:
-      - blockcall-network
+  # mongo2:
+  #   image: mongo:6.0
+  #   container_name: mongo2
+  #   hostname: mongo2
+  #   # command: ["mongod", "--replSet", "rs0"]
+  #   command: ["mongod", "--replSet", "rs0", "--bind_ip", "0.0.0.0"]
+  #   ports:
+  #     - 27018:27017
+  #   volumes:
+  #     - ./mongo/mongo2-data:/data/db
+  #   networks:
+  #     - blockcall-network
 
-  mongo3:
-    image: mongo:6.0
-    container_name: mongo3
-    hostname: mongo3
-    # command: ["mongod", "--replSet", "rs0"]
-    command: ["mongod", "--replSet", "rs0", "--bind_ip", "0.0.0.0"]
-    ports:
-      - 27019:27017
-    volumes:
-      - ./mongo/mongo3-data:/data/db
-    networks:
-      - blockcall-network
+  # mongo3:
+  #   image: mongo:6.0
+  #   container_name: mongo3
+  #   hostname: mongo3
+  #   # command: ["mongod", "--replSet", "rs0"]
+  #   command: ["mongod", "--replSet", "rs0", "--bind_ip", "0.0.0.0"]
+  #   ports:
+  #     - 27019:27017
+  #   volumes:
+  #     - ./mongo/mongo3-data:/data/db
+  #   networks:
+  #     - blockcall-network
 
-  ################################
-  # Setup Mongo express container
-  ################################
-  mongo-express:
-    image: mongo-express:1.0.2-20-alpine3.19
-    container_name: ${PREFIX}_express 
-    environment:
-      ME_CONFIG_MONGODB_URL: mongodb://mongo1,mongo2,mongo3:27017/?replicaSet=rs0
-      ME_CONFIG_MONGODB_SERVER: mongo1
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME}
-      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_CONFIG_BASICAUTH_PASSWORD}
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
-    ports:
-      - "1983:8081"
-    depends_on:
-      - mongo1
-      - mongo2
-      - mongo3
-    restart: unless-stopped
-    networks:
-      - blockcall-network
+  # ################################
+  # # Setup Mongo express container
+  # ################################
+  # mongo-express:
+  #   image: mongo-express:1.0.2-20-alpine3.19
+  #   container_name: ${PREFIX}_express 
+  #   environment:
+  #     ME_CONFIG_MONGODB_URL: mongodb://mongo1,mongo2,mongo3:27017/?replicaSet=rs0
+  #     ME_CONFIG_MONGODB_SERVER: mongo1
+  #     ME_CONFIG_MONGODB_PORT: 27017
+  #     ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME}
+  #     ME_CONFIG_BASICAUTH_PASSWORD: ${ME_CONFIG_BASICAUTH_PASSWORD}
+  #     ME_CONFIG_MONGODB_ADMINUSERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
+  #     ME_CONFIG_MONGODB_ADMINPASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
+  #   ports:
+  #     - "1983:8081"
+  #   depends_on:
+  #     - mongo1
+  #     - mongo2
+  #     - mongo3
+  #   restart: unless-stopped
+  #   networks:
+  #     - blockcall-network
 
   ################################
   # Setup Api Graphql container
   ################################
+  # backend:
+  #   build: 
+  #     context: ./backend_ts
+  #     dockerfile: Dockerfile.dev   
+  #   container_name: ${PREFIX}_backend_ts          
+  #   ports:
+  #     - "4000:4000"
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock  # set can run docker inside ex. run docker backup db(a4_mongo)
+  #     - ./backend_ts/src:/app/src        
+  #     - ./uploads:/app/uploads  
+  #     - ./mongo/backups:/app/backups
+  #   depends_on:
+  #     - mongo1
+  #     - mongo2
+  #     - mongo3
+  #   networks:
+  #     - blockcall-network
+
   backend:
-    build: 
+    build:
       context: ./backend_ts
       dockerfile: Dockerfile.dev   
-    container_name: ${PREFIX}_backend_ts          
     ports:
       - "4000:4000"
     env_file:
       - .env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  # set can run docker inside ex. run docker backup db(a4_mongo)
-      - ./backend_ts/src:/app/src        
+      - ./backend_ts/src:/app/src      
       - ./uploads:/app/uploads  
-      - ./mongo/backups:/app/backups
     depends_on:
-      - mongo1
-      - mongo2
-      - mongo3
+      - postgres
+    networks:
+      - blockcall-network
+
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: exampledb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
     networks:
       - blockcall-network
 
 networks:
   blockcall-network:
     external: true
+    driver: bridge

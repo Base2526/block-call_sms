@@ -7,7 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 
 import AttackFileField from "@/components/basic/attack-file";
-import { guery_report, guery_provinces, mutation_report, query_banks } from '@/apollo/gqlQuery';
+import { query_report, query_provinces, mutation_report, query_banks } from '@/apollo/gqlQuery';
 import { getHeaders } from '@/utils';
 import handlerError from '@/utils/handlerError';
 
@@ -116,7 +116,7 @@ const ReportForm: React.FC = (props) => {
 
   const { loading: loadingProvinces, 
           data: dataProvinces, 
-          error: errorProvinces } = useQuery(guery_provinces, {
+          error: errorProvinces } = useQuery(query_provinces, {
     context: { headers: getHeaders(location) },
     fetchPolicy: 'cache-first',
     nextFetchPolicy: 'network-only',
@@ -124,7 +124,7 @@ const ReportForm: React.FC = (props) => {
   });
 
   if (errorProvinces) {
-      handlerError(props, errorProvinces);
+    handlerError(props, errorProvinces);
   }
   useEffect(() => {
     if (!loadingProvinces && dataProvinces?.provinces) {
@@ -140,11 +140,12 @@ const ReportForm: React.FC = (props) => {
   const { loading: loadingReport, 
     data: dataReport, 
     error: errorReport,
-    refetch: refetchReport } = useQuery(guery_report, {
+    refetch: refetchReport } = useQuery(query_report, {
         context: { headers: getHeaders(location) },
         fetchPolicy: 'cache-first',
         nextFetchPolicy: 'network-only',
         notifyOnNetworkStatusChange: false,
+        skip: _.isEmpty(_id)
     });
 
   if (errorReport) {

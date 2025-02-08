@@ -8,13 +8,13 @@ import cryptojs from "crypto-js";
 import * as fs from "fs";
 import { GraphQLUpload, FileUpload } from 'graphql-upload-ts';
 
-
 import AppError from "./utils/AppError"
 import * as utils from "./utils"
 import * as constants from "./constants"
 import * as model from "./model"
 import pubsub from './pubsub'
 import { IUser, ILike, IFile } from "./utils/Interface"
+import pool from './db';
 
 const REACT_APP_JWT_SECRET = process.env.REACT_APP_JWT_SECRET as string;
 
@@ -23,9 +23,23 @@ const resolvers: IResolvers = {
     test: async(parent, args, context): Promise<any> => {
       let start = Date.now();
       let { req } = context;
+
+     
+
+      // const query = await pool.query('SELECT * FROM "user"');
+      // // if( query && query.rowCount > 0 ) {
+      // //   console.log("test > res : ", query.rows)
+      // // }
+
+      // console.log('Current Pool Status:');
+      // console.log(`Total Connections: ${pool.totalCount}`);       // Total number of clients in the pool
+      // console.log(`Idle Connections: ${pool.idleCount}`);         // Idle connections in the pool
+      // console.log(`Active Connections: ${pool.totalCount - pool.idleCount}`); // Active connections
+      
       return  {
                 status: true,
-                req,
+                // req,
+                // rows: query.rows,
                 executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
               }
     },
@@ -33,32 +47,38 @@ const resolvers: IResolvers = {
       let start = Date.now()
       let { req } = context;
 
-      let { current_user }=  await utils.checkAuth(req);
-      let role = utils.checkRole(current_user)
+      // let { current_user }=  await utils.checkAuth(req);
+      // let role = utils.checkRole(current_user)
 
-      console.log('@@@@@@@@@@@ provinces :', role)
+      // if( role !== constants.Role.ADMINISTRATOR  &&
+      //     role !== constants.Role.AUTHENTICATED 
+      //     ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied')
 
-      if( role !== constants.Role.ADMINISTRATOR  &&
-          role !== constants.Role.AUTHENTICATED 
-          ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied')
-    
-      let provinces = await model.models.Province.find({})
+      const query = await pool.query('SELECT * FROM province');
+      if( query.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
+
       return {
         status: true,
-        data: provinces,
+        data: query.rows,
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
     reports: async(parent, args, context): Promise<any> => {
       let start = Date.now()
       let { req } = context
+      
+      console.log("call function reports()");
+      let { current_user } =  await utils.checkAuth(req);
+      let role = utils.checkRole(current_user)
+      console.log("reports : current_user :", current_user, role, req)
 
-      // let { current_user } =  await utils.checkAuth(req);
-      // let role = utils.checkRole(current_user)
+      console.log(`reports :`)
+      console.log(args)
 
-      // if( role !== Constants.ADMINISTRATOR  && 
-      //     role !== Constants.AUTHENTICATED  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
+      // if( role !== constants.Role.ADMINISTRATOR  && 
+      //     role !== constants.Role.AUTHENTICATED  ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
 
+      /*
       let limitSize = 10;  // Number of documents to return
       let page = 1;  // For pagination, which page to retrieve
       let skipSize = (page - 1) * limitSize;  // Number of documents to skip
@@ -121,10 +141,110 @@ const resolvers: IResolvers = {
           $limit: limitSize 
         }
       ]);
+      */
+
+      let { searchText, page, pageSize} = args.input
+      const reportsQuery = `SELECT 
+                              r.id AS report_id,
+                              r.user_id,
+                              r.seller_first_name,
+                              r.seller_last_name,
+                              r.id_card,
+                              r.product,
+                              r.transfer_amount,
+                              r.transfer_date,
+                              r.selling_website,
+                              r.additional_info,
+                              r.created_at,
+                              r.updated_at,
+
+                              -- Province (Unique by p.id)
+                              COALESCE(
+                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th)) 
+                                  FILTER (WHERE p.id IS NOT NULL), 
+                                  '[]'::JSONB
+                              ) AS province,
+
+                              -- Tel Numbers (Unique by tn.id)
+                              COALESCE(
+                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', tn.id, 'tel', tn.tel)) 
+                                  FILTER (WHERE tn.id IS NOT NULL), 
+                                  '[]'::JSONB
+                              ) AS tel_numbers,
+
+                              -- Seller Accounts (Unique by sa.id)
+                              COALESCE(
+                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT(
+                                      'id', sa.id, 
+                                      'seller_account', sa.seller_account, 
+                                      'bank_id', sa.bank_id, 
+                                      'bank_name', COALESCE(b.name_en, b.name_th)
+                                  )) FILTER (WHERE sa.id IS NOT NULL), 
+                                  '[]'::JSONB
+                              ) AS seller_accounts,
+
+                              -- Images (Unique by f.id)
+                              COALESCE(
+                                  JSONB_AGG(
+                                      DISTINCT JSONB_BUILD_OBJECT('id', f.id, 'filename', f.filename, 'url', f.url)
+                                  ) FILTER (WHERE f.id IS NOT NULL AND f.filename IS NOT NULL AND f.url IS NOT NULL), 
+                                  '[]'::JSONB
+                              ) AS images
+
+                          FROM report r
+                          LEFT JOIN tel_numbers tn ON r.id = tn.report_id
+                          LEFT JOIN seller_account sa ON r.id = sa.report_id
+                          LEFT JOIN bank b ON sa.bank_id = b.id -- Join with the bank table to get the bank name
+                          LEFT JOIN report_images ri ON r.id = ri.report_id
+                          LEFT JOIN province p ON p.id = r.province_id 
+                          LEFT JOIN file f ON ri.file_id = f.id
+
+                          WHERE (
+                            COALESCE(CAST($3 AS TEXT), '') = '' OR 
+                            r.seller_first_name ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                            r.seller_last_name ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                            r.id_card ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                            r.product ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                            r.selling_website ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                            r.additional_info ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                            p.name_th ILIKE '%' || CAST($3 AS TEXT) || '%'
+                          )
+
+                          GROUP BY r.id 
+                          ORDER BY r.created_at DESC
+                          LIMIT $1 OFFSET $2;
+                          `;
+
+      const totalCountQuery = `
+                          SELECT COUNT(*) AS totalCount
+                          FROM report r
+                          LEFT JOIN province p ON p.id = r.province_id
+                          WHERE (
+                            COALESCE(CAST($1 AS TEXT), '') = '' OR 
+                            (r.seller_first_name || ' ' || r.seller_last_name) ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                            r.seller_first_name ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                            r.seller_last_name ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                            r.id_card ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                            r.product ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                            r.selling_website ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                            r.additional_info ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                            p.name_th ILIKE '%' || CAST($1 AS TEXT) || '%'
+                          );
+                        `;
+
+      // const searchWords = searchText.trim().split(/\s+/);
+      const reportsPromise = pool.query(reportsQuery, [pageSize, (page - 1) * pageSize, searchText]);
+      const totalCountPromise = pool.query(totalCountQuery, [searchText]);
+      const [reportsResult, totalCountResult] = await Promise.all([reportsPromise, totalCountPromise]);
+                                
+      if( reportsResult.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
+      console.log( "rowCount :", reportsResult.rowCount )
+      console.log( "rows :", reportsResult.rows )
 
       return {
-        status:true,
-        data: reports,
+        status: true,
+        data: reportsResult.rows,
+        totalCount: parseInt(totalCountResult.rows[0].totalcount, 10),
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
@@ -134,6 +254,8 @@ const resolvers: IResolvers = {
       let { _id } = args
 
       let { current_user } =  await utils.checkAuth(req);
+      console.log("current_user :", current_user)
+      /*
       let report = await model.models.Report.aggregate([
                                                       { 
                                                         $match: { _id: mongoose.Types.ObjectId(_id) } 
@@ -228,11 +350,74 @@ const resolvers: IResolvers = {
                                                         }
                                                       },
                                                     ]);
-                                                    
+                                                    */
+
+      const reportsQuery = `SELECT 
+                              r.id AS report_id,
+                              r.user_id,
+                              r.seller_first_name,
+                              r.seller_last_name,
+                              r.id_card,
+                              r.product,
+                              r.transfer_amount,
+                              r.transfer_date,
+                              r.selling_website,
+                              -- r.province_id,
+                              r.additional_info,
+                              r.created_at,
+                              r.updated_at,
+                            
+                              -- Province (Unique by p.id)
+                              COALESCE(
+                                JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th)) 
+                                FILTER (WHERE p.id IS NOT NULL), 
+                                '[]'::JSONB
+                              ) AS province,
+
+                              -- Tel Numbers (Unique by tn.id)
+                              COALESCE(
+                                JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', tn.id, 'tel', tn.tel)) 
+                                FILTER (WHERE tn.id IS NOT NULL), 
+                                '[]'::JSONB
+                              ) AS tel_numbers,
+
+                              -- Seller Accounts (Unique by sa.id)
+                              COALESCE(
+                                JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT(
+                                  'id', sa.id, 
+                                  'seller_account', sa.seller_account, 
+                                  'bank_id', sa.bank_id, 
+                                  'bank_name', COALESCE(b.name_en, b.name_th)
+                                )) FILTER (WHERE sa.id IS NOT NULL), 
+                                '[]'::JSONB
+                              ) AS seller_accounts,
+
+                              -- Images (Unique by f.id)
+                              COALESCE(
+                                JSONB_AGG(
+                                  DISTINCT JSONB_BUILD_OBJECT('id', f.id, 'filename', f.filename, 'url', f.url)
+                                ) FILTER (WHERE f.id IS NOT NULL AND f.filename IS NOT NULL AND f.url IS NOT NULL), 
+                                '[]'::JSONB
+                              ) AS images
+
+                            FROM report r
+                            LEFT JOIN tel_numbers tn ON r.id = tn.report_id
+                            LEFT JOIN seller_account sa ON r.id = sa.report_id
+                            LEFT JOIN bank b ON sa.bank_id = b.id -- Join with the bank table to get the bank name
+                            LEFT JOIN report_images ri ON r.id = ri.report_id
+                            LEFT JOIN province p ON p.id = r.province_id 
+                            LEFT JOIN file f ON ri.file_id = f.id
+                            WHERE r.id = $1
+                            GROUP BY r.id, p.id;`;
+                            
+      const reportsResult = await pool.query(reportsQuery, [ _id ]);                                
       // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
+
+      // console.log("call function report()");
+      // console.log( reportsResult.rows )
       return {
         status:true,
-        data: report.length > 0 ? report[0] : undefined,
+        data: reportsResult.rows.length > 0 ? reportsResult.rows[0] : undefined,
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
@@ -275,51 +460,68 @@ const resolvers: IResolvers = {
       let start = Date.now()
       let { req } = context
 
-      let { current_user } =  await utils.checkAuth(req);
-      let role = utils.checkRole(current_user)
+      // let { current_user } =  await utils.checkAuth(req);
+      // let role = utils.checkRole(current_user)
 
-      console.log("users :", role)
-      if( role !== constants.Role.ADMINISTRATOR ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
+      // console.log("users :", role)
+      // if( role !== constants.Role.ADMINISTRATOR ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
 
-      let users = await model.models.User.aggregate([ 
-                                              {
-                                                $match: {
-                                                  "current.roles": { $ne: 1 } // Matches documents where 'roles' does not contain 1
-                                                }
-                                              },
-                                              {
-                                                $addFields: {
-                                                  avatarId: "$current.avatarId",  // Bring the nested field to the top level
-                                                }
-                                              },
-                                              {
-                                                $lookup: {
-                                                  localField: "avatarId",
-                                                  from: "file",
-                                                  foreignField: "_id",
-                                                  as: "avatar"
-                                                }
-                                              },
-                                              {
-                                                $unwind: {
-                                                  path: "$avatar",
-                                                  preserveNullAndEmptyArrays: true
-                                                }
-                                              },
-                                              {
-                                                $addFields: {
-                                                  "current.avatar": "$avatar"  // Set 'current.avatar' field
-                                                }
-                                              },
-                                              {
-                                                $project: {
-                                                  avatarId: 0,                // Hide 'avatarId' field if not needed
-                                                  avatar: 0                   // Optionally remove 'avatar' after mapping
-                                                }
-                                              }]);
+      // let users = await model.models.User.aggregate([ 
+      //                                         {
+      //                                           $match: {
+      //                                             "current.roles": { $ne: 1 } // Matches documents where 'roles' does not contain 1
+      //                                           }
+      //                                         },
+      //                                         {
+      //                                           $addFields: {
+      //                                             avatarId: "$current.avatarId",  // Bring the nested field to the top level
+      //                                           }
+      //                                         },
+      //                                         {
+      //                                           $lookup: {
+      //                                             localField: "avatarId",
+      //                                             from: "file",
+      //                                             foreignField: "_id",
+      //                                             as: "avatar"
+      //                                           }
+      //                                         },
+      //                                         {
+      //                                           $unwind: {
+      //                                             path: "$avatar",
+      //                                             preserveNullAndEmptyArrays: true
+      //                                           }
+      //                                         },
+      //                                         {
+      //                                           $addFields: {
+      //                                             "current.avatar": "$avatar"  // Set 'current.avatar' field
+      //                                           }
+      //                                         },
+      //                                         {
+      //                                           $project: {
+      //                                             avatarId: 0,                // Hide 'avatarId' field if not needed
+      //                                             avatar: 0                   // Optionally remove 'avatar' after mapping
+      //                                           }
+      //                                         }]);
+      
+      const query = await pool.query(`SELECT 
+                                            "user".id AS id,
+                                            "user".username,
+                                            "user".email,
+                                            file.id AS file_id,
+                                            file.url,
+                                            file.filename
+                                        FROM 
+                                            "user"
+                                        LEFT JOIN 
+                                            file
+                                        ON 
+                                            "user".id = file.user_id;`);
+
+      if( query.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
+
       return {
         status: true,
-        data: users,
+        data: query.rows,
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
@@ -334,42 +536,55 @@ const resolvers: IResolvers = {
       
       // let user = await model.models.User.findById(_id)
 
-      let user = await model.models.User.aggregate([  { $match: { _id: mongoose.Types.ObjectId(_id) }  },
-        {
-          $addFields: {
-            avatarId: "$current.avatarId",  // Bring the nested field to the top level
-          }
-        },
-        {
-          $lookup: {
-            localField: "avatarId",
-            from: "file",
-            foreignField: "_id",
-            as: "avatar"
-          }
-        },
-        {
-          $unwind: {
-            path: "$avatar",
-            preserveNullAndEmptyArrays: true
-          }
-        },
-        {
-          $addFields: {
-            "current.avatar": "$avatar"  // Set 'current.avatar' field
-          }
-        },
-        {
-          $project: {
-            avatarId: 0,                // Hide 'avatarId' field if not needed
-            avatar: 0                   // Optionally remove 'avatar' after mapping
-          }
-        }
-      ]);
+      // let user = await model.models.User.aggregate([  { $match: { _id: mongoose.Types.ObjectId(_id) }  },
+      //   {
+      //     $addFields: {
+      //       avatarId: "$current.avatarId",  // Bring the nested field to the top level
+      //     }
+      //   },
+      //   {
+      //     $lookup: {
+      //       localField: "avatarId",
+      //       from: "file",
+      //       foreignField: "_id",
+      //       as: "avatar"
+      //     }
+      //   },
+      //   {
+      //     $unwind: {
+      //       path: "$avatar",
+      //       preserveNullAndEmptyArrays: true
+      //     }
+      //   },
+      //   {
+      //     $addFields: {
+      //       "current.avatar": "$avatar"  // Set 'current.avatar' field
+      //     }
+      //   },
+      //   {
+      //     $project: {
+      //       avatarId: 0,                // Hide 'avatarId' field if not needed
+      //       avatar: 0                   // Optionally remove 'avatar' after mapping
+      //     }
+      //   }
+      // ]);
+
+      const query = await pool.query(`SELECT 
+                                            "user".id AS user_id,
+                                            "user".username,
+                                            "user".email,
+                                            file.id AS file_id,
+                                            file.url,
+                                            file.filename
+                                        FROM "user"
+                                        WHERE "user".id = ${ _id }
+                                        LEFT JOIN  file ON "user".id = file.userId;`);
+
+      if( query.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
 
       return {
         status: true,
-        data: user.length > 0 ? user[0] : "",
+        data: query.rows[0],
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
@@ -377,17 +592,21 @@ const resolvers: IResolvers = {
       let start = Date.now()
       let { req } = context
 
-      let { current_user } =  await utils.checkAuth(req);
-      let role = utils.checkRole(current_user)
-      console.log('@@@@@@@@@@@ banks :', role)
+      // let { current_user } =  await utils.checkAuth(req);
+      // let role = utils.checkRole(current_user)
+      // console.log('@@@@@@@@@@@ banks :', role)
 
-      if( role !== constants.Role.ADMINISTRATOR  &&
-          role !== constants.Role.AUTHENTICATED ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
+      // if( role !== constants.Role.ADMINISTRATOR  &&
+      //     role !== constants.Role.AUTHENTICATED ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
 
-      let banks = await model.models.Bank.find({});
+      // let banks = await model.models.Bank.find({});
+ 
+      const query = await pool.query(`SELECT * FROM bank;`);
+      if( query.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
+
       return {
         status: true,
-        data: banks,
+        data: query.rows,
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
@@ -412,89 +631,120 @@ const resolvers: IResolvers = {
     }
   },
   Mutation: {
-    login: async(parent, args, context): Promise<any> => {
-      let start = Date.now()
-      let {input} = args
+    test: async (parent, args, context): Promise<any> => {
+      const start = Date.now();
+      // const { client } = context;
+      let { req }   = context
+      const { input } = args;
 
-      let username = input.username.toLowerCase()
+      pubsub.publish(constants.Subscription.HEART_BEAT, {
+        params: {
+          mutation: constants.Status.FORCE_LOGOUT,
+          req
+        },
+      });
     
-      let user = await  model.models.User.findOne( {"current.email": username}  );
-
-      console.log("login :", input, REACT_APP_JWT_SECRET)
-
-      if(utils.emailValidate().test(username)){
-        if( _.isNull(user) ){
-          throw new AppError(constants.Status.USER_NOT_FOUND, 'USER NOT FOUND')
-        }
-        if(!_.isEqual(cryptojs.AES.decrypt(user.current?.password, REACT_APP_JWT_SECRET).toString(cryptojs.enc.Utf8), input.password)){
-          throw new AppError(constants.Status.PASSWORD_WRONG, 'PASSWORD WRONG')
-        }
-      }else{
-        user = await  model.models.User.findOne( {"current.username":username} ); 
-        if( _.isNull(user) ){
-          throw new AppError(constants.Status.USER_NOT_FOUND, 'USER NOT FOUND')
-        }
-        if(!_.isEqual(cryptojs.AES.decrypt(user?.current?.password, REACT_APP_JWT_SECRET).toString(cryptojs.enc.Utf8), input.password)){
-          throw new AppError(constants.Status.PASSWORD_WRONG, 'PASSWORD WRONG')
-        }
+      // Return response
+      return {
+        status: true,
+        executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`,
+      };
+    },
+    login: async (parent, args, context): Promise<any> => {
+      const start = Date.now();
+      // const { client } = context;
+      const { input } = args;
+    
+      const username = input.username.trim().toLowerCase();
+      const password = input.password.trim();
+    
+      console.log("login attempt:", input);
+    
+      const isEmail = utils.emailValidate().test(username);
+      const queryField = isEmail ? 'email' : 'username';
+    
+      // Query user based on username or email
+      const query = await pool.query(
+        `SELECT * FROM "user" WHERE "user".${queryField} = $1`,
+        [username]
+      );
+    
+      if (query.rowCount === 0) {
+        throw new AppError(constants.Status.DATA_NOT_FOUND, 'USER NOT FOUND');
       }
-
-      await model.models.User.updateOne({ _id: user?._id }, { "current.lastAccess" : Date.now() });
-
-      let sessionId = await utils.getSession(user?._id, input);
+    
+      const user = query.rows[0];
+      
+      // Decrypt and verify the password
+      const decryptedPassword = cryptojs.AES.decrypt(user.password, REACT_APP_JWT_SECRET).toString(cryptojs.enc.Utf8);
+      if (decryptedPassword !== password) {
+        throw new AppError(constants.Status.PASSWORD_WRONG, 'PASSWORD WRONG');
+      }
+    
+      // Update last access timestamp
+      await pool.query(
+        `UPDATE "user" SET last_access = CURRENT_TIMESTAMP WHERE id = $1`,
+        [user.id]
+      );
+    
+      // Get session ID
+      const sessionId = await utils.getSession(user.id);
+    
+      // Return response
       return {
         status: true,
         data: user,
         sessionId,
-        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
-      }
+        executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`,
+      };
     },
     register: async(parent, args, context): Promise<any> => {
       let start     = Date.now()
       let { input } = args
-      let { req } = context
-      console.log("register :", input)
-      if(!_.isNull( await utils.getUser({
-                                            "$and": [{
-                                                "current.username": input.username
-                                            }, {
-                                                "current.email": input.email
-                                            }]
-                                          } ) )) throw new AppError(constants.Status.ERROR, "EXITING USERNAME AND EMAIL", input)
-      
-      if(!_.isNull( await utils.getUser({ "current.username": input.username?.toLowerCase() }))) throw new AppError(constants.Status.ERROR, "EXITING USERNAME", input)
-      if(!_.isNull( await utils.getUser({ "current.email": input.email }) )) throw new AppError(constants.Status.ERROR, "EXITING EMAIL", input)
 
-      let newInput =  {current: { ...input,  
-                                  username: input.username?.toLowerCase(),
-                                  password: cryptojs.AES.encrypt( input.password, REACT_APP_JWT_SECRET).toString(),
-                                  displayName: input.username ,
-                                  lastAccess: Date.now(), 
-                                  isOnline: true}
-                      }
+      // Combine the checks for username and email existence into one query
+      let query = await pool.query(
+        `SELECT * FROM "user" WHERE username = $1 OR email = $2`, 
+        [input.username, input.email]
+      );
 
-      const session = await mongoose.startSession();
-      session.startTransaction();
-      try {
-        // avatarId
-        await model.models.User.create([newInput], { session });
-
-        // Commit the transaction
-        await session.commitTransaction();
-
-        return {
-          status: true,
-          executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+      if (query.rowCount != 0) {
+        // Determine whether it's a username or email conflict
+        if (query.rows.some(row => row.username === input.username)) {
+          throw new AppError(constants.Status.ERROR, "EXITING USERNAME", input);
         }
-      }catch(error: any){
-        console.log("error :", error)
-  
-        await session.abortTransaction();
+        if (query.rows.some(row => row.email === input.email)) {
+          throw new AppError(constants.Status.ERROR, "EXITING EMAIL", input);
+        }
+      }
 
-        throw new AppError(constants.Status.ERROR, error)
-      }finally {
-        session.endSession();
-      } 
+      let query_user = `
+                        INSERT INTO "user" (
+                            username, password, displayName, email, roles, isActive, lockAccount_lock, lockAccount_date, lastAccess, createdAt, updatedAt
+                        ) VALUES (
+                            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+                        )
+                      `;
+
+      const values_user = [
+        input.username,
+        cryptojs.AES.encrypt( input.password, REACT_APP_JWT_SECRET).toString(),
+        input.username,  // Assuming display name is the same as the username
+        input.email,
+        JSON.stringify([1]),  // Roles as an array
+        true,  // isActive
+        false, // lockAccount_lock
+        new Date(), // lockAccount_date
+        new Date(), // lastAccess
+        new Date(), // createdAt
+        new Date()  // updatedAt
+      ];
+                      
+      await pool.query(query_user, values_user);
+      return {
+        status: true,
+        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+      }
     },
     forgot_password: async(parent, args, context): Promise<any> => {
       let start     = Date.now()
@@ -600,8 +850,111 @@ const resolvers: IResolvers = {
       
       switch(input.mode){
         case 'added':{
-          const session = await mongoose.startSession();
-          session.startTransaction();
+          try {
+            // Start a transaction
+            await pool.query('BEGIN');
+            
+            const insertQueryReport = `
+              INSERT INTO report (user_id, seller_first_name, seller_last_name, id_card, product, transfer_amount, transfer_date, selling_website, province_id, additional_info)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+              RETURNING id;
+            `;
+          
+            const report_query = await pool.query(insertQueryReport, [current_user.id, input.seller_first_name, input.seller_last_name, input.id_card, input.product, input.transfer_amount, input.transfer_date, input.selling_website, input.province_id, input.additional_info]);
+          
+            if (report_query.rowCount == 1) {
+              const report_id = report_query.rows[0].id;
+          
+              // Insert related data like tel_numbers and seller_accounts (without checking report_id here)
+              const insertQueryTelNumbers = `INSERT INTO tel_numbers (report_id, tel) VALUES ($1, $2) RETURNING id;`;
+              for (const tel_number of input.tel_numbers) {
+                await pool.query(insertQueryTelNumbers, [report_id, tel_number.tel]);
+              }
+          
+              const insertQuerySellerAccount = `INSERT INTO seller_account (report_id, seller_account, bank_id) VALUES ($1, $2, $3) RETURNING id;`;
+              for (const seller_account of input.seller_accounts) {
+                await pool.query(insertQuerySellerAccount, [report_id, seller_account.seller_account, seller_account.bank_id]);
+              }
+          
+              // Process images
+              let promises = [];
+              if (!_.isEmpty(input.images)) {
+                for (let i = 0; i < input.images.length; i++) {
+                  const { createReadStream, filename, encoding, mimetype } = (await input.images[i]).file;
+                  const stream = createReadStream();
+                  const assetUniqName = utils.fileRenamer(filename);
+                  let pathName = `/app/uploads/${assetUniqName}`;
+          
+                  const output = fs.createWriteStream(pathName);
+                  stream.pipe(output);
+          
+                  const promise = new Promise(async (resolve, reject) => {
+
+                    const currentReportId = report_id;
+                    
+                    output.on('finish', async () => {
+                      try {
+                        const insertQueryFile = `
+                          INSERT INTO file (user_id, url, filename, mimetype, encoding)
+                          VALUES ($1, $2, $3, $4, $5)
+                          RETURNING id;
+                        `;
+                        const file_query = await pool.query(insertQueryFile, [current_user?.id, `images/${assetUniqName}`, filename, encoding, mimetype]);
+          
+                        if (file_query.rowCount == 1) {
+                          const file_id = file_query.rows[0].id;
+
+                          // Ensure the report_id exists before inserting into report_images
+                          // const checkReportExistsQuery = `SELECT id FROM report WHERE id = $1;`;
+                          // const reportExists = await pool.query(checkReportExistsQuery, [currentReportId]);
+
+
+                          // console.log(`>>>>>>>>>>   ${currentReportId} `);
+                          // if (reportExists.rowCount === 0) {
+                          //   throw new Error(`Report with id ${report_id} does not exist.`);
+                          // }
+          
+                          // Now insert into report_images without checking the report again
+                          const insertQueryReportImages = `INSERT INTO report_images (report_id, file_id) VALUES ($1, $2) RETURNING id;`;
+                          const result = await pool.query(insertQueryReportImages, [currentReportId, file_id]);
+                          resolve(file_id);
+                        }
+                      } catch (error) {
+                        reject(`Failed to save data to MongoDB: ${error}`);
+                      }
+                    });
+          
+                    output.on('error', (err) => {
+                      reject(err);
+                    });
+                  });
+          
+                  promises.push(promise);
+                }
+              }
+          
+              // Wait for all image files to be processed
+              let images = await Promise.all(promises);
+              console.log("All files processed: ", images);
+          
+              // Commit the transaction after all inserts are successful
+              await pool.query('COMMIT');
+          
+              return {
+                status: true,
+                executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`,
+              };
+            }
+          } catch (error: any) {
+            // Rollback the transaction in case of an error
+            await pool.query('ROLLBACK');
+            console.error('Error during transaction:', error);
+            throw new AppError(constants.Status.ERROR, error)
+          }
+          
+          // const session = await mongoose.startSession();
+          // session.startTransaction();
+          /*
           try {
             let promises = []; 
             if(!_.isEmpty(input.images)){
@@ -627,7 +980,7 @@ const resolvers: IResolvers = {
                         // console.log("finish : ", { url: `images/${assetUniqName}`, filename, encoding, mimetype })
                         
                         // let newInput ={current: { parentId: input?.parentId, childs: [{childId: current_user?._id}]}}  
-                        let file = await model.models.File.insertMany([{userId:current_user?._id, url: `images/${assetUniqName}`, filename, encoding, mimetype }], {session});
+                        let file = await model.models.File.insertMany([{userId:current_user?.id, url: `images/${assetUniqName}`, filename, encoding, mimetype }], {session});
                         // console.log("file ", file)
                         resolve(file !== null ? file[0] : undefined );
                     } catch (error: any) {
@@ -649,149 +1002,165 @@ const resolvers: IResolvers = {
             console.log("All files processed: ", images );
 
             const newInput = _.omit(input, ['mode']);
-            let current  = {...newInput, images, ownerId: current_user?._id }
+            // let current  = {...newInput, images, user_id: current_user?._id }
             
-            console.log("@@@2 Report current : ", current)
+            console.log("@@@2 Report current : ", newInput)
             
-            await model.models.Report.insertMany([{ current }], { session });
-            // Commit the transaction
-            await session.commitTransaction();
+            // await model.models.Report.insertMany([{ current }], { session });
+            // // Commit the transaction
+            // await session.commitTransaction();
 
             // await session.abortTransaction();
           }catch(error: any){
               console.log("error @@@@@@@1 :", error)
-              await session.abortTransaction();
+              // await session.abortTransaction();
           
               throw new AppError(constants.Status.ERROR, error)
           }finally {
-              session.endSession();
+              // session.endSession();
               console.log("finally @@@@@@@1 :")
           }  
+          */
 
           break;
         }
 
-        case 'edited':{
-          const session = await mongoose.startSession();
-          session.startTransaction();
-          try {
-            let promises = []; 
-            let newFiles: unknown[] = [];
-            if(!_.isEmpty(input.images)){
-              for (let i = 0; i < input.images.length; i++) {
-                try{
-                  let fileObject = (await input.images[i]).file
+      //   case 'edited':{
+      //     const session = await mongoose.startSession();
+      //     session.startTransaction();
+      //     try {
+      //       let promises = []; 
+      //       let newFiles: unknown[] = [];
+      //       if(!_.isEmpty(input.images)){
+      //         for (let i = 0; i < input.images.length; i++) {
+      //           try{
+      //             let fileObject = (await input.images[i]).file
     
-                  if(!_.isEmpty(fileObject)){
-                    const { createReadStream, filename, encoding, mimetype } = fileObject //await input.files[i];
+      //             if(!_.isEmpty(fileObject)){
+      //               const { createReadStream, filename, encoding, mimetype } = fileObject //await input.files[i];
       
-                    const stream = createReadStream();
-                    const assetUniqName = utils.fileRenamer(filename);
-                    let pathName = `/app/uploads/${assetUniqName}`;
+      //               const stream = createReadStream();
+      //               const assetUniqName = utils.fileRenamer(filename);
+      //               let pathName = `/app/uploads/${assetUniqName}`;
           
-                    const output = fs.createWriteStream(pathName)
-                    stream.pipe(output);
+      //               const output = fs.createWriteStream(pathName)
+      //               stream.pipe(output);
           
-                    const promise = await new Promise(function (resolve, reject) {
-                      // output.on('close', () => {
-                      //   resolve("close");
-                      // });
+      //               const promise = await new Promise(function (resolve, reject) {
+      //                 // output.on('close', () => {
+      //                 //   resolve("close");
+      //                 // });
 
-                      output.on('finish', async () => {
-                        console.log('@finish');
-                        try {
-                            // Save data to MongoDB after the stream has finished writing
-                            // await saveDataToMongoDB(data, dbUrl, dbName, collectionName);
-                            // console.log("finish : ", { url: `images/${assetUniqName}`, filename, encoding, mimetype })
+      //                 output.on('finish', async () => {
+      //                   console.log('@finish');
+      //                   try {
+      //                       // Save data to MongoDB after the stream has finished writing
+      //                       // await saveDataToMongoDB(data, dbUrl, dbName, collectionName);
+      //                       // console.log("finish : ", { url: `images/${assetUniqName}`, filename, encoding, mimetype })
                             
-                            // let newInput ={current: { parentId: input?.parentId, childs: [{childId: current_user?._id}]}}  
-                            let file = await model.models.File.insertMany([{userId:current_user?._id, url: `images/${assetUniqName}`, filename, encoding, mimetype }], {session});
-                            // console.log("file ", file)
-                            resolve(file !== null ? file[0] : undefined );
-                        } catch (error: any) {
-                            reject(`Failed to save data to MongoDB: ${error.message}`);
-                        }
-                      });
+      //                       // let newInput ={current: { parentId: input?.parentId, childs: [{childId: current_user?._id}]}}  
+      //                       let file = await model.models.File.insertMany([{userId:current_user?._id, url: `images/${assetUniqName}`, filename, encoding, mimetype }], {session});
+      //                       // console.log("file ", file)
+      //                       resolve(file !== null ? file[0] : undefined );
+      //                   } catch (error: any) {
+      //                       reject(`Failed to save data to MongoDB: ${error.message}`);
+      //                   }
+      //                 });
                 
-                      output.on('error', async(err) => {
-                        console.log('@error');
-                        await utils.loggerError(req, err.toString());
+      //                 output.on('error', async(err) => {
+      //                   console.log('@error');
+      //                   await utils.loggerError(req, err.toString());
           
-                        reject(err);
-                      });
-                    });
-                    promises.push(promise);
+      //                   reject(err);
+      //                 });
+      //               });
+      //               promises.push(promise);
 
-                  }else{
-                    if(input.images[i].delete){
-                      let pathUnlink = '/app/uploads/' + input.images[i].url.split('/').pop()
-                      fs.unlink(pathUnlink, async(err: any)=>{
-                          if (err) {
-                            await utils.loggerError(req, err);
-                          }else{
-                            // if no error, file has been deleted successfully
-                            console.log('File has been deleted successfully ', pathUnlink);
-                          }
-                      });
-                    }else{
-                      newFiles = [...newFiles, input.images[i]]
-                    }
-                  }
-                } catch(err: any) {
-                  await utils.loggerError(req, err.toString());
+      //             }else{
+      //               if(input.images[i].delete){
+      //                 let pathUnlink = '/app/uploads/' + input.images[i].url.split('/').pop()
+      //                 fs.unlink(pathUnlink, async(err: any)=>{
+      //                     if (err) {
+      //                       await utils.loggerError(req, err);
+      //                     }else{
+      //                       // if no error, file has been deleted successfully
+      //                       console.log('File has been deleted successfully ', pathUnlink);
+      //                     }
+      //                 });
+      //               }else{
+      //                 newFiles = [...newFiles, input.images[i]]
+      //               }
+      //             }
+      //           } catch(err: any) {
+      //             await utils.loggerError(req, err.toString());
 
-                  console.log("@error :", err)
-                }
-              }
-            }
-            let images = await Promise.all(promises);
+      //             console.log("@error :", err)
+      //           }
+      //         }
+      //       }
+      //       let images = await Promise.all(promises);
           
-            let newInput = _.omit(input, ['_id', 'mode']);
+      //       let newInput = _.omit(input, ['_id', 'mode']);
           
-            let history = await model.models.Report.findOne({ _id: mongoose.Types.ObjectId(input._id) })
-            let result = await model.models.Report.updateOne({ _id: input._id }, { $set: { current: {...newInput, images: [...images, ...newFiles], ownerId: current_user?._id}, history: utils.createRevision(history) } }, { session });
+      //       let history = await model.models.Report.findOne({ _id: mongoose.Types.ObjectId(input._id) })
+      //       let result = await model.models.Report.updateOne({ _id: input._id }, { $set: { current: {...newInput, images: [...images, ...newFiles], ownerId: current_user?._id}, history: utils.createRevision(history) } }, { session });
 
-            console.log("All files processed @@@ : ", result, input._id, newInput );
-            // Commit the transaction
-            await session.commitTransaction();
-          }catch(error: any){
-            console.log("error @@@@@@@1 :", error)
-            await session.abortTransaction();
+      //       console.log("All files processed @@@ : ", result, input._id, newInput );
+      //       // Commit the transaction
+      //       await session.commitTransaction();
+      //     }catch(error: any){
+      //       console.log("error @@@@@@@1 :", error)
+      //       await session.abortTransaction();
         
-            throw new AppError(constants.Status.ERROR, error)
-          }finally {
-            session.endSession();
-            console.log("finally @@@@@@@1 :")
-          }  
+      //       throw new AppError(constants.Status.ERROR, error)
+      //     }finally {
+      //       session.endSession();
+      //       console.log("finally @@@@@@@1 :")
+      //     }  
 
-          break;
-        }
+      //     break;
+      //   }
 
         case 'deleted':{
-          const session = await mongoose.startSession();
-          session.startTransaction();
           try {
-            await model.models.Report.deleteOne({ _id: input._id }, { session });
+            // Start a transaction
+            await pool.query('BEGIN');
+            let { reportIds } = input
+            if (reportIds.length === 0) throw new AppError(constants.Status.DATA_NOT_FOUND, "DATA_NOT_FOUND");
+
+            // Delete from related tables first
+            await pool.query(`
+              DELETE FROM tel_numbers WHERE report_id = ANY($1);
+            `, [reportIds]);
+            await pool.query(`
+              DELETE FROM seller_account WHERE report_id = ANY($1);
+            `, [reportIds]);
+            await pool.query(`
+              DELETE FROM report_images WHERE report_id = ANY($1);
+            `, [reportIds]);
+            // Finally, delete from report table
+            await pool.query(`
+              DELETE FROM report WHERE id = ANY($1);
+            `, [reportIds]);
 
             // Commit the transaction
-            await session.commitTransaction();
-          }catch(error: any){
-            console.log("error @@@@@@@1 :", error)
-            await session.abortTransaction();
-        
-            throw new AppError(constants.Status.ERROR, error)
-          }finally {
-            session.endSession();
-            console.log("finally @@@@@@@1 :")
-          } 
+            await pool.query('COMMIT');
 
-          break;
+            return {
+              status: true,
+              executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+            }
+          } catch (error: any) {
+            // Rollback the transaction in case of an error
+            await pool.query('ROLLBACK');
+        
+            console.error('Error checking or inserting data:', error);
+
+            throw new AppError(constants.Status.ERROR, error)
+          } 
         }
       }
-      return {
-        status: true,
-        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
-      }
+      
     },
     like_report: async(parent, args, context): Promise<any> => {
       let start = Date.now();
@@ -927,9 +1296,9 @@ const resolvers: IResolvers = {
           // current_user?.follows = current_user?.follows.filter(follow => follow.userId.toString() !== input?._id.toString());
   
           // Filter and update follows array
-          current_user.follows = current_user.follows.filter(
-            follow => follow.userId.toString() !== input?._id.toString()
-          );
+          // current_user.follows = current_user.follows.filter(
+          //   follow => follow.userId.toString() !== input?._id.toString()
+          // );
 
           if (originalFollowsCount > current_user?.follows.length) {
               // The user had liked the report and has been unliked
@@ -1066,18 +1435,33 @@ const resolvers: IResolvers = {
     }
   },
   Subscription: {
-    userConnected: {
+    heart_beat: {
       resolve: (payload: any) => {
-        console.log("@@@ resolve:", payload);
-        return payload.userConnected;
+        // console.log("heart_beat resolve:", payload);
+        return payload.heart_beat;
       },
       subscribe: withFilter(
         (parent: any, args: any, context: any, info: GraphQLResolveInfo) => {
           // Return the async iterator for the topic
-          return pubsub.asyncIterator<any>(["USER_CONNECTED"]);
+          return pubsub.asyncIterator<any>([constants.Subscription.HEART_BEAT]);
         },
         async (payload: any, variables: any, context: any, info: GraphQLResolveInfo) => {
-          console.log("userConnected subscribe");
+          let { params } = payload
+
+          console.log("@@1");
+          switch(params.mutation){
+            case constants.Status.FORCE_LOGOUT: {
+              let { req }  = params;
+
+              console.log("@1");
+              console.log(params);
+              console.log(variables);
+              console.log(context);
+              console.log("@2");
+              break;
+            }
+          }
+
           // Add filtering logic if needed
           return true;
         }

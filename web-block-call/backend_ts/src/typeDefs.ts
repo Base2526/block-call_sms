@@ -14,7 +14,7 @@ export const typeDefs = gql`
   type Query {
     test(input: JSON): JSON
     provinces(input: JSON): JSON
-    reports: JSON
+    reports(input: JSON): JSON
     report(_id: ID): JSON
     my_reports: JSON
     user(_id: ID!): JSON
@@ -24,6 +24,7 @@ export const typeDefs = gql`
   }
 
   type Mutation {
+    test(input: JSON): JSON
     login(input: JSON): JSON
     register(input: JSON): JSON
     forgot_password(input: JSON): JSON
@@ -36,7 +37,7 @@ export const typeDefs = gql`
   }
 
   type Subscription {
-    userConnected: JSON
+    heart_beat(input: JSON): JSON
   }
 `;
 

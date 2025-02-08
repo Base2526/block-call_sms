@@ -22,10 +22,10 @@ const persistConfig = {
   storage,
   transforms: [
     {
-      in: (state: any) => mode !== 'development' ?  encrypt(JSON.stringify(state)) : JSON.stringify(state), // Encrypt the state before persisting
-      out: (state: string) => mode !== 'development' ? JSON.parse(decrypt(state)) : JSON.parse(state), // Decrypt the state when rehydrating
-      // in: (state: any) => JSON.stringify(state) , // Encrypt the state before persisting
-      // out: (state: string) => JSON.parse(state) , // Decrypt the state when rehydrating
+      // in: (state: any) => mode !== 'development' ?  encrypt(JSON.stringify(state)) : JSON.stringify(state), // Encrypt the state before persisting
+      // out: (state: string) => mode !== 'development' ? JSON.parse(decrypt(state)) : JSON.parse(state), // Decrypt the state when rehydrating
+      in: (state: any) => JSON.stringify(state) , // Encrypt the state before persisting
+      out: (state: string) => JSON.parse(state) , // Decrypt the state when rehydrating
     }
   ]
 };

@@ -48,6 +48,9 @@ const userSlice = createSlice({
 
       Object.assign(state, { ...action.payload, logged: true });
     },
+    logout(){
+      return initialState;
+    },
     // for cart
     addCart: (state, action: PayloadAction<ProductItem>) => {
       // state.cart.push(action.payload);
@@ -77,6 +80,6 @@ const userSlice = createSlice({
   },
 });
 
-export const { setUserItem, testSetRamdom, updateProfile, addCart, removeCart, clearAllCart, updateCartQuantities } = userSlice.actions;
+export const { setUserItem, testSetRamdom, updateProfile, logout, addCart, removeCart, clearAllCart, updateCartQuantities } = userSlice.actions;
 
 export default userSlice.reducer;

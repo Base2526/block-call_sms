@@ -1,6 +1,6 @@
 import React, { FC, useRef} from "react";
 import { Space, Avatar, Button, Typography } from 'antd';
-import { DeleteOutlined as RemoveCircleIcon, PlusOutlined } from '@ant-design/icons';
+import { DeleteOutlined as RemoveCircleIcon,  PlusOutlined } from '@ant-design/icons';
 import _ from "lodash";
 
 const { Text } = Typography;
@@ -58,7 +58,7 @@ const AttackFileField: FC<AttackFileFieldProps> = ({
         />
         <Button
           icon={<PlusOutlined />}
-          shape="circle"
+          type="default"
           onClick={handleClick}
         />
       </label>

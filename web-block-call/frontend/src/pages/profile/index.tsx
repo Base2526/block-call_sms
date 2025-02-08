@@ -6,8 +6,8 @@ import { useMutation } from "@apollo/client";
 import { useNavigate } from 'react-router-dom';
 import QRCode from 'react-qr-code';
 
-import { mutation_profile } from "@/apollo/gqlQuery";
-import { getHeaders } from "@/utils";
+import { mutation_profile, mutation_test } from "@/apollo/gqlQuery";
+import { getHeaders, getCookie } from "@/utils";
 import { updateProfile } from '@/stores/user.store';
 import "@/pages/profile/index.less";
 import handlerError from "@/utils/handlerError"
@@ -26,6 +26,18 @@ const ProfilePage: FC = () => {
   const [loadingUpdateProfile, setLoadingUpdateProfile] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [onTest] = useMutation(mutation_test, {
+    context: { headers: getHeaders(location) },
+    update: (cache, { data: { test } }) => {
+      console.log("Test :", test)
+    },
+    onError(error) {
+      console.error("onError:", error);
+
+      handlerError({}, error)
+    }
+  });
 
   const [onUpdateProfile] = useMutation(mutation_profile, {
     context: { headers: getHeaders(location) },
@@ -201,6 +213,12 @@ const ProfilePage: FC = () => {
             <p>{profile?.current?.email}</p>
           </div>
         </div>
+        <div>
+          {JSON.stringify(profile, null, 2)}
+        </div>
+        <div>
+          { getCookie('usida') }
+        </div>
         <Descriptions title="User Information" bordered column={1} style={{ marginTop: '20px' }}>
           {/* <Descriptions.Item label="Phone"><Paragraph className='ant-typography-tel' copyable>{profile?.current?.tel}</Paragraph></Descriptions.Item>
           <Descriptions.Item label="Address">{ profile?.current?.address !== undefined ? <Paragraph className='ant-typography-tel' copyable>{profile?.current?.address}</Paragraph> : <></>  }</Descriptions.Item> */}
@@ -209,8 +227,11 @@ const ProfilePage: FC = () => {
               type="primary" 
               style={{ marginRight: '10px' }}
               onClick={()=>{
-                navigate('/my_list')
-              }}>My Reports</Button>
+                // navigate('/my_list')
+
+                onTest({ variables: { input: { "test": "abc" } } })
+                // 
+              }}>TEST</Button>
           </Descriptions.Item>
           {/* <Descriptions.Item label="QR URL">
             <Input.Group compact>

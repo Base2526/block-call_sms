@@ -1,6 +1,6 @@
 import 'dayjs/locale/zh-cn';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ConfigProvider, Spin, theme as antdTheme } from 'antd';
 import enUS from 'antd/es/locale/en_US';
 import zhCN from 'antd/es/locale/zh_CN';
@@ -19,15 +19,24 @@ import  { DefaultRootState } from '@/interface/DefaultRootState';
 import { localeConfig } from './locales';
 import RenderRouter from './routes';
 import { setGlobalState } from './stores/global.store';
-import { healthCheck, userConnected } from "./apollo/gqlQuery"
+import { heart_beat } from "./apollo/gqlQuery"
 
+import { getCookie } from "@/utils" 
+
+// const { logged, device, profile } = useSelector((state: DefaultRootState) => state.user);
 const App: FC = () => {
-  const { locale } = useSelector((state : DefaultRootState) => state.user);
+  const { profile, locale } = useSelector((state : DefaultRootState) => state.user);
   const { theme, loading } = useSelector((state : DefaultRootState) => state.global);
+
+  const [forceResubscription, setForceResubscription] = useState(profile);
   const dispatch = useDispatch();
   const { t } = useTranslation();
 
-  const { data: useData, loading: useLoading, error: useError } = useSubscription(userConnected);
+  console.log("App [logged]:", profile)
+  const { data: useData, loading: useLoading, error: useError } = useSubscription(heart_beat, {
+                                                                    variables: { input:  { "cookie": getCookie('usida') } },
+                                                                    skip: !forceResubscription, 
+                                                                  });
 
   // Handle error here
   if (useError) {
@@ -60,6 +69,11 @@ const App: FC = () => {
       mql.addEventListener('change', matchMode);
     }
   }, []);
+
+  useEffect(() => {
+    // Update userId to force re-subscription
+    setForceResubscription(profile);
+  }, [profile]);
 
   // set the locale for the user
   // more languages options can be added here

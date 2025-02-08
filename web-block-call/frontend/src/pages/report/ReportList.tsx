@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Input, Tag, Button, Space, Dropdown, Image } from 'antd';
+import React, { useState, useEffect, Key } from 'react';
+import { Table, Input, Tag, Button, Space, Dropdown, Image,  } from 'antd';
 import moment from "moment";
 import { useQuery, useMutation } from "@apollo/client";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import _ from "lodash"
-import { DownOutlined, PlusOutlined } from '@ant-design/icons';
+import { DownOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 
-import { query_reports } from "@/apollo/gqlQuery"
+import { query_reports, mutation_report } from "@/apollo/gqlQuery"
 import { getHeaders, isValidUrl } from "@/utils"
 
 import handlerError from '@/utils/handlerError';
@@ -30,7 +30,7 @@ const items = [
 
 interface reportItem {
     current:{
-        sellerFirstName: string;
+        seller_first_name: string;
         sellerLastName: string;
         idCard: string;
         sellerAccount: string;
@@ -47,10 +47,10 @@ interface reportItem {
 
 const columns = (navigate: ReturnType<typeof useNavigate>) => [
     {
-        title: 'Images',
-        dataIndex: ['current', 'images'],
+        title: 'Picture',
+        dataIndex: ['images'],
         render: (images: any[]) => {
-            const items = _.map(images, v=> `http://localhost:1984/${v.url}`);
+            const items = _.map(images, v=> `http://localhost:4000/${v.url}`);
             return <div style={{position: 'relative', display: 'inline-block'}}>
                         <Image.PreviewGroup items={items}>
                         <div className="image-wrapper" style={{position: 'relative', display: 'inline-block'}} >
@@ -74,16 +74,16 @@ const columns = (navigate: ReturnType<typeof useNavigate>) => [
         },
     },
     {
-        title: 'sellerFirstName',
-        dataIndex: ['current', 'sellerFirstName'],
-        sorter: (a: reportItem, b: reportItem) => a.current.sellerFirstName.localeCompare(b.current.sellerFirstName) ,
-        render: (sellerFirstName: string) =>{
-            return <>{sellerFirstName}</>
+        title: 'Seller Name',
+        dataIndex: ['seller_first_name'],
+        sorter: (a: reportItem, b: reportItem) => a.current.seller_first_name.localeCompare(b.current.seller_first_name) ,
+        render: (value: string) =>{
+            return <>{value}</>
         }
     },
     {
-        title: 'additionalInfo',
-        dataIndex: ['current', 'additionalInfo'],
+        title: 'Info',
+        dataIndex: ['additional_info'],
         // sorter: (a: reportItem, b: reportItem) => a.current.localeCompare(b.email),
         render: (additionalInfo: string) =>{
             return <>{ additionalInfo }</>
@@ -109,8 +109,7 @@ const columns = (navigate: ReturnType<typeof useNavigate>) => [
         key: 'action',
         sorter: true,
         render: (item: any) => {
-            console.log("Action :", item)
-
+            // console.log("Action :", item)
             // if(data.roles.includes(1)){
             //     return  <Space size="middle">
             //                 <a onClick={()=>{
@@ -124,10 +123,11 @@ const columns = (navigate: ReturnType<typeof useNavigate>) => [
             // }
             return  <Space size="middle">
                         <a onClick={()=>{
-                            navigate(`/view?v=${item._id}`, { state: { _id: item._id } });
+                            console.log("item :", item)
+                            navigate(`/view?v=${item.report_id}`, { state: { _id: item.report_id } });
                         }}>View</a>
                         <a onClick={()=>{
-                            navigate('/report?mode=edited', { state: { mode: "edited", _id: item._id } });
+                            navigate('/report?mode=edited', { state: { mode: "edited", _id: item.report_id } });
                         }}>Edit</a>
                         <Dropdown menu={{ items }}>
                             <a>More <DownOutlined /></a>
@@ -146,10 +146,46 @@ const ReportList: React.FC = (props) => {
     const [files, setFiles] = useState<File[]>([]);
     const { profile } = useSelector((state: any) => state.user);
 
+    const [pageSizeOptions, setPageSizeOptions] = useState([10, 50, 100])
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: pageSizeOptions[0],
+    });
+
+    const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); // State for selected rows
+  
+    const [onReport] = useMutation(mutation_report, {
+        context: { headers: getHeaders(location) },
+        update: (cache, { data: { report } }) => {
+          console.log("report: ", report);
+        },
+        onCompleted: (data, clientOptions) => {
+        //   setLoading(false);  
+        //   let { variables: { input } } : any = clientOptions;
+        //   if(input?.mode === 'added'){
+        //     message.success('Added successfully!');
+        //     navigate(-1);
+        //   }else if(input?.mode === 'edited'){
+        //     message.success('Edited successfully!');
+        //     navigate(-1);
+        //   }
+        },
+        onError: (error) => {
+        //   setLoading(false);
+          handlerError(props, error);
+        }
+    });
+
     const { loading: loadingReports, 
             data: dataReports, 
-            error: errorReports  } =  useQuery( query_reports, {
+            error: errorReports,
+            refetch: refetchReports  } =  useQuery( query_reports, {
                                                 context: { headers: getHeaders(location) },
+                                                variables: { input: {
+                                                                    page: pagination.current, 
+                                                                    pageSize: pagination.pageSize
+                                                                }
+                                                            },
                                                 fetchPolicy: 'cache-first', 
                                                 nextFetchPolicy: 'network-only', 
                                                 notifyOnNetworkStatusChange: false,
@@ -192,6 +228,10 @@ const ReportList: React.FC = (props) => {
         }
     }, [dataReports, loadingReports])
 
+    useEffect(()=>{
+        refetchReports({input: { page: pagination.current, pageSize: pagination.pageSize }})
+    }, [ pagination ])
+
     const handleSearch = (value: string) => {
         // setSearchText(value);
         // const filtered = data?.filter((item) => 
@@ -207,6 +247,32 @@ const ReportList: React.FC = (props) => {
         // navigate('/administrator/products/new', { state: { mode: 'added' } })}
     };
 
+    // Handle row selection changes
+    const handleRowSelectionChange = (
+        newSelectedRowKeys: Key[], // Selected row keys
+        newSelectedRows: reportItem[], // Selected rows
+        info: { type: string } // Information about the selection type
+    ) => {
+        console.log('Selected Row Keys:', newSelectedRowKeys);
+        console.log('Selected Rows:', newSelectedRows);
+        console.log('Selection Info:', info);
+        setSelectedRowKeys(newSelectedRowKeys); // Update selected row keys
+    };
+
+    const onClickDelete = () => {
+        console.log("onClickDelete :", selectedRowKeys)
+
+        onReport({ variables: { input: { mode: "deleted", reportIds: selectedRowKeys } } });
+    }
+
+    const handleTableChange = (pagination: any) => {
+        setPagination(pagination);
+    };
+
+    const handlePageSizeChange = (newPageSize: number) => {
+        setPagination({ ...pagination, pageSize: newPageSize });
+    };
+    
     return (
         <div>
             <Input.Search
@@ -223,12 +289,33 @@ const ReportList: React.FC = (props) => {
             >
                 Add New Report
             </Button>
+            {
+                selectedRowKeys.length > 0
+                ?   <div>
+                        <Button type="primary" danger onClick={onClickDelete} disabled={!(selectedRowKeys.length > 0)} icon={<DeleteOutlined />} />
+                        {selectedRowKeys.length > 0 ? `Selected ${selectedRowKeys.length} items` : null}
+                    </div>
+                :   <div />
+            }
             
             <Table
                 columns={columns(navigate)}
                 dataSource={filteredData}
-                pagination={{ pageSize: 50 }}
-                rowKey="key"
+                pagination={{ 
+                    current: pagination.current,
+                    pageSize: pagination.pageSize,
+                    total: dataReports?.reports.totalCount, // Use total count from the server
+                    pageSizeOptions,
+                    showSizeChanger: true,
+                    onShowSizeChange: (_, size) => handlePageSizeChange(size),
+                    showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+                }}
+                onChange={handleTableChange}
+                rowKey="report_id"
+                rowSelection={{
+                    selectedRowKeys, // This binds the selectedRowKeys state
+                    onChange: handleRowSelectionChange, // Callback to handle row selection changes
+                }}  
             />
         </div>
     );

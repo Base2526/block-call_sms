@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import _, { result } from "lodash";
+import _, { result, values } from "lodash";
 import deepdash from "deepdash";
 deepdash(_);
 import mongoose, { ObjectId, Schema } from 'mongoose';
@@ -10,9 +10,10 @@ import * as path from 'path';
 import AppError from "./AppError"
 
 import * as model from "../model"
-import * as Constants from "../constants"
+import * as constants from "../constants"
 import * as cache from "../cache"
 
+import pool from '../db';
 
 // import logger from "./logger";
 
@@ -22,6 +23,9 @@ import { getPercentById, getPositionById, positionLevelMoreThan } from "./positi
 // import order from '../model/OrderModel';
 
 import { Node, Member, TreeNode, IMember, IFile } from "./Interface"
+
+
+import pubsub from '../pubsub';
 
 export const loggerError = async(req: any, message: string) =>{
    let { current_user } = await checkAuth(req);
@@ -70,86 +74,101 @@ export const formatDate = (date: any) => {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-export const getSession = async(userId: string, input: any) => {  
-    await model.models.Session.deleteOne({userId})
-
-    const { REACT_APP_JWT_SECRET } = process.env as { REACT_APP_JWT_SECRET: string; };
-    let session = await model.models.Session.create({  ...input, 
-                                                userId, 
-                                                token: jwt.sign(userId.toString(), REACT_APP_JWT_SECRET)});
+export const getSession = async( userId: number ) => {  
+  // await model.models.Session.deleteOne({userId})
+  const { REACT_APP_JWT_SECRET } = process.env as { REACT_APP_JWT_SECRET: string; };
   
-    return cryptojs.AES.encrypt(session?._id.toString(), REACT_APP_JWT_SECRET).toString() 
-}
+  // let session = await model.models.Session.create({  ...input, 
+  //                                             userId, 
+  //                                             token: jwt.sign(userId.toString(), REACT_APP_JWT_SECRET)});
 
-// export const getMember = async( query: any ) =>{
-//     return  await Model.models.Member.findOne( query  )
-// }
+  const insertQuery = `INSERT INTO session (user_id, token) VALUES ($1, $2) RETURNING id;`;
+  let payload = `${ userId }_${ Date.now() }`;
+  let query = await pool.query(insertQuery, [userId, jwt.sign(payload, REACT_APP_JWT_SECRET)]);
+  return cryptojs.AES.encrypt(query.rows[0].id.toString(), REACT_APP_JWT_SECRET).toString() 
+}
 
 export const checkRole = (user: any) =>{
     // console.log("@1 checkRole :", user)
-    if(user?.current?.roles){
+    if(user?.roles){
         let { REACT_APP_USER_ROLES } = process.env
-        // console.log("@2 checkRole :", user?.current?.roles, REACT_APP_USER_ROLES)
-        if(_.includes( user?.current?.roles, parseInt(_.split(REACT_APP_USER_ROLES, ',' )[0])) ){
-            return Constants.Role.ADMINISTRATOR;
+        console.log("@2 checkRole :", user?.roles, REACT_APP_USER_ROLES)
+        if(_.includes( user?.roles, parseInt(_.split(REACT_APP_USER_ROLES, ',' )[0])) ){
+            return constants.Role.ADMINISTRATOR;
         }
-        else if(_.includes( user?.current?.roles, parseInt(_.split(REACT_APP_USER_ROLES, ',' )[2])) ){
-            return Constants.Role.SELLER;
+        else if(_.includes( user?.roles, parseInt(_.split(REACT_APP_USER_ROLES, ',' )[2])) ){
+            return constants.Role.SELLER;
         }
-        else if(_.includes( user?.current?.roles, parseInt(_.split(REACT_APP_USER_ROLES, ',' )[1])) ){
-            return Constants.Role.AUTHENTICATED;
+        else if(_.includes( user?.roles, parseInt(_.split(REACT_APP_USER_ROLES, ',' )[1])) ){
+            return constants.Role.AUTHENTICATED;
         }
     }
-    return Constants.Role.ANONYMOUS;
+    return constants.Role.ANONYMOUS;
 }
 
-export const getUser = async(query: any) =>{
-    return  await model.models.User.findOne( query  )
+export const getUser = async(id: any) =>{
+    // return  await model.models.User.findOne( query  )
+
+    let query = await pool.query(`SELECT * FROM "user" WHERE "user".id = ${ id }`);
+    return query.rows[0]      
 }
 
 export const checkAuth = async(req: any) => {
-    console.log("@1 checkAuth :", req) // authorization
+    // console.log("@1 checkAuth :", req) // authorization
     const { REACT_APP_JWT_SECRET } = process.env as { REACT_APP_JWT_SECRET: string; };
 
     if (req && req["authorization"]) {
-        const auth    = req["authorization"];
-        const parts   = auth.split(" ");
-        const bearer  = parts[0];
-        try{
-            const sessionId   = cryptojs.AES.decrypt(parts[1], REACT_APP_JWT_SECRET).toString(cryptojs.enc.Utf8);
-            if (bearer === "Bearer") {
-                let session = await model.models.Session.findOne({_id: sessionId});
-                if(!_.isEmpty(session)){
+      const auth    = req["authorization"];
+      const parts   = auth.split(" ");
+      const bearer  = parts[0];
+      try{
+        const sessionId   = cryptojs.AES.decrypt(parts[1], REACT_APP_JWT_SECRET).toString(cryptojs.enc.Utf8);
+        if (bearer === "Bearer") {
+          // let session = await model.models.Session.findOne({_id: sessionId});
 
-                    let expiredDays = Math.floor((session.expired.getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+          let sessions = await pool.query(`SELECT * FROM session WHERE id = ${ sessionId }`);
+          if (sessions?.rowCount !== null && sessions.rowCount >= 0) {
+            let session = sessions.rows[0]
+            if(!_.isEmpty(session)){
 
-                    // code
-                    // -1 : force logout
-                    //  0 : anonymums
-                    //  1 : OK
-                    if(expiredDays >= 0){
-                        let userId  = jwt.verify(session.token, REACT_APP_JWT_SECRET);
-                        let current_user = await getUser({_id: userId}) 
+              let expiredDays = Math.floor((session.expired.getTime() - new Date().getTime()) / (1000 * 3600 * 24));
 
-                        if(!_.isNull(current_user)){
-                            return {
-                                status: true,
-                                code: Constants.Status.SUCCESS,
-                                pathname: JSON.parse(req["custom-location"])?.pathname,
-                                current_user,
-                            }
-                        }
-                    }
+              console.log("expiredDays :", expiredDays)
+              // code
+              // -1 : force logout
+              //  0 : anonymums
+              //  1 : OK
+              if(expiredDays >= 0){
+                let user_id  = jwt.verify(session.token, REACT_APP_JWT_SECRET);
+                let current_user = await getUser(user_id.split("_")[0]) 
+                if(!_.isNull(current_user)){
+                  return {
+                    status: true,
+                    code: constants.Status.SUCCESS,
+                    pathname: JSON.parse(req["custom-location"])?.pathname,
+                    current_user,
+                  }
                 }
+              }else{
+                pubsub.publish(constants.Subscription.HEART_BEAT, {
+                  params: {
+                    mutation: constants.Status.FORCE_LOGOUT,
+                    req
+                  },
+                });
+              }
             }
-            throw new AppError(Constants.Status.FORCE_LOGOUT, 'Expired!', req)
-        } catch (e: any) {
-            throw new AppError(Constants.Status.FORCE_LOGOUT, 'Expired!', {...e, ...req} )
+          } 
         }
+        throw new AppError(constants.Status.FORCE_LOGOUT, 'Expired!', req)
+      } catch (e: any) {
+        console.error(e)
+        throw new AppError(constants.Status.FORCE_LOGOUT, 'Expired!', {...e, ...req} )
+      }
     }
     return {
         status: false,
-        code: Constants.Status.USER_NOT_FOUND,
+        code: constants.Status.USER_NOT_FOUND,
         message: "without user - anonymous user"
     }
 }

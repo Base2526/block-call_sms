@@ -11,7 +11,7 @@ import { getHeaders, getCookie } from "@/utils"
 import { queryMembers, faker_agent, 
         faker_insurance, mutationTest_addmember, 
         query_users, mutation_report, mutation_register,
-        guery_provinces, query_banks } from "@/apollo/gqlQuery"
+        query_provinces, query_banks } from "@/apollo/gqlQuery"
 
 import  { DefaultRootState } from '@/interface/DefaultRootState';
 // import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
@@ -47,7 +47,7 @@ const Faker: React.FC = (props) => {
 
     const { loading: loadingProvinces, 
         data: dataProvinces, 
-        error: errorProvinces } = useQuery(guery_provinces, {
+        error: errorProvinces } = useQuery(query_provinces, {
         context: { headers: getHeaders(location) },
         fetchPolicy: 'cache-first',
         nextFetchPolicy: 'network-only',
@@ -445,7 +445,7 @@ const Faker: React.FC = (props) => {
     const generateSellerAccounts = (count: number): any[] => {
         const sellerAccounts: any[] = [];
         for (let i = 0; i < count; i++) {
-            sellerAccounts.push({ sellerAccount: generateIDCard(), bankId: banks[Math.floor(Math.random() * banks.length)]?._id }); 
+            sellerAccounts.push({ seller_account: generateIDCard(), bank_id: banks[Math.floor(Math.random() * banks.length)]?.id }); 
         }
         return sellerAccounts;
     };
@@ -456,24 +456,24 @@ const Faker: React.FC = (props) => {
       };
 
     const onFinishReport=  async(values: any) => {
-        for ( var i = 0; i < 10; i++ ) {
+        for ( var i = 0; i < 20; i++ ) {
 
             const fileCount = Math.floor(Math.random() * 8) + 1; // Define the number of files you want to generate
             const images = await createMultiplePngFiles(fileCount); // Call the function to create multiple files
 
             let newInput = {
-                ownerId: users[Math.floor(Math.random() * users.length)]._id,
-                sellerFirstName: faker.name.firstName(),
-                sellerLastName: faker.name.firstName(),
-                idCard: generateIdCardNumber(),
+                user_id: users[Math.floor(Math.random() * users.length)].id,
+                seller_first_name: faker.name.firstName(),
+                seller_last_name: faker.name.firstName(),
+                id_card: generateIdCardNumber(),
                 product: faker.name.jobTitle(),
-                transferAmount: faker.commerce.price(),
-                transferDate: new Date(),
-                sellingWebsite: faker.address.streetAddress(),
-                provinceId: provinces[Math.floor(Math.random() * provinces.length)]._id,
-                telNumbers: generateTelNumbers(fileCount),
-                sellerAccounts: generateSellerAccounts(fileCount), //[{ sellerAccount: 'A001', bankId: ObjectId('66fa659dec7a4f0134b57610') }],
-                additionalInfo: faker.name.jobTitle(),
+                transfer_amount: faker.commerce.price(),
+                transfer_date: new Date(),
+                selling_website: faker.address.streetAddress(),
+                province_id: provinces[Math.floor(Math.random() * provinces.length)].id,
+                tel_numbers: generateTelNumbers(fileCount),
+                seller_accounts: generateSellerAccounts(fileCount), //[{ sellerAccount: 'A001', bankId: ObjectId('66fa659dec7a4f0134b57610') }],
+                additional_info: faker.name.jobTitle(),
                 images,
             }
 
@@ -490,7 +490,6 @@ const Faker: React.FC = (props) => {
         // Add more items as needed
     ];
     
-
     const saleItems: SaleItem[] = [
         { id: 1, name: 'Product A', amount: 50, checked: true },
         { id: 2, name: 'Product B', amount: 30, checked: false },

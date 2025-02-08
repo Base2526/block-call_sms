@@ -19,6 +19,7 @@ import { GraphQLUpload, graphqlUploadExpress } from 'graphql-upload-ts';
 
 
 
+
 import typeDefs from "./typeDefs";
 import resolvers from "./resolvers";
 // import * as Utils from "./utils";
@@ -32,7 +33,53 @@ import pubsub from './pubsub';
 // Import your cron jobs
 // import './cron-jobs';
 
-import './mongo';
+// import './mongo';
+
+import { Pool } from "pg";
+
+import { createTable } from './sql';
+
+import pool from './db';
+
+// const {
+//   DB_HOST,
+//   DB_PORT,
+//   DB_USER,
+//   DB_PASSWORD,
+//   DB_NAME
+// } = process.env;
+
+// // Database client
+// const pool = new Pool({
+//   host: DB_HOST,
+//   port: Number(DB_PORT),
+//   user: DB_USER,
+//   password: DB_PASSWORD,
+//   database: DB_NAME,
+
+//   max: 100,               // Maximum number of clients in the pool
+//   idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
+//   connectionTimeoutMillis: 10000, // How long to wait for a connection before timing out
+// });
+
+// Connect to the database
+const connectDB = async () => {
+  let client;
+  try {
+    client = await pool.connect();
+    console.log("Connected to the database");
+
+    await createTable(client);
+
+    // Ensure release is called only once
+  } catch (error) {
+    console.error("Database connection error", error);
+    pool && pool.end();
+    process.exit(1); // Exit the process if the database connection fails
+  } finally{
+    client && client.release(); // Release the client back to the pool
+  }
+};
 
 // const { graphqlUploadExpress } = require('graphql-upload');
 
@@ -155,7 +202,6 @@ server.start().then(() => {
 
   app.use('/graphql', expressMiddleware(server, {
     context: async ({ req }: { req: Request }) =>{
-      // console.log('/graphql')
       return ({ req: req.headers })
     } ,
   }));
@@ -168,9 +214,13 @@ server.start().then(() => {
     res.status(200).send('Subscription All: ' + subscriptionCount.join(' '));
   });
 
-  const httpServer = app.listen(Number(REACT_APP_GRAPHQL_PORT) || 4000, () => {
+  const httpServer = app.listen(Number(REACT_APP_GRAPHQL_PORT) || 4000, async() => {
     console.log(`Server is now running on http://localhost:${REACT_APP_GRAPHQL_PORT || 4000}/graphql`);
     // savePositionsIfNotExists();
+
+    await connectDB();
+
+    
   });
 
   const wsServer = new WebSocketServer({ server: httpServer, path: '/graphql' });

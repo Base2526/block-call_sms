@@ -177,23 +177,22 @@ export interface IDblog extends Document {
 }
 
 export interface IProvince {
-  _id: any;
+  // id: any;
   value: string; // Thai name
   label: string; // English name
 }
 
 // Define interfaces for data structures
 export interface IAdminUser {
-  _id?: string;
-  current: {
+  // current: {
     username?: string;
     password?: string;
-    displayName?: string;
+    display_name?: string;
     email?: string;
     tel: string;
     idCard: string;
     roles: number[];
-  };
+  // };
 }
 
 // Define an interface for the bank object

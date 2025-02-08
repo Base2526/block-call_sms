@@ -22,7 +22,7 @@ import LanguageSwitcher from "@/pages/layout/LanguageSwitcher"
 import * as utils from "@/utils"
 import * as Constants from "@/constants"
 import  { DefaultRootState } from '@/interface/DefaultRootState';
-
+import { logout } from '@/stores/user.store';
 const { Header } = Layout;
 const { REACT_APP_HOST_GRAPHAL }  = process.env
 
@@ -52,6 +52,7 @@ const HeaderComponent: FC<HeaderProps> = ({ collapsed, toggle }) => {
         // const res = Boolean(await dispatch(logoutAsync()));
         // res && 
         
+        dispatch(logout())
         navigate('/login');
         return;
     }
@@ -82,13 +83,13 @@ const HeaderComponent: FC<HeaderProps> = ({ collapsed, toggle }) => {
   return (
     <Header className="layout-page-header bg-2" style={{ backgroundColor: token.token.colorBgContainer }}>       
       {device !== 'MOBILE' && (
-        <div className="logo" style={{ width: collapsed ? 80 : 200 }} onClick={()=>navigate('/')}>
+        <div className="logo" style={{ width: collapsed ? 80 : 100 }} onClick={()=>navigate('/')}>
           <InsuranceLogo color= { theme === 'dark' ? "#FFFFFF" : "#333333" } />
         </div>
       )}
       <div className="layout-page-header-main">
-        <div onClick={toggle} style={{ color: '#afafaf' }}>
-          <span id="sidebar-trigger">{collapsed ? <MenuUnfoldOutlined style={{ color: theme === 'dark' ? "#FFFFFF" : "#333333", fontSize: '24px' }} /> : <MenuFoldOutlined style={{ color: theme === 'dark' ? "#FFFFFF" : "#333333", fontSize: '24px' }}/>}</span>
+        <div /*onClick={toggle}*/  style={{ color: '#afafaf' }}>
+          {/* <span id="sidebar-trigger">{collapsed ? <MenuUnfoldOutlined style={{ color: theme === 'dark' ? "#FFFFFF" : "#333333", fontSize: '24px' }} /> : <MenuFoldOutlined style={{ color: theme === 'dark' ? "#FFFFFF" : "#333333", fontSize: '24px' }}/>}</span> */}
         </div>
         <div className="actions">
           {/* <CartComponent /> */}
