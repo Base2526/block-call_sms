@@ -69,6 +69,8 @@ import AboutUsPage from "@/pages/settings/AboutUs"
 
 import WrapperRouteComponent from '@/routes/config';
 
+import UserViewPage from "@/pages/administrator/UserView"
+
 const NotFound = lazy(() => import(/* webpackChunkName: "404'"*/ '@/pages/404'));
 const Documentation = lazy(() => import(/* webpackChunkName: "404'"*/ '@/pages/doucumentation'));
 const Guide = lazy(() => import(/* webpackChunkName: "guide'"*/ '@/pages/guide'));
@@ -114,11 +116,16 @@ const routeList: RouteObject[] = [
       // },
       {
         path: '/',
-        element: <WrapperRouteComponent requireAuth={true} element={<HomePage />} titleId="title.dashboard" />,
+        element: <WrapperRouteComponent requireAuth={true} element={<HomePage />} titleId="title.home" />,
       },
       {
         path: 'view',
         element: <WrapperRouteComponent requireAuth={true} element={<ReportViewPage />} titleId="title.insurance" />,
+      },
+      // 
+      {
+        path: 'user',
+        element: <WrapperRouteComponent requireAuth={true} element={<UserViewPage />} titleId="title.insurance" />,
       },
       {
         path: 'my_list',

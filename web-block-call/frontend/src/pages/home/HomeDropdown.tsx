@@ -35,7 +35,7 @@ const HomeDropdown: React.FC<HomeDropdownProps> = ({ id, onItemClick, style }) =
           }}
           onClick={(e) => {
             e.stopPropagation();  // Prevent List.Item click
-            console.log("Clicked ID:", id);
+            // console.log("Clicked ID:", id);
           }} // Prevent List.Item click when clicking menu
         />
       </Dropdown>

@@ -8,23 +8,16 @@ import HomeDropdown from "@/pages/home/HomeDropdown"
 
 const { Paragraph, Text } = Typography;
 
-interface ProductListItemProps {
+interface HomeListProps {
   report: reportItem;
   onClick?: () => void;
-  onAddToCart?: () => void;
-  onDeleteForCart?: () => void;
-  onBuy?: () => void;
+  onMenuItemClick: (id: string | number, action: string | number) => void;
 }
-
 const { REACT_APP_HOST_GRAPHAL } = process.env;
 
-const HomeList: React.FC<ProductListItemProps> = ({
-  report,
-  onClick,
-  onBuy
-}) => {
-  const items = _.map(report.images, v => `http://${REACT_APP_HOST_GRAPHAL}/${v.url}`);
+const HomeList: React.FC<HomeListProps> = ({ report, onClick, onMenuItemClick }) => {
 
+  const items = _.map(report.images, v => `http://${REACT_APP_HOST_GRAPHAL}/${v.url}`);
   const telNumbersView = () => (
     <ul style={{marginLeft: '0px'}}>
       {_.map(report.tel_numbers, (v, index) => (
@@ -39,11 +32,9 @@ const HomeList: React.FC<ProductListItemProps> = ({
 
   return (
     <List.Item className="list-card-item" style={{ position: 'relative' }}>
-      <HomeDropdown id={report.report_id} onItemClick={(id, key)=> console.log(">>: ", id, key)}/>
-      {/* Image and Actions Wrapper */}
+      <HomeDropdown id={report.report_id} onItemClick={onMenuItemClick}/>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {/* Image Preview */}
-        <div style={{ position: 'relative', display: 'inline-block' /*, width: '100%'*/  }}>
+        <div style={{ position: 'relative', display: 'inline-block' }}>
           <Image.PreviewGroup items={items}>
             <Image
               width={150}
@@ -110,9 +101,7 @@ const HomeList: React.FC<ProductListItemProps> = ({
         <p onClick={onClick} style={{ fontSize: '12px', color: "rgba(0, 0, 0, 0.45)" }}>
           <Text strong>วันลงข้อมูล:</Text> {moment(report.updated_at).format('MM/DD, YY hh:mm')}
         </p>
-      </div>
-
-      
+      </div>      
     </List.Item>
   );
 };

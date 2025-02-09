@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Descriptions, Image, Carousel, Row, Col, Skeleton, Tag, Typography } from 'antd';
 import { useQuery } from '@apollo/client';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import moment from 'moment';
 import _ from "lodash"
 
-import Component from "../components/comment"
-import { query_report, query_provinces, mutation_report } from '@/apollo/gqlQuery';
+import Comments from "@/pages/components/Comments"
+import { query_report } from '@/apollo/gqlQuery';
 import { getHeaders } from '@/utils';
 import handlerError from '@/utils/handlerError';
 import HomeDropdown from "@/pages/home/HomeDropdown"
@@ -36,8 +36,10 @@ const bankOptions: { [key: string]: string } = {
 
 const ReportView: React.FC = (props) => {
   const location = useLocation();
-  const { _id } = location.state || {};
+  const [searchParams] = useSearchParams();
+  const { _id } = location.state || { _id: searchParams.get('v') };
 
+  console.log("ReportView :", _id)
   const [data, setData] = useState<FormData>();
 
   const { loading: loadingReport, 
@@ -48,6 +50,7 @@ const ReportView: React.FC = (props) => {
         fetchPolicy: 'cache-first',
         nextFetchPolicy: 'network-only',
         notifyOnNetworkStatusChange: false,
+        skip: !_.isEmpty(_id) 
     });
 
   if (errorReport) {
@@ -160,7 +163,7 @@ const ReportView: React.FC = (props) => {
           {/* Right Column: Details */}
           <Col xs={24} md={9} className='right-column' style={{ padding: '5px', borderRadius: '10px', borderStyle:'dashed', borderColor:'#ebebeb', width: '100%' }}>
             <div style={{ width: '100%', padding: '10px' }}>
-              <Component />
+              <Comments id={_id} />
             </div>
           </Col>
         </Row>

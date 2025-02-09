@@ -81,8 +81,8 @@ const columns = (navigate: ReturnType<typeof useNavigate>, onDelete: (item: Orde
   // dataIndex: ['current', 'status'],
   render: (item: OrderItem) => {
       console.log("item :", item)
-      if(item.editer && item.editer.current !== undefined){
-        return <Tag color="#2db7f5" key={status}>{item.editer.current.displayName}</Tag>
+      if(item.editer && item.editer !== undefined){
+        return <Tag color="#2db7f5" key={status}>{item.editer.display_name}</Tag>
       }
       return <></>
     }

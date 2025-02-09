@@ -20,7 +20,7 @@ export const typeDefs = gql`
     user(_id: ID!): JSON
     users: JSON
     banks: JSON
-    comment_by_id(input: JSON): JSON
+    comment(_id: ID!): JSON
   }
 
   type Mutation {

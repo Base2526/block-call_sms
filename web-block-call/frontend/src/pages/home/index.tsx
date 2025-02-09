@@ -42,9 +42,9 @@ const ProductList: React.FC = (props) => {
                                                     pageSize: pagination.pageSize
                                                   }
                                                 },
-                                                fetchPolicy: 'no-cache',
+                                                fetchPolicy: 'cache-first', 
                                                 nextFetchPolicy: 'network-only',
-                                                notifyOnNetworkStatusChange: false,
+                                                notifyOnNetworkStatusChange: false
                                               });
 
   if (errorReports) {
@@ -60,6 +60,8 @@ const ProductList: React.FC = (props) => {
     if (!loadingReports && dataReports?.reports) {
       const { status, data, totalCount } = dataReports.reports;
       if (status) {
+
+        console.log(">> data :", data)
         // If data is already an array, you can set it directly.
         setReports(data);
         setFilteredReports(data);
@@ -112,6 +114,7 @@ const ProductList: React.FC = (props) => {
     // navigate('/administrator/products/new', { state: { mode: 'added' } })}
   };
 
+  // navigate('/profile')
   return (
     <div>
       <div style={{ marginBottom: 16, display: 'flex', gap: '10px' }}>
@@ -144,11 +147,16 @@ const ProductList: React.FC = (props) => {
             grid={{ gutter: 16, column: 2 }}
             dataSource={filteredReports}
             renderItem={(item) => (
-              <List.Item className="list-item-product-card">
+              <List.Item className="item-product-list">
                 <HomeList
                   report={item}
                   onClick={() => {
                     navigate(`/view?v=${item.report_id}`, { state: { _id: item.report_id } });
+                  }}
+                  onMenuItemClick={(id, action) => {
+                    console.log("onMenuItemClick :", id, action)
+
+                    navigate(`/user?id=${action}`, { state: { id: action } });
                   }}
                 />
               </List.Item>
@@ -158,11 +166,16 @@ const ProductList: React.FC = (props) => {
             grid={{ gutter: 16, column: 5 }}
             dataSource={filteredReports}
             renderItem={item => (
-              <List.Item  className={`list-item-product-card`}>
+              <List.Item  className={`item-product-card`}>
                 <HomeGrid
                   report= {item}
                   onClick={()=>{
                     navigate(`/view?v=${item.report_id}`, { state: { _id: item.report_id } });
+                  }}
+                  onMenuItemClick={(id, action) => {
+                    console.log("onMenuItemClick :", id, action)
+                    
+                    navigate(`/user?id=${action}`, { state: { id: action } });
                   }}
                 />
               </List.Item>

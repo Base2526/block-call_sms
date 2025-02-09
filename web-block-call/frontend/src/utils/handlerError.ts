@@ -30,6 +30,7 @@ const handlerError = (props: any, error: ApolloError) => {
     error.graphQLErrors.forEach((e: GraphQLError) => {
         const code = e.extensions?.code;
 
+        console.log("graphQLErrors :", e)
         switch (code) {
             case constants.FORCE_LOGOUT: {
                 const { logout } = props;

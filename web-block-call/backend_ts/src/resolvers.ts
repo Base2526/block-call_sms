@@ -413,8 +413,8 @@ const resolvers: IResolvers = {
       const reportsResult = await pool.query(reportsQuery, [ _id ]);                                
       // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
 
-      // console.log("call function report()");
-      // console.log( reportsResult.rows )
+      console.log("call function report()");
+      console.log( reportsResult.rows )
       return {
         status:true,
         data: reportsResult.rows.length > 0 ? reportsResult.rows[0] : undefined,
@@ -534,51 +534,13 @@ const resolvers: IResolvers = {
       // let role = utils.checkRole(current_user)
       // if( role !== Constants.ADMINISTRATOR ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
       
-      // let user = await model.models.User.findById(_id)
-
-      // let user = await model.models.User.aggregate([  { $match: { _id: mongoose.Types.ObjectId(_id) }  },
-      //   {
-      //     $addFields: {
-      //       avatarId: "$current.avatarId",  // Bring the nested field to the top level
-      //     }
-      //   },
-      //   {
-      //     $lookup: {
-      //       localField: "avatarId",
-      //       from: "file",
-      //       foreignField: "_id",
-      //       as: "avatar"
-      //     }
-      //   },
-      //   {
-      //     $unwind: {
-      //       path: "$avatar",
-      //       preserveNullAndEmptyArrays: true
-      //     }
-      //   },
-      //   {
-      //     $addFields: {
-      //       "current.avatar": "$avatar"  // Set 'current.avatar' field
-      //     }
-      //   },
-      //   {
-      //     $project: {
-      //       avatarId: 0,                // Hide 'avatarId' field if not needed
-      //       avatar: 0                   // Optionally remove 'avatar' after mapping
-      //     }
-      //   }
-      // ]);
-
-      const query = await pool.query(`SELECT 
-                                            "user".id AS user_id,
-                                            "user".username,
-                                            "user".email,
-                                            file.id AS file_id,
-                                            file.url,
-                                            file.filename
+      const query = await pool.query(`SELECT "user".*,
+                                             file.id AS file_id,
+                                             file.url,
+                                             file.filename
                                         FROM "user"
-                                        WHERE "user".id = ${ _id }
-                                        LEFT JOIN  file ON "user".id = file.userId;`);
+                                        LEFT JOIN  file ON "user".avatar_id = file.id
+                                        WHERE "user".id = ${ _id };`);
 
       if( query.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
 
@@ -610,22 +572,22 @@ const resolvers: IResolvers = {
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
-    comment_by_id: async(parent, args, context): Promise<any> => {
+    comment: async(parent, args, context): Promise<any> => {
       let start = Date.now()
       let { req } = context
-      let { input } = args
+      let { _id } = args
 
-      console.log("comment_by_id :", input)
+      console.log("comment :", _id)
       let { current_user } =  await utils.checkAuth(req);
       // let role = Utils.checkRole(current_user)
    
-      const existingComment = await model.models.Comment.findOne({ reportId: input?.id });
+      // const existingComment = await model.models.Comment.findOne({ reportId: input?.id });
          
                                                     
       // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
       return {
         status:true,
-        data: existingComment?.data !== undefined ? existingComment?.data : [],
+        // data: existingComment?.data !== undefined ? existingComment?.data : [],
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     }

@@ -93,3 +93,8 @@ app-block-call/vendor/bundle/
 
 react-comments/example/node_modules
 react-comments/react-comments-section/node_modules
+
+
+uploads
+
+web-block-call/postgres_data

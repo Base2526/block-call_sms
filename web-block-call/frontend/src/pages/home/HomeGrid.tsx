@@ -10,24 +10,16 @@ import HomeDropdown from "@/pages/home/HomeDropdown"
 const { Paragraph, Text } = Typography;
 
 // Define a TypeScript interface for card props
-interface ProductCardProps {
+interface HomeGridProps {
   report: reportItem;
   onClick?: () => void;
-  onAddToCart?: () => void;
-  onDeleteForCart?: () => void;
-  onBuy?: () => void;
+  onMenuItemClick: (id: string | number, action: string) => void;
 }
 
 const { REACT_APP_HOST_GRAPHAL } = process.env;
-const HomeGrid: React.FC<ProductCardProps> = ({
-  report,
-  onClick,
-  onAddToCart,
-  onDeleteForCart,
-  onBuy
-}) => {  
+const HomeGrid: React.FC<HomeGridProps> = ({ report, onClick, onMenuItemClick }) => { 
+   
   const items = _.map(report.images, v=> `http://${REACT_APP_HOST_GRAPHAL}/${v.url}`);
-
   const telNumbersView = () =>(
     <ul style={{marginLeft: '0px'}}>
       {_.map(report.tel_numbers, (v, index) => (
@@ -75,7 +67,7 @@ const HomeGrid: React.FC<ProductCardProps> = ({
           </div>
         </div>
       }>
-      <HomeDropdown id={report.report_id} onItemClick={(id, key)=> console.log(">>: ", id, key)}/>
+      <HomeDropdown id={report.report_id} onItemClick={onMenuItemClick}/>
       <div style={{ marginTop: '5px', minWidth: '150px' }}>
         <p onClick={onClick} style={{ fontSize: '12px', color: "rgba(0, 0, 0, 0.45)", display: 'inline' }} >
           <Text>ชื่อ:</Text>{" "} 
@@ -97,8 +89,8 @@ const HomeGrid: React.FC<ProductCardProps> = ({
           justifyContent: 'flex-end', // Align buttons to the end of the flex container
           gap: '8px' // Space between buttons
         }}>
-          <Button className='ant-btn-like' type="primary" icon={<LikeOutlined />} onClick={onBuy} />
-          <Button className='ant-btn-dislike' type="primary"  style={{backgroundColor:'red'}} icon={<DislikeOutlined />} onClick={onBuy} />
+          <Button className='ant-btn-like' type="primary" icon={<LikeOutlined />} onClick={()=>{}} />
+          <Button className='ant-btn-dislike' type="primary"  style={{backgroundColor:'red'}} icon={<DislikeOutlined />} onClick={()=>{}} />
         </div>
       </div>
     </Card>

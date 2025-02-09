@@ -196,7 +196,7 @@ const HeaderComponent: FC<HeaderProps> = ({ collapsed, toggle }) => {
             >
               <span className="user-action">
                 <Avatar 
-                  src={`http://${REACT_APP_HOST_GRAPHAL}/` + profile?.current?.avatar?.url}
+                  src={`http://${REACT_APP_HOST_GRAPHAL}/` + profile?.avatar?.url}
                   className="user-avator" 
                   size={40} 
                   icon={<UserOutlined />} />

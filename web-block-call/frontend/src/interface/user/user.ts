@@ -44,8 +44,10 @@ interface Current {
 }
 
 interface profileType {
-  _id?: string;
-  current?: Current;
+  id?: string;
+  display_name?: string;
+  email?: string;
+  avatar?: Avatar;
   history?: History[]; // Assuming `historySchema` has been defined elsewhere as `History`
 }
 
