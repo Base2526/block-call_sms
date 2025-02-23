@@ -8,9 +8,9 @@ import { useServer } from 'graphql-ws/lib/use/ws';
 import cors from 'cors';
 import path from 'path';
 // import jwt from 'jsonwebtoken';
-// import cryptojs from "crypto-js";
+import cryptojs from "crypto-js";
 import bodyParser from "body-parser";
-import _ from "lodash";
+import _, { isEmpty } from "lodash";
 // import { graphqlUploadExpress, GraphQLUpload } from 'graphql-upload';
 // import { processRequest } from 'graphql-upload-ts';
 import { json } from 'body-parser';
@@ -206,8 +206,39 @@ server.start().then(() => {
     } ,
   }));
 
+  // 
+
   app.get('/health', (req: Request, res: Response) => {
     res.status(200).send('Okay! >> ' + subscriptionCount.toString());
+  });
+
+  // GET /encrypt?password=12345
+  app.get('/encrypt', (req: Request, res: Response) => {
+    const password = req.query.password || ''; 
+    const REACT_APP_JWT_SECRET = process.env.REACT_APP_JWT_SECRET as string;
+
+    if (typeof password === "string") {
+      let encryptPassword =  cryptojs.AES.encrypt( password, REACT_APP_JWT_SECRET).toString()
+      res.status(200).send(`Encrypt = ${encryptPassword}`);
+      return;
+    }
+    
+    res.status(500).send(`Not okay!`);
+  });
+
+  // GET /decrypt?password=12345
+  app.get('/decrypt', (req: Request, res: Response) => {
+    const password = req.query.password || ''; 
+    const REACT_APP_JWT_SECRET = process.env.REACT_APP_JWT_SECRET as string;
+
+    if (typeof password === "string") {
+      const decryptedPassword = cryptojs.AES.decrypt(password, REACT_APP_JWT_SECRET).toString(cryptojs.enc.Utf8);
+           
+      res.status(200).send(`Encrypt = ${decryptedPassword}`);
+      return;
+    }
+    
+    res.status(500).send(`Not okay!`);
   });
 
   app.get('/subscriptions', (req: Request, res: Response) => {
