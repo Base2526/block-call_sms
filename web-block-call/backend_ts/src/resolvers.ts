@@ -15,6 +15,7 @@ import * as model from "./model"
 import pubsub from './pubsub'
 import { IUser, ILike, IFile } from "./utils/Interface"
 import pool from './db';
+import logger from "./utils/logger";
 
 const REACT_APP_JWT_SECRET = process.env.REACT_APP_JWT_SECRET as string;
 
@@ -64,341 +65,138 @@ const resolvers: IResolvers = {
       }
     },
     reports: async(parent, args, context): Promise<any> => {
-      let start = Date.now()
-      let { req } = context
-      
-      console.log("call function reports()");
-      let { current_user } =  await utils.checkAuth(req);
-      let role = utils.checkRole(current_user)
-      console.log("reports : current_user :", current_user, role, req)
+      try{
+        let start = Date.now()
+        let { req } = context
+        
+        console.log("call function reports()");
+        let { current_user } =  await utils.checkAuth(req);
+        let role = utils.checkRole(current_user)
+        console.log("reports : current_user :", current_user, role, req)
 
-      console.log(`reports :`)
-      console.log(args)
+        console.log(`reports :`)
+        console.log(args)
+        
+  
+        // logger.info(`Call >> reports: ${current_user}`, { current_user });
 
-      // if( role !== constants.Role.ADMINISTRATOR  && 
-      //     role !== constants.Role.AUTHENTICATED  ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
+        // logger.info('Hello World');
 
-      /*
-      let limitSize = 10;  // Number of documents to return
-      let page = 1;  // For pagination, which page to retrieve
-      let skipSize = (page - 1) * limitSize;  // Number of documents to skip
+        // if( role !== constants.Role.ADMINISTRATOR  && 
+        //     role !== constants.Role.AUTHENTICATED  ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
 
-      let reports = await model.models.Report.aggregate([
-        {
-          $addFields: {
-            ownerId: "$current.ownerId",
-            provinceId: "$current.provinceId",  // Bring the nested field to the top level
+        /*
+        let limitSize = 10;  // Number of documents to return
+        let page = 1;  // For pagination, which page to retrieve
+        let skipSize = (page - 1) * limitSize;  // Number of documents to skip
+
+        let reports = await model.models.Report.aggregate([
+          {
+            $addFields: {
+              ownerId: "$current.ownerId",
+              provinceId: "$current.provinceId",  // Bring the nested field to the top level
+            }
+          },
+          {
+            $lookup: {
+              localField: "ownerId",
+              from: "user",
+              foreignField: "_id",
+              as: "owner"
+            }
+          },
+          {
+            $unwind: {
+              path: "$owner",
+              preserveNullAndEmptyArrays: true
+            }
+          },
+          {
+            $lookup: {
+              localField: "provinceId",
+              from: "province",
+              foreignField: "_id",
+              as: "province"
+            }
+          },
+          {
+            $unwind: {
+              path: "$province",
+              preserveNullAndEmptyArrays: true
+            }
+          },
+          {
+            $lookup: {
+              localField: "_id",
+              from: "comment",
+              foreignField: "reportId",
+              as: "comment"
+            }
+          },
+          {
+            $unwind: {
+              path: "$province",
+              preserveNullAndEmptyArrays: true
+            }
+          },
+          // Add the $skip stage to skip documents for pagination
+          { 
+            $skip: skipSize 
+          },
+          // Add the $limit stage to limit the number of returned documents
+          { 
+            $limit: limitSize 
           }
-        },
-        {
-          $lookup: {
-            localField: "ownerId",
-            from: "user",
-            foreignField: "_id",
-            as: "owner"
-          }
-        },
-        {
-          $unwind: {
-            path: "$owner",
-            preserveNullAndEmptyArrays: true
-          }
-        },
-        {
-          $lookup: {
-            localField: "provinceId",
-            from: "province",
-            foreignField: "_id",
-            as: "province"
-          }
-        },
-        {
-          $unwind: {
-            path: "$province",
-            preserveNullAndEmptyArrays: true
-          }
-        },
-        {
-          $lookup: {
-            localField: "_id",
-            from: "comment",
-            foreignField: "reportId",
-            as: "comment"
-          }
-        },
-        {
-          $unwind: {
-            path: "$province",
-            preserveNullAndEmptyArrays: true
-          }
-        },
-        // Add the $skip stage to skip documents for pagination
-        { 
-          $skip: skipSize 
-        },
-        // Add the $limit stage to limit the number of returned documents
-        { 
-          $limit: limitSize 
-        }
-      ]);
-      */
+        ]);
+        */
 
-      let { searchText, page, pageSize} = args.input
-      const reportsQuery = `SELECT 
-                              r.id AS report_id,
-                              r.user_id,
-                              r.seller_first_name,
-                              r.seller_last_name,
-                              r.id_card,
-                              r.product,
-                              r.transfer_amount,
-                              r.transfer_date,
-                              r.selling_website,
-                              r.additional_info,
-                              r.created_at,
-                              r.updated_at,
+        let { searchText, page, pageSize} = args.input
+        const reportsQuery = `SELECT 
+                                r.id AS report_id,
+                                r.user_id,
+                                r.seller_first_name,
+                                r.seller_last_name,
+                                r.id_card,
+                                r.product,
+                                r.transfer_amount,
+                                r.transfer_date,
+                                r.selling_website,
+                                r.additional_info,
+                                r.created_at,
+                                r.updated_at,
 
-                              -- Province (Unique by p.id)
-                              COALESCE(
-                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th)) 
-                                  FILTER (WHERE p.id IS NOT NULL), 
-                                  '[]'::JSONB
-                              ) AS province,
+                                -- Province (Unique by p.id)
+                                COALESCE(
+                                    JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th)) 
+                                    FILTER (WHERE p.id IS NOT NULL), 
+                                    '[]'::JSONB
+                                ) AS province,
 
-                              -- Tel Numbers (Unique by tn.id)
-                              COALESCE(
-                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', tn.id, 'tel', tn.tel)) 
-                                  FILTER (WHERE tn.id IS NOT NULL), 
-                                  '[]'::JSONB
-                              ) AS tel_numbers,
+                                -- Tel Numbers (Unique by tn.id)
+                                COALESCE(
+                                    JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', tn.id, 'tel', tn.tel)) 
+                                    FILTER (WHERE tn.id IS NOT NULL), 
+                                    '[]'::JSONB
+                                ) AS tel_numbers,
 
-                              -- Seller Accounts (Unique by sa.id)
-                              COALESCE(
-                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT(
-                                      'id', sa.id, 
-                                      'seller_account', sa.seller_account, 
-                                      'bank_id', sa.bank_id, 
-                                      'bank_name', COALESCE(b.name_en, b.name_th)
-                                  )) FILTER (WHERE sa.id IS NOT NULL), 
-                                  '[]'::JSONB
-                              ) AS seller_accounts,
+                                -- Seller Accounts (Unique by sa.id)
+                                COALESCE(
+                                    JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT(
+                                        'id', sa.id, 
+                                        'seller_account', sa.seller_account, 
+                                        'bank_id', sa.bank_id, 
+                                        'bank_name', COALESCE(b.name_en, b.name_th)
+                                    )) FILTER (WHERE sa.id IS NOT NULL), 
+                                    '[]'::JSONB
+                                ) AS seller_accounts,
 
-                              -- Images (Unique by f.id)
-                              COALESCE(
-                                  JSONB_AGG(
-                                      DISTINCT JSONB_BUILD_OBJECT('id', f.id, 'filename', f.filename, 'url', f.url)
-                                  ) FILTER (WHERE f.id IS NOT NULL AND f.filename IS NOT NULL AND f.url IS NOT NULL), 
-                                  '[]'::JSONB
-                              ) AS images
-
-                          FROM report r
-                          LEFT JOIN tel_numbers tn ON r.id = tn.report_id
-                          LEFT JOIN seller_account sa ON r.id = sa.report_id
-                          LEFT JOIN bank b ON sa.bank_id = b.id -- Join with the bank table to get the bank name
-                          LEFT JOIN report_images ri ON r.id = ri.report_id
-                          LEFT JOIN province p ON p.id = r.province_id 
-                          LEFT JOIN file f ON ri.file_id = f.id
-
-                          WHERE (
-                            COALESCE(CAST($3 AS TEXT), '') = '' OR 
-                            r.seller_first_name ILIKE '%' || CAST($3 AS TEXT) || '%' OR
-                            r.seller_last_name ILIKE '%' || CAST($3 AS TEXT) || '%' OR
-                            r.id_card ILIKE '%' || CAST($3 AS TEXT) || '%' OR
-                            r.product ILIKE '%' || CAST($3 AS TEXT) || '%' OR
-                            r.selling_website ILIKE '%' || CAST($3 AS TEXT) || '%' OR
-                            r.additional_info ILIKE '%' || CAST($3 AS TEXT) || '%' OR
-                            p.name_th ILIKE '%' || CAST($3 AS TEXT) || '%'
-                          )
-
-                          GROUP BY r.id 
-                          ORDER BY r.created_at DESC
-                          LIMIT $1 OFFSET $2;
-                          `;
-
-      const totalCountQuery = `
-                          SELECT COUNT(*) AS totalCount
-                          FROM report r
-                          LEFT JOIN province p ON p.id = r.province_id
-                          WHERE (
-                            COALESCE(CAST($1 AS TEXT), '') = '' OR 
-                            (r.seller_first_name || ' ' || r.seller_last_name) ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            r.seller_first_name ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            r.seller_last_name ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            r.id_card ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            r.product ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            r.selling_website ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            r.additional_info ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            p.name_th ILIKE '%' || CAST($1 AS TEXT) || '%'
-                          );
-                        `;
-
-      // const searchWords = searchText.trim().split(/\s+/);
-      const reportsPromise = pool.query(reportsQuery, [pageSize, (page - 1) * pageSize, searchText]);
-      const totalCountPromise = pool.query(totalCountQuery, [searchText]);
-      const [reportsResult, totalCountResult] = await Promise.all([reportsPromise, totalCountPromise]);
-                                
-      if( reportsResult.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
-      console.log( "rowCount :", reportsResult.rowCount )
-      console.log( "rows :", reportsResult.rows )
-
-      return {
-        status: true,
-        data: reportsResult.rows,
-        totalCount: parseInt(totalCountResult.rows[0].totalcount, 10),
-        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
-      }
-    },
-    report: async(parent, args, context): Promise<any> => {
-      let start = Date.now()
-      let { req } = context
-      let { _id } = args
-
-      let { current_user } =  await utils.checkAuth(req);
-      console.log("current_user :", current_user)
-      /*
-      let report = await model.models.Report.aggregate([
-                                                      { 
-                                                        $match: { _id: mongoose.Types.ObjectId(_id) } 
-                                                      },
-                                                      {
-                                                        $addFields: {
-                                                          ownerId: "$current.ownerId",
-                                                          provinceId: "$current.provinceId",  // Bring the nested field to the top level
-                                                        }
-                                                      },
-                                                      {
-                                                        $lookup: {
-                                                          from: "province",
-                                                          localField: "provinceId",
-                                                          foreignField: "_id",
-                                                          as: "province"
-                                                        }
-                                                      },
-                                                      {
-                                                        $unwind: {
-                                                          path: "$province",
-                                                          preserveNullAndEmptyArrays: true
-                                                        }
-                                                      },
-
-                                                      {
-                                                        $lookup: {
-                                                          from: "user",
-                                                          localField: "ownerId",
-                                                          foreignField: "_id",
-                                                          as: "owner"
-                                                        }
-                                                      },
-                                                      {
-                                                        $unwind: {
-                                                          path: "$province",
-                                                          preserveNullAndEmptyArrays: true
-                                                        }
-                                                      },
-                                                      // Unwind sellerAccounts to perform a lookup for each account
-                                                      {
-                                                        $unwind: {
-                                                          path: "$current.sellerAccounts",
-                                                          preserveNullAndEmptyArrays: true
-                                                        }
-                                                      },
-                                                      // Lookup bank details for each bankId in sellerAccounts
-                                                      {
-                                                        $lookup: {
-                                                          from: "bank",  // the collection for banks
-                                                          localField: "current.sellerAccounts.bankId",
-                                                          foreignField: "_id",
-                                                          as: "bank"
-                                                        }
-                                                      },
-                                                      // Unwind the bank lookup results to get individual bank details
-                                                      {
-                                                        $unwind: {
-                                                          path: "$bank",
-                                                          preserveNullAndEmptyArrays: false
-                                                        }
-                                                      },
-                                                      // Add the bank name_th field into sellerAccounts
-                                                      {
-                                                        $addFields: {
-                                                          "current.sellerAccounts.bankName_th": "$bank.name_th"
-                                                        }
-                                                      },
-                                                      // Group sellerAccounts back into an array after the unwind
-                                                      {
-                                                        $group: {
-                                                          _id: "$_id",
-                                                          reportData: { $first: "$$ROOT" },
-                                                          sellerAccounts: { $push: "$current.sellerAccounts" }
-                                                        }
-                                                      },
-                                                      // Reconstruct the report with sellerAccounts containing bankName_th
-                                                      {
-                                                        $addFields: {
-                                                          "reportData.current.sellerAccounts": "$sellerAccounts"
-                                                        }
-                                                      },
-                                                      {
-                                                        $replaceRoot: { newRoot: "$reportData" }
-                                                      },
-                                                      {
-                                                        $lookup: {
-                                                          localField: "_id",
-                                                          from: "comment",
-                                                          foreignField: "reportId",
-                                                          as: "comment"
-                                                        }
-                                                      },
-                                                    ]);
-                                                    */
-
-      const reportsQuery = `SELECT 
-                              r.id AS report_id,
-                              r.user_id,
-                              r.seller_first_name,
-                              r.seller_last_name,
-                              r.id_card,
-                              r.product,
-                              r.transfer_amount,
-                              r.transfer_date,
-                              r.selling_website,
-                              -- r.province_id,
-                              r.additional_info,
-                              r.created_at,
-                              r.updated_at,
-                            
-                              -- Province (Unique by p.id)
-                              COALESCE(
-                                JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th)) 
-                                FILTER (WHERE p.id IS NOT NULL), 
-                                '[]'::JSONB
-                              ) AS province,
-
-                              -- Tel Numbers (Unique by tn.id)
-                              COALESCE(
-                                JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', tn.id, 'tel', tn.tel)) 
-                                FILTER (WHERE tn.id IS NOT NULL), 
-                                '[]'::JSONB
-                              ) AS tel_numbers,
-
-                              -- Seller Accounts (Unique by sa.id)
-                              COALESCE(
-                                JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT(
-                                  'id', sa.id, 
-                                  'seller_account', sa.seller_account, 
-                                  'bank_id', sa.bank_id, 
-                                  'bank_name', COALESCE(b.name_en, b.name_th)
-                                )) FILTER (WHERE sa.id IS NOT NULL), 
-                                '[]'::JSONB
-                              ) AS seller_accounts,
-
-                              -- Images (Unique by f.id)
-                              COALESCE(
-                                JSONB_AGG(
-                                  DISTINCT JSONB_BUILD_OBJECT('id', f.id, 'filename', f.filename, 'url', f.url)
-                                ) FILTER (WHERE f.id IS NOT NULL AND f.filename IS NOT NULL AND f.url IS NOT NULL), 
-                                '[]'::JSONB
-                              ) AS images
+                                -- Images (Unique by f.id)
+                                COALESCE(
+                                    JSONB_AGG(
+                                        DISTINCT JSONB_BUILD_OBJECT('id', f.id, 'filename', f.filename, 'url', f.url)
+                                    ) FILTER (WHERE f.id IS NOT NULL AND f.filename IS NOT NULL AND f.url IS NOT NULL), 
+                                    '[]'::JSONB
+                                ) AS images
 
                             FROM report r
                             LEFT JOIN tel_numbers tn ON r.id = tn.report_id
@@ -407,19 +205,145 @@ const resolvers: IResolvers = {
                             LEFT JOIN report_images ri ON r.id = ri.report_id
                             LEFT JOIN province p ON p.id = r.province_id 
                             LEFT JOIN file f ON ri.file_id = f.id
-                            WHERE r.id = $1
-                            GROUP BY r.id, p.id;`;
-                            
-      const reportsResult = await pool.query(reportsQuery, [ _id ]);                                
-      // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
 
-      console.log("call function report()");
-      console.log( reportsResult.rows )
-      return {
-        status:true,
-        data: reportsResult.rows.length > 0 ? reportsResult.rows[0] : undefined,
-        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
-      }
+                            WHERE (
+                              COALESCE(CAST($3 AS TEXT), '') = '' OR 
+                              r.seller_first_name ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                              r.seller_last_name ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                              r.id_card ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                              r.product ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                              r.selling_website ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                              r.additional_info ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                              p.name_th ILIKE '%' || CAST($3 AS TEXT) || '%'
+                            )
+
+                            GROUP BY r.id 
+                            ORDER BY r.created_at DESC
+                            LIMIT $1 OFFSET $2;
+                            `;
+
+        const totalCountQuery = `
+                            SELECT COUNT(*) AS totalCount
+                            FROM report r
+                            LEFT JOIN province p ON p.id = r.province_id
+                            WHERE (
+                              COALESCE(CAST($1 AS TEXT), '') = '' OR 
+                              (r.seller_first_name || ' ' || r.seller_last_name) ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              r.seller_first_name ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              r.seller_last_name ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              r.id_card ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              r.product ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              r.selling_website ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              r.additional_info ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              p.name_th ILIKE '%' || CAST($1 AS TEXT) || '%'
+                            );
+                          `;
+
+        // const searchWords = searchText.trim().split(/\s+/);
+        const reportsPromise = pool.query(reportsQuery, [pageSize, (page - 1) * pageSize, searchText]);
+        const totalCountPromise = pool.query(totalCountQuery, [searchText]);
+        const [reportsResult, totalCountResult] = await Promise.all([reportsPromise, totalCountPromise]);
+                                  
+        // if( reportsResult.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
+        console.log( "rowCount :", reportsResult.rowCount )
+        console.log( "rows :", reportsResult.rows )
+
+        return {
+          status: true,
+          data: reportsResult.rows,
+          totalCount: parseInt(totalCountResult.rows[0].totalcount, 10),
+          executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+        }
+      }catch(error: any){
+        logger.error('[reports] An error occurred', { stack: error });
+
+        throw new AppError(constants.Status.ERROR, error)
+      }finally {
+      }  
+    },
+    report: async(parent, args, context): Promise<any> => {
+      try{
+        let start = Date.now()
+        let { req } = context
+        let { _id } = args
+
+        let { current_user } =  await utils.checkAuth(req);
+        console.log("current_user :", current_user)
+
+        const reportsQuery = `SELECT 
+                                r.id AS report_id,
+                                r.user_id,
+                                r.seller_first_name,
+                                r.seller_last_name,
+                                r.id_card,
+                                r.product,
+                                r.transfer_amount,
+                                r.transfer_date,
+                                r.selling_website,
+                                -- r.province_id,
+                                r.additional_info,
+                                r.created_at,
+                                r.updated_at,
+                              
+                                -- Province (Unique by p.id)
+                                COALESCE(
+                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th)) 
+                                  FILTER (WHERE p.id IS NOT NULL), 
+                                  '[]'::JSONB
+                                ) AS province,
+
+                                -- Tel Numbers (Unique by tn.id)
+                                COALESCE(
+                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', tn.id, 'tel', tn.tel)) 
+                                  FILTER (WHERE tn.id IS NOT NULL), 
+                                  '[]'::JSONB
+                                ) AS tel_numbers,
+
+                                -- Seller Accounts (Unique by sa.id)
+                                COALESCE(
+                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT(
+                                    'id', sa.id, 
+                                    'seller_account', sa.seller_account, 
+                                    'bank_id', sa.bank_id, 
+                                    'bank_name', COALESCE(b.name_en, b.name_th)
+                                  )) FILTER (WHERE sa.id IS NOT NULL), 
+                                  '[]'::JSONB
+                                ) AS seller_accounts,
+
+                                -- Images (Unique by f.id)
+                                COALESCE(
+                                  JSONB_AGG(
+                                    DISTINCT JSONB_BUILD_OBJECT('id', f.id, 'filename', f.filename, 'url', f.url)
+                                  ) FILTER (WHERE f.id IS NOT NULL AND f.filename IS NOT NULL AND f.url IS NOT NULL), 
+                                  '[]'::JSONB
+                                ) AS images
+
+                              FROM report r
+                              LEFT JOIN tel_numbers tn ON r.id = tn.report_id
+                              LEFT JOIN seller_account sa ON r.id = sa.report_id
+                              LEFT JOIN bank b ON sa.bank_id = b.id -- Join with the bank table to get the bank name
+                              LEFT JOIN report_images ri ON r.id = ri.report_id
+                              LEFT JOIN province p ON p.id = r.province_id 
+                              LEFT JOIN file f ON ri.file_id = f.id
+                              WHERE r.id = $1
+                              GROUP BY r.id, p.id;`;
+                              
+        const reportsResult = await pool.query(reportsQuery, [ _id ]);                                
+        // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
+
+        console.log("call function report()");
+        console.log( reportsResult.rows )
+        return {
+          status:true,
+          data: reportsResult.rows.length > 0 ? reportsResult.rows[0] : undefined,
+          executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+        }
+      }catch(error: any){
+        logger.error('[report] An error occurred', { stack: error });
+
+        throw new AppError(constants.Status.ERROR, error)
+      }finally {
+      }  
     },
     my_reports: async(parent, args, context): Promise<any> => {
       let start = Date.now()

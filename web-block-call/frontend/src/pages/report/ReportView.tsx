@@ -133,7 +133,13 @@ const ReportView: React.FC = (props) => {
             ) : (
               <p>ไม่มีรูปภาพแนบ</p>
             )}
-            <HomeDropdown style={{ top: 10, right: 20 }}  id={3} onItemClick={(id, key)=> console.log(">>: ", id, key)}/>
+            {/* <HomeDropdown 
+              style={{ top: 10, right: 20 }}  
+              id={3} 
+              onItemClick={(id, key)=>{
+                // console.log(">>: ", id, key)
+              }}
+              /> */}
             <Descriptions
               title="รายละเอียดการขาย"
               bordered

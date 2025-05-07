@@ -67,7 +67,7 @@ const HomeGrid: React.FC<HomeGridProps> = ({ report, onClick, onMenuItemClick })
           </div>
         </div>
       }>
-      <HomeDropdown id={report.report_id} onItemClick={onMenuItemClick}/>
+      <HomeDropdown item={report} onItemClick={onMenuItemClick}/>
       <div style={{ marginTop: '5px', minWidth: '150px' }}>
         <p onClick={onClick} style={{ fontSize: '12px', color: "rgba(0, 0, 0, 0.45)", display: 'inline' }} >
           <Text>ชื่อ:</Text>{" "} 

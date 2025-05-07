@@ -26,7 +26,7 @@ import resolvers from "./resolvers";
 import pubsub from './pubsub';
 
 // import { savePositionsIfNotExists } from "./utils/positionsCache";
-// import logger from "./utils/logger";
+import logger from "./utils/logger";
 // import { graphqlUploadExpress } from 'graphql-upload';
 // import graphqlUploadExpress from "graphql-upload/graphqlUploadExpress.mjs"
 

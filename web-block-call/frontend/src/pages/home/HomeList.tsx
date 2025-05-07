@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { List, Button, Image, Typography, Dropdown, Menu } from 'antd';
 import { LikeOutlined, DislikeOutlined, MoreOutlined } from '@ant-design/icons';
 import moment from 'moment';
@@ -32,7 +32,7 @@ const HomeList: React.FC<HomeListProps> = ({ report, onClick, onMenuItemClick })
 
   return (
     <List.Item className="list-card-item" style={{ position: 'relative' }}>
-      <HomeDropdown id={report.report_id} onItemClick={onMenuItemClick}/>
+      <HomeDropdown item={report} onItemClick={onMenuItemClick}/>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ position: 'relative', display: 'inline-block' }}>
           <Image.PreviewGroup items={items}>

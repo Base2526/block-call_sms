@@ -1,7 +1,7 @@
 import "./index.less"
 
 import React, { useState, useEffect } from 'react';
-import { Input, Select, List, Pagination, message, Skeleton, Button } from 'antd';
+import { Input, ConfigProvider, Empty, List, Pagination, message, Skeleton, Button } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import _ from "lodash"
@@ -19,12 +19,20 @@ import { reportItem } from "@/utils/Interface"
 // const { Option } = Select;
 const { Search } = Input;
 
+const CustomEmpty = () => (
+  <Empty
+  image="https://cdn-icons-png.flaticon.com/512/4076/4076549.png"
+  imageStyle={{ height: 100 }}
+  description={<span>No items found</span>}
+  />
+  );
+
 const ProductList: React.FC = (props) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [reports, setReports] = useState<reportItem[]>([]);
   const [filteredReports, setFilteredReports] = useState<reportItem[]>([]);
-  const [pageSizeOptions, setPageSizeOptions] = useState([20, 50, 100])
+  const [pageSizeOptions, setPageSizeOptions] = useState([20, 50, 100, 500, 1000]);
   const [pagination, setPagination] = useState({ current: 1, pageSize: pageSizeOptions[0] });
   const [totalCount, setTotalCount] = useState(0);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -53,6 +61,7 @@ const ProductList: React.FC = (props) => {
   }
 
   useEffect(()=>{
+    console.log("searchText :", searchText)
     refetchReports({input: { searchText, page: pagination.current, pageSize: pagination.pageSize }})
   }, [ searchText, pagination ])
 
@@ -114,6 +123,29 @@ const ProductList: React.FC = (props) => {
     // navigate('/administrator/products/new', { state: { mode: 'added' } })}
   };
 
+  const onMenuItemClick = (id: string | number, action: string | number) =>{
+      console.log("onMenuItemClick :", id, action)
+
+      // navigate(`/user?id=${action}`, { state: { id: action } });
+
+      switch(action){
+        // Owner post
+        case 1: {
+          break;
+        }
+
+        // Edit
+        case 2: {
+          break;
+        }
+
+        // Delete
+        case 3: {
+          break;
+        }
+      }
+  }
+
   // navigate('/profile')
   return (
     <div>
@@ -141,11 +173,14 @@ const ProductList: React.FC = (props) => {
         </div>
       </div>
       <Skeleton loading={loadingDatas} active>
+      <ConfigProvider renderEmpty={() => <CustomEmpty />}>
       {
         viewMode === "list" 
-        ? <List
+        ? 
+          <List
             grid={{ gutter: 16, column: 2 }}
             dataSource={filteredReports}
+            // locale={{ emptyText: 'No items found, please try again later.' }}
             renderItem={(item) => (
               <List.Item className="item-product-list">
                 <HomeList
@@ -153,11 +188,7 @@ const ProductList: React.FC = (props) => {
                   onClick={() => {
                     navigate(`/view?v=${item.report_id}`, { state: { _id: item.report_id } });
                   }}
-                  onMenuItemClick={(id, action) => {
-                    console.log("onMenuItemClick :", id, action)
-
-                    navigate(`/user?id=${action}`, { state: { id: action } });
-                  }}
+                  onMenuItemClick={onMenuItemClick}
                 />
               </List.Item>
             )}
@@ -165,6 +196,7 @@ const ProductList: React.FC = (props) => {
         : <List
             grid={{ gutter: 16, column: 5 }}
             dataSource={filteredReports}
+            locale={{ emptyText: 'No items found, please try again later.' }}
             renderItem={item => (
               <List.Item  className={`item-product-card`}>
                 <HomeGrid
@@ -172,16 +204,13 @@ const ProductList: React.FC = (props) => {
                   onClick={()=>{
                     navigate(`/view?v=${item.report_id}`, { state: { _id: item.report_id } });
                   }}
-                  onMenuItemClick={(id, action) => {
-                    console.log("onMenuItemClick :", id, action)
-                    
-                    navigate(`/user?id=${action}`, { state: { id: action } });
-                  }}
+                  onMenuItemClick={onMenuItemClick}
                 />
               </List.Item>
             )}
           />
       }
+      </ConfigProvider>
       </Skeleton>
       { 
         totalCount > 20 &&
@@ -189,6 +218,7 @@ const ProductList: React.FC = (props) => {
           current={pagination.current}
           pageSize={pagination.pageSize}
           pageSizeOptions={pageSizeOptions}
+          showSizeChanger={true}  // show the dropdown
           total={totalCount}
           showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
           onChange={handlePaginationChange}

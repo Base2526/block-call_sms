@@ -4,7 +4,7 @@ import '../report/scss/InputField.scss'
 import '../report/scss/LoginSection.scss'
 
 import React, { useEffect } from 'react'
-import { CommentSection } from 'react-comments-section'
+// import { CommentSection } from 'react-comments-section'
 import { useState } from 'react'
 import { useQuery } from "@apollo/client";
 import { useDispatch, useSelector } from 'react-redux';
@@ -97,7 +97,7 @@ const Comments: React.FC<CommentsProps> = (props) => {
 
   return (
     <div style={{ width: '100%' }}>
-      <CommentSection
+      {/* <CommentSection
         currentUser={{
           currentUserId: profile.id ?? "" ,
           currentUserImg:
@@ -136,7 +136,7 @@ const Comments: React.FC<CommentsProps> = (props) => {
         }}
         advancedInput={true}
         replyInputStyle={{ borderBottom: '1px solid black', color: 'black' }}
-      />
+      /> */}
     </div>
   )
 }

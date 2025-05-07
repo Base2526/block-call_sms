@@ -432,6 +432,17 @@ CREATE TABLE IF NOT EXISTS comment_data (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
   `;
+  
+  const sql_table_logs = `
+  CREATE TABLE IF NOT EXISTS logs (
+    id SERIAL PRIMARY KEY,
+    level VARCHAR(50) NOT NULL,
+    message TEXT NOT NULL,
+    stack JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+  `;
 
     const sql_table_schema_version = `
   -- Create table for schema version tracking
@@ -439,7 +450,7 @@ CREATE TABLE IF NOT EXISTS comment_data (
     "id" SERIAL PRIMARY KEY,
     "table_name" VARCHAR(255) NOT NULL UNIQUE,
     "version" INTEGER DEFAULT 0
-  );`
+  );`  
 
   try {
     //   await client.query(initialTableQuery);
@@ -451,7 +462,7 @@ CREATE TABLE IF NOT EXISTS comment_data (
     await client.query(sql_table_follow);
     await client.query(sql_table_bank);
     await client.query(sql_table_comment);
-    await client.query(sql_table_dblog);
+    // await client.query(sql_table_dblog);
     await client.query(sql_table_file);
     await client.query(sql_table_log_user_access);
     await client.query(sql_table_position);
@@ -463,6 +474,7 @@ CREATE TABLE IF NOT EXISTS comment_data (
     await client.query(sql_table_report_images);
     await client.query(sql_table_session);
     await client.query(sql_table_socket);
+    await client.query(sql_table_logs);
     await client.query(sql_table_schema_version);
 
     console.log('Tables created (or already exist)');
