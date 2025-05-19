@@ -74,6 +74,7 @@ export const mutationContent = gql`mutation content($input: JSON) { content(inpu
 
 
 
+
 // Define types for inputs
 type JSON = Record<string, any>;
 type ID = string;
@@ -148,3 +149,5 @@ export const query_provinces  = gql`query provinces { provinces }`;
 export const mutation_report  = gql`mutation report($input: JSON) { report(input: $input) }`;
 
 export const mutation_uploadFile  = gql`mutation uploadFile($input: JSON) { uploadFile(input: $input) }`;
+
+export const mutation_bookmark  = gql`mutation bookmark($input: JSON) { bookmark(input: $input) }`;

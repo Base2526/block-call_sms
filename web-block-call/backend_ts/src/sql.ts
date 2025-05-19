@@ -373,6 +373,37 @@ CREATE TABLE IF NOT EXISTS comment_data (
   );
     `;
 
+        const sql_table_report_revisions = `
+  CREATE TABLE IF NOT EXISTS report_revisions (
+    id SERIAL PRIMARY KEY,
+    report_id INT NOT NULL,
+    data JSONB,          -- store entire document snapshot here
+    updated_by INT,
+    revision_at TIMESTAMP DEFAULT NOW()
+  );
+
+
+  CREATE OR REPLACE FUNCTION log_report_update()
+  RETURNS TRIGGER AS $$
+  BEGIN
+    INSERT INTO report_revisions (report_id, data, updated_by, revision_at)
+    VALUES (
+      OLD.id,
+      to_jsonb(OLD),      -- snapshot of old row
+      current_setting('app.current_user_id')::INTEGER,               -- optionally set via application or session variable
+      NOW()
+    );
+    RETURN NEW;
+  END;
+  $$ LANGUAGE plpgsql;
+
+  CREATE TRIGGER trigger_report_update
+  BEFORE UPDATE ON report
+  FOR EACH ROW
+  EXECUTE FUNCTION log_report_update();
+
+    `;
+
     const sql_table_seller_account = `
   CREATE TABLE IF NOT EXISTS seller_account (
       id SERIAL PRIMARY KEY,
@@ -452,6 +483,33 @@ CREATE TABLE IF NOT EXISTS comment_data (
     "version" INTEGER DEFAULT 0
   );`  
 
+  const sql_table_bookmark = `
+  CREATE TABLE IF NOT EXISTS bookmark (
+      report_id INT NOT NULL,
+      user_id INT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, report_id),
+      FOREIGN KEY (report_id) REFERENCES report (id)
+  );
+     `
+
+    //  Trigger Function in PostgreSQL
+    const notify_table = `
+    CREATE OR REPLACE FUNCTION notify_table_update()
+    RETURNS trigger AS $$
+    BEGIN
+      PERFORM pg_notify('table_update_channel', 'updated');
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    CREATE TRIGGER document_update_notify
+    AFTER UPDATE ON report
+    FOR EACH ROW
+    EXECUTE FUNCTION notify_table_update();
+       `
+
   try {
     //   await client.query(initialTableQuery);
     //   console.log('Table created (or already exists)');
@@ -468,6 +526,7 @@ CREATE TABLE IF NOT EXISTS comment_data (
     await client.query(sql_table_position);
     await client.query(sql_table_province);
     await client.query(sql_table_report);
+    await client.query(sql_table_report_revisions);
     await client.query(sql_table_seller_account);
     await client.query(sql_table_tel_numbers);
     await client.query(sql_table_likes);
@@ -476,6 +535,9 @@ CREATE TABLE IF NOT EXISTS comment_data (
     await client.query(sql_table_socket);
     await client.query(sql_table_logs);
     await client.query(sql_table_schema_version);
+    await client.query(sql_table_bookmark);
+    
+    await client.query(notify_table);
 
     console.log('Tables created (or already exist)');
     // Check the schema version

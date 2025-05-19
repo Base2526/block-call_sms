@@ -4,20 +4,21 @@ import React, { useState, useEffect } from 'react';
 import { Input, ConfigProvider, Empty, List, Pagination, message, Skeleton, Button } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
-import _ from "lodash"
-import { useQuery } from '@apollo/client';
+import _ from "lodash";
+import { useQuery, useMutation } from '@apollo/client';
 import { PlusOutlined, OrderedListOutlined, TableOutlined} from '@ant-design/icons';
-
 
 import HomeGrid from "@/pages/home/HomeGrid";
 import HomeList from "@/pages/home/HomeList";
-import { query_reports } from '@/apollo/gqlQuery';
+import { query_reports, mutation_bookmark } from '@/apollo/gqlQuery';
 import { getHeaders } from '@/utils';
 import handlerError from '@/utils/handlerError';
-import { reportItem } from "@/utils/Interface" 
+import { reportItem } from "@/utils/Interface";
+import SearchComponent from "@/pages/home/SearchComponent";
+import HomeModalComment from "@/pages/home/HomeModalComment";
+import ComfirmDelete from "@/pages/home/ComfirmDelete";
 
-// const { Option } = Select;
-const { Search } = Input;
+// const { Search } = Input;
 
 const CustomEmpty = () => (
   <Empty
@@ -38,6 +39,85 @@ const ProductList: React.FC = (props) => {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [searchText, setSearchText] = useState('');
   const [loadingDatas, setloadingDatas] = useState(true);
+
+  const [isModalCommentOpen, setIsModalCommentOpen] = useState(false);
+  const [isComfirmDeleteOpen, setIsComfirmDeleteOpen] = useState(false);
+
+  const [onBookmark] = useMutation(mutation_bookmark, {
+    context: { headers: getHeaders({}) },
+    // Optimistic UI updates could be re-enabled with minimal state for quick feedback
+    update: (cache, { data: { bookmark } }, params) => {
+      const { status, isBookmark } = bookmark;
+      const input = (params?.variables as { input?: any })?.input;
+
+      console.log("bookmark :", bookmark, input);
+      
+  
+      // if (status) {
+      //   const existingComment = cache.readQuery({
+      //     query: query_comment,
+      //     variables: { input: { id: input.reportId } }, // Ensure variables are correct
+      //   });
+  
+      //   // Create a deep clone of the comment input and set status to 'SENT'
+      //   let comment = { ...input.comment, status: 'SENT' };
+  
+      //   if (existingComment) {
+      //     // Handle adding new comments
+      //     if (input.commentId === undefined) {
+      //       // Create a deep copy of the existing data to prevent direct mutations
+      //       const updatedData = _.cloneDeep(existingComment?.comment_by_id.data);
+  
+      //       cache.writeQuery({
+      //         query: query_comment,
+      //         variables: { input: { id: input.reportId } },
+      //         data: {
+      //           comment_by_id: {
+      //             ...existingComment.comment_by_id,
+      //             data: [...updatedData, comment], // Add the new comment to the end
+      //           },
+      //         },
+      //       });
+      //     } else {
+      //       // Handle updating sub-comments in an existing comment
+      //       const updatedData = _.map(existingComment?.comment_by_id.data, (v) => {
+      //         if (v._id === input.commentId) {
+      //           return {
+      //             ...v,
+      //             exposed: true, // Optimistically expose comment
+      //             subComments: [...v.subComments, comment], // Add the new subComment
+      //           };
+      //         }
+      //         return v;
+      //       });
+  
+      //       // Write updated data back to the cache
+      //       cache.writeQuery({
+      //         query: query_comment,
+      //         variables: { input: { id: input.reportId } },
+      //         data: {
+      //           comment_by_id: {
+      //             ...existingComment.comment_by_id,
+      //             data: updatedData, // Replace with the updated data array
+      //           },
+      //         },
+      //       });
+      //     }
+      //   }
+      // }
+    },
+    // Memoize error handler to prevent unnecessary recalculations
+    // onError: React.useCallback((error: ApolloError) => {
+    //   // handlerError(props, toast, error);
+    // }, [props, toast]),
+    // Completion handler (if needed)
+    onCompleted: (data, clientOptions) => {
+      // Use clientOptions if needed for further optimizations
+      console.log("[ onBookmark ] : onCompleted :", data, clientOptions);
+      const { status, isBookmark }  = data?.bookmark;
+      if(status) isBookmark ? message.success('BookmarkClick @1', 2.5) : message.error('BookmarkClick @1', 2.5)
+    },
+  });
 
   const { loading: loadingReports, 
           data: dataReports, 
@@ -123,41 +203,54 @@ const ProductList: React.FC = (props) => {
     // navigate('/administrator/products/new', { state: { mode: 'added' } })}
   };
 
-  const onMenuItemClick = (id: string | number, action: string | number) =>{
-      console.log("onMenuItemClick :", id, action)
+  const onDropdownItemClick = (_id: string | number, action: string | number) =>{
+      console.log("onDropdownItemClick :", _id, action)
 
       // navigate(`/user?id=${action}`, { state: { id: action } });
 
-      switch(action){
+      switch( parseInt(action as string, 10) ){
         // Owner post
         case 1: {
+          console.log("Owner post");
           break;
         }
 
         // Edit
         case 2: {
+          navigate('/report?mode=edited', { state: { mode: "edited", _id } });
           break;
         }
 
         // Delete
         case 3: {
+          setIsComfirmDeleteOpen(true);
           break;
         }
       }
   }
 
+  const showModalComment = () => {
+    setIsModalCommentOpen(true);
+  };
+
   // navigate('/profile')
   return (
     <div>
       <div style={{ marginBottom: 16, display: 'flex', gap: '10px' }}>
-        <Search
+        <SearchComponent 
+          onSearchChange={(text) => {
+            console.log( "SearchWithHistory :", text );
+            setSearchText( text );
+          }}
+        />
+        {/* <Search
           placeholder="Search"
           onChange={(e) => setSearchText(e.target.value)}
           onSearch={handleSearch}
           style={{ width: 300 }}
           enterButton
           allowClear
-        />
+        /> */}
         <Button type="primary" onClick={handleNewReport} icon={<PlusOutlined />}>New</Button>
         <div style={{ display: "flex", gap: "5px" }}>
           <Button
@@ -188,7 +281,22 @@ const ProductList: React.FC = (props) => {
                   onClick={() => {
                     navigate(`/view?v=${item.report_id}`, { state: { _id: item.report_id } });
                   }}
-                  onMenuItemClick={onMenuItemClick}
+                  onDropdownItemClick={onDropdownItemClick}
+                  onActionItemClick={(post_id, action)=> {
+                    console.log("onBookmarkClick @1", post_id, action)  
+
+                    switch(action){
+                      case "bookmark":{
+                        onBookmark({variables:{ input:  { post_id } }});
+                        break;
+                      }
+
+                      case "comment":{
+                        showModalComment();
+                        break;
+                      }
+                    }
+                  }}
                 />
               </List.Item>
             )}
@@ -204,7 +312,22 @@ const ProductList: React.FC = (props) => {
                   onClick={()=>{
                     navigate(`/view?v=${item.report_id}`, { state: { _id: item.report_id } });
                   }}
-                  onMenuItemClick={onMenuItemClick}
+                  onDropdownItemClick={onDropdownItemClick}
+                  onActionItemClick={(post_id, action)=> {
+                    console.log("onBookmarkClick @1", post_id, action)  
+
+                    switch(action){
+                      case "bookmark":{
+                        onBookmark({variables:{ input:  { post_id } }});
+                        break;
+                      }
+
+                      case "comment":{
+                        showModalComment();
+                        break;
+                      }
+                    }
+                  }}
                 />
               </List.Item>
             )}
@@ -225,6 +348,27 @@ const ProductList: React.FC = (props) => {
           style={{ marginTop: 20, marginBottom: 20}}
         />
       }
+
+      {
+        isModalCommentOpen 
+        ? <HomeModalComment isModalCommentOpen={isModalCommentOpen} onClose={()=>{setIsModalCommentOpen(false)}}/>
+        : null
+      }
+
+      {
+        isComfirmDeleteOpen
+        ? <ComfirmDelete 
+            isComfirmDeleteOpen={isComfirmDeleteOpen} 
+            content="" 
+            onDeleted={()=>{
+              console.log("onDeleted");
+
+              setIsComfirmDeleteOpen(false)
+            }} 
+            onClosed={()=>setIsComfirmDeleteOpen(false)}/>
+        : null
+      }
+      {/*  */}
     </div>
   );
 };

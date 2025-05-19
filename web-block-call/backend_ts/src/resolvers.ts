@@ -14,8 +14,10 @@ import * as constants from "./constants"
 import * as model from "./model"
 import pubsub from './pubsub'
 import { IUser, ILike, IFile } from "./utils/Interface"
-import pool from './db';
+// import pool from './db';
 import logger from "./utils/logger";
+
+import { PgClient } from './dbClient';
 
 const REACT_APP_JWT_SECRET = process.env.REACT_APP_JWT_SECRET as string;
 
@@ -54,8 +56,8 @@ const resolvers: IResolvers = {
       // if( role !== constants.Role.ADMINISTRATOR  &&
       //     role !== constants.Role.AUTHENTICATED 
       //     ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied')
-
-      const query = await pool.query('SELECT * FROM province');
+      
+      const query = await PgClient.selectQuery('SELECT * FROM province');
       if( query.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
 
       return {
@@ -165,6 +167,13 @@ const resolvers: IResolvers = {
                                 r.created_at,
                                 r.updated_at,
 
+                                -- bookmark 
+                                COALESCE(
+                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('user_id', bm.user_id)) 
+                                  FILTER (WHERE bm.user_id IS NOT NULL), 
+                                  '[]'::JSONB
+                                ) AS bookmarks,
+
                                 -- Province (Unique by p.id)
                                 COALESCE(
                                     JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th)) 
@@ -205,6 +214,7 @@ const resolvers: IResolvers = {
                             LEFT JOIN report_images ri ON r.id = ri.report_id
                             LEFT JOIN province p ON p.id = r.province_id 
                             LEFT JOIN file f ON ri.file_id = f.id
+                            LEFT JOIN bookmark bm ON r.id = bm.report_id
 
                             WHERE (
                               COALESCE(CAST($3 AS TEXT), '') = '' OR 
@@ -240,8 +250,9 @@ const resolvers: IResolvers = {
                           `;
 
         // const searchWords = searchText.trim().split(/\s+/);
-        const reportsPromise = pool.query(reportsQuery, [pageSize, (page - 1) * pageSize, searchText]);
-        const totalCountPromise = pool.query(totalCountQuery, [searchText]);
+
+        const reportsPromise = PgClient.selectQuery(reportsQuery, [pageSize, (page - 1) * pageSize, searchText]);
+        const totalCountPromise = PgClient.selectQuery(totalCountQuery, [searchText]);
         const [reportsResult, totalCountResult] = await Promise.all([reportsPromise, totalCountPromise]);
                                   
         // if( reportsResult.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
@@ -287,7 +298,7 @@ const resolvers: IResolvers = {
                               
                                 -- Province (Unique by p.id)
                                 COALESCE(
-                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th)) 
+                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th, 'name_en', p.name_en)) 
                                   FILTER (WHERE p.id IS NOT NULL), 
                                   '[]'::JSONB
                                 ) AS province,
@@ -328,7 +339,7 @@ const resolvers: IResolvers = {
                               WHERE r.id = $1
                               GROUP BY r.id, p.id;`;
                               
-        const reportsResult = await pool.query(reportsQuery, [ _id ]);                                
+        const reportsResult = await PgClient.selectQuery(reportsQuery, [ _id ]);                                
         // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
 
         console.log("call function report()");
@@ -427,7 +438,7 @@ const resolvers: IResolvers = {
       //                                           }
       //                                         }]);
       
-      const query = await pool.query(`SELECT 
+      const query = await PgClient.selectQuery(`SELECT 
                                             "user".id AS id,
                                             "user".username,
                                             "user".email,
@@ -458,7 +469,7 @@ const resolvers: IResolvers = {
       // let role = utils.checkRole(current_user)
       // if( role !== Constants.ADMINISTRATOR ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
       
-      const query = await pool.query(`SELECT "user".*,
+      const query = await PgClient.selectQuery(`SELECT "user".*,
                                              file.id AS file_id,
                                              file.url,
                                              file.filename
@@ -487,7 +498,7 @@ const resolvers: IResolvers = {
 
       // let banks = await model.models.Bank.find({});
  
-      const query = await pool.query(`SELECT * FROM bank;`);
+      const query = await PgClient.selectQuery(`SELECT * FROM bank;`);
       if( query.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
 
       return {
@@ -550,7 +561,7 @@ const resolvers: IResolvers = {
       const queryField = isEmail ? 'email' : 'username';
     
       // Query user based on username or email
-      const query = await pool.query(
+      const query = await PgClient.selectQuery(
         `SELECT * FROM "user" WHERE "user".${queryField} = $1`,
         [username]
       );
@@ -568,7 +579,7 @@ const resolvers: IResolvers = {
       }
     
       // Update last access timestamp
-      await pool.query(
+      await PgClient.selectQuery(
         `UPDATE "user" SET last_access = CURRENT_TIMESTAMP WHERE id = $1`,
         [user.id]
       );
@@ -589,7 +600,7 @@ const resolvers: IResolvers = {
       let { input } = args
 
       // Combine the checks for username and email existence into one query
-      let query = await pool.query(
+      let query = await PgClient.selectQuery(
         `SELECT * FROM "user" WHERE username = $1 OR email = $2`, 
         [input.username, input.email]
       );
@@ -626,7 +637,7 @@ const resolvers: IResolvers = {
         new Date()  // updatedAt
       ];
                       
-      await pool.query(query_user, values_user);
+      await PgClient.selectQuery(query_user, values_user);
       return {
         status: true,
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
@@ -732,14 +743,13 @@ const resolvers: IResolvers = {
       if( role !==constants.Role.ADMINISTRATOR &&
           role !==constants.Role.AUTHENTICATED ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
           
-      console.log("report : ", input)
+      console.log("Mutation >> report : ", input)
+
+      const pool = await PgClient.create(current_user.id);
       
       switch(input.mode){
         case 'added':{
           try {
-            // Start a transaction
-            await pool.query('BEGIN');
-            
             const insertQueryReport = `
               INSERT INTO report (user_id, seller_first_name, seller_last_name, id_card, product, transfer_amount, transfer_date, selling_website, province_id, additional_info)
               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -824,7 +834,7 @@ const resolvers: IResolvers = {
               console.log("All files processed: ", images);
           
               // Commit the transaction after all inserts are successful
-              await pool.query('COMMIT');
+              await pool.commit();
           
               return {
                 status: true,
@@ -833,81 +843,12 @@ const resolvers: IResolvers = {
             }
           } catch (error: any) {
             // Rollback the transaction in case of an error
-            await pool.query('ROLLBACK');
+            await pool.rollback();
+
             console.error('Error during transaction:', error);
             throw new AppError(constants.Status.ERROR, error)
           }
           
-          // const session = await mongoose.startSession();
-          // session.startTransaction();
-          /*
-          try {
-            let promises = []; 
-            if(!_.isEmpty(input.images)){
-              for (let i = 0; i < input.images.length; i++) {
-                const { createReadStream, filename, encoding, mimetype } = (await input.images[i]).file //await input.files[i];
-      
-                const stream = createReadStream();
-                const assetUniqName = utils.fileRenamer(filename);
-                let pathName = `/app/uploads/${assetUniqName}`;
-      
-                const output = fs.createWriteStream(pathName)
-                stream.pipe(output);
-      
-                const promise = await new Promise(function (resolve, reject) {
-                  // output.on('close', () => {
-                  //   resolve("close");
-                  // });
-
-                  output.on('finish', async () => {
-                    try {
-                        // Save data to MongoDB after the stream has finished writing
-                        // await saveDataToMongoDB(data, dbUrl, dbName, collectionName);
-                        // console.log("finish : ", { url: `images/${assetUniqName}`, filename, encoding, mimetype })
-                        
-                        // let newInput ={current: { parentId: input?.parentId, childs: [{childId: current_user?._id}]}}  
-                        let file = await model.models.File.insertMany([{userId:current_user?.id, url: `images/${assetUniqName}`, filename, encoding, mimetype }], {session});
-                        // console.log("file ", file)
-                        resolve(file !== null ? file[0] : undefined );
-                    } catch (error: any) {
-                        reject(`Failed to save data to MongoDB: ${error.message}`);
-                    }
-                  });
-            
-                  output.on('error', async(err) => {
-                    await utils.loggerError(req, err.toString());
-      
-                    reject(err);
-                  });
-                });
-                promises.push(promise);
-              }
-            }
-
-            let images = await Promise.all(promises);
-            console.log("All files processed: ", images );
-
-            const newInput = _.omit(input, ['mode']);
-            // let current  = {...newInput, images, user_id: current_user?._id }
-            
-            console.log("@@@2 Report current : ", newInput)
-            
-            // await model.models.Report.insertMany([{ current }], { session });
-            // // Commit the transaction
-            // await session.commitTransaction();
-
-            // await session.abortTransaction();
-          }catch(error: any){
-              console.log("error @@@@@@@1 :", error)
-              // await session.abortTransaction();
-          
-              throw new AppError(constants.Status.ERROR, error)
-          }finally {
-              // session.endSession();
-              console.log("finally @@@@@@@1 :")
-          }  
-          */
-
           break;
         }
 
@@ -1007,30 +948,184 @@ const resolvers: IResolvers = {
       //     break;
       //   }
 
+        case 'edited':{
+          try{
+            const updateQueryReport = `
+                                        UPDATE report
+                                        SET 
+                                          seller_first_name = $1,
+                                          seller_last_name = $2,
+                                          id_card = $3,
+                                          product = $4,
+                                          transfer_amount = $5,
+                                          transfer_date = $6,
+                                          selling_website = $7,
+                                          province_id = $8,
+                                          additional_info = $9
+                                        WHERE id = $10 
+                                      `;
+
+            await pool.query(updateQueryReport, [
+              input.seller_first_name,
+              input.seller_last_name,
+              input.id_card,
+              input.product,
+              input.transfer_amount,
+              input.transfer_date,
+              input.selling_website,
+              input.province_id,
+              input.additional_info,
+              input._id,
+            ]);
+
+            const INSERT_TEL_SQL = `INSERT INTO tel_numbers (report_id, tel) VALUES ($1, $2) RETURNING id;`;
+            const UPDATE_TEL_SQL = `UPDATE tel_numbers SET tel = $1 WHERE id = $2 AND report_id = $3;`;
+            const DELETE_TEL_SQL = `DELETE FROM tel_numbers WHERE id = $1 AND report_id = $2;`;
+            for (const tel_number of input.tel_numbers) {
+              const { id, tel, mode } = tel_number;
+              if (mode === 'new') {
+                await pool.query(INSERT_TEL_SQL, [input._id, tel]);
+              } else if (mode === 'edited') {
+                await pool.query(UPDATE_TEL_SQL, [tel, id, input._id]);
+              } else if (mode === 'deleted') {
+                await pool.query(DELETE_TEL_SQL, [id, input._id]);
+              }
+            }
+
+            // prepare your SQL templates
+            const INSERT_ACCT_SQL = `INSERT INTO seller_account (report_id, seller_account, bank_id, bank_name) VALUES ($1, $2, $3, $4) RETURNING id;`;
+            const UPDATE_ACCT_SQL = `UPDATE seller_account SET seller_account = $1, bank_id = $2, bank_name = $3 WHERE id = $4; `;
+            const DELETE_ACCT_SQL = `DELETE FROM seller_account WHERE id = $1; `;
+            for (const acct of input.seller_accounts) {
+              switch (acct.mode) {
+                case 'new':
+                  // INSERT
+                  await pool.query(INSERT_ACCT_SQL, [ input._id, acct.seller_account, acct.bank_id, acct.bank_name ]);
+                  break;
+
+                case 'edited':
+                  // UPDATE — we assume acct.id is valid
+                  await pool.query(UPDATE_ACCT_SQL, [ acct.seller_account, acct.bank_id, acct.bank_name, acct.id ]);
+                  break;
+
+                case 'deleted':
+                  // DELETE — we assume acct.id is valid
+                  await pool.query(DELETE_ACCT_SQL, [acct.id]);
+                  break;
+              }
+            }
+
+            const DELETE_FILE_SQL = `DELETE FROM file WHERE id = $1; `;
+            // Process images
+            let promises = [];
+            if (!_.isEmpty(input.images)) {
+              // for (let i = 0; i < input.images.length; i++) {
+              for (const image of input.images) {
+                if ('file' in image && 'promise' in image) {
+                  // This is likely a new Upload
+                  console.log('New uploaded image:', image);
+
+                  const { createReadStream, filename, encoding, mimetype } = (await image).file;
+                  const stream = createReadStream();
+                  const assetUniqName = utils.fileRenamer(filename);
+                  let pathName = `/app/uploads/${assetUniqName}`;
+
+                  const output = fs.createWriteStream(pathName);
+                  stream.pipe(output);
+
+                  const promise = new Promise(async (resolve, reject) => {
+
+                    const reportId = input._id;
+                    
+                    output.on('finish', async () => {
+                      try {
+                        const INSERT_FILE_SQL = `
+                          INSERT INTO file (user_id, url, filename, mimetype, encoding)
+                          VALUES ($1, $2, $3, $4, $5)
+                          RETURNING id;
+                        `;
+                        const file_query = await pool.query(INSERT_FILE_SQL, [current_user?.id, `images/${assetUniqName}`, filename, encoding, mimetype]);
+
+                        if (file_query.rowCount == 1) {
+                          const file_id = file_query.rows[0].id;
+                          // Ensure the report_id exists before inserting into report_images
+                          // const checkReportExistsQuery = `SELECT id FROM report WHERE id = $1;`;
+                          // const reportExists = await pool.query(checkReportExistsQuery, [currentReportId]);
+
+                          // console.log(`>>>>>>>>>>   ${currentReportId} `);
+                          // if (reportExists.rowCount === 0) {
+                          //   throw new Error(`Report with id ${report_id} does not exist.`);
+                          // }
+
+                          // Now insert into report_images without checking the report again
+                          const INSERT_IMAGE_SQL = `INSERT INTO report_images (report_id, file_id) VALUES ($1, $2) RETURNING id;`;
+                          await pool.query(INSERT_IMAGE_SQL, [reportId, file_id]);
+
+                          resolve(file_id);
+                        }
+                      } catch (error) {
+                        reject(`Failed to save data to MongoDB: ${error}`);
+                      }
+                    });
+
+                    output.on('error', (err) => {
+                      reject(err);
+                    });
+                  });
+
+                  promises.push(promise);
+                } else if ('id' in image) {
+                  // This is an existing image
+                  if (image.deleted) {
+                    console.log('Image marked for deletion:', image);
+                    await pool.query(DELETE_FILE_SQL, [image.id]);
+                  } else {
+                    console.log('Existing image:', image);
+                  }
+                } else {
+                  console.warn('Unknown image type:', image);
+                }
+              }
+            }
+
+            // Wait for all image files to be processed
+            let images = await Promise.all(promises);
+            console.log("All files processed: ", images);
+
+            await pool.commit();
+            return {
+              status: true,
+              executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`,
+            };
+          
+          }catch(error: any){
+            console.log("error @@@@@@@1 :", error)
+            await pool.rollback();
+        
+            throw new AppError(constants.Status.ERROR, error)
+          }finally {
+          }  
+
+          break;
+        }
+
         case 'deleted':{
           try {
-            // Start a transaction
-            await pool.query('BEGIN');
             let { reportIds } = input
-            if (reportIds.length === 0) throw new AppError(constants.Status.DATA_NOT_FOUND, "DATA_NOT_FOUND");
+            if (!reportIds || reportIds.length === 0) {
+              throw new AppError(constants.Status.DATA_NOT_FOUND, 'DATA_NOT_FOUND');
+            }
 
             // Delete from related tables first
-            await pool.query(`
-              DELETE FROM tel_numbers WHERE report_id = ANY($1);
-            `, [reportIds]);
-            await pool.query(`
-              DELETE FROM seller_account WHERE report_id = ANY($1);
-            `, [reportIds]);
-            await pool.query(`
-              DELETE FROM report_images WHERE report_id = ANY($1);
-            `, [reportIds]);
+            await pool.query(`DELETE FROM tel_numbers WHERE report_id = ANY($1);`, [reportIds]);
+            await pool.query(`DELETE FROM seller_account WHERE report_id = ANY($1);`, [reportIds]);
+            await pool.query(`DELETE FROM report_images WHERE report_id = ANY($1);`, [reportIds]);
+
             // Finally, delete from report table
-            await pool.query(`
-              DELETE FROM report WHERE id = ANY($1);
-            `, [reportIds]);
+            await pool.query(`DELETE FROM report WHERE id = ANY($1);`, [reportIds]);
 
             // Commit the transaction
-            await pool.query('COMMIT');
+            await pool.commit();
 
             return {
               status: true,
@@ -1038,7 +1133,7 @@ const resolvers: IResolvers = {
             }
           } catch (error: any) {
             // Rollback the transaction in case of an error
-            await pool.query('ROLLBACK');
+            await pool.rollback();
         
             console.error('Error checking or inserting data:', error);
 
@@ -1046,7 +1141,6 @@ const resolvers: IResolvers = {
           } 
         }
       }
-      
     },
     like_report: async(parent, args, context): Promise<any> => {
       let start = Date.now();
@@ -1317,6 +1411,55 @@ const resolvers: IResolvers = {
           throw new AppError(constants.Status.ERROR, error);
       } finally {
           session.endSession();
+      }
+    },
+    bookmark: async(parent, args, context): Promise<any> => {
+      let start = Date.now();
+      let { input } = args;
+      let { req } = context;
+  
+      let { current_user } = await utils.checkAuth(req);
+      let role = utils.checkRole(current_user);
+      
+      if (role !== constants.Role.ADMINISTRATOR && role !== constants.Role.AUTHENTICATED) {
+          throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user);
+      }
+
+      const pool = await PgClient.create(current_user.id);
+      try {
+        
+        await pool.query(
+          `SELECT 1 FROM bookmark WHERE report_id = $1 AND user_id = $2`,
+          [input.post_id, current_user.id]
+        );
+    
+        const result = await pool.query(
+          `DELETE FROM bookmark WHERE report_id = $1 AND user_id = $2 RETURNING *`,
+          [input.post_id, current_user.id]
+        );
+        
+        const isBookmark = result.rowCount === 0;
+        if (isBookmark) {
+          await pool.query(
+            `INSERT INTO bookmark (report_id, user_id)
+             VALUES ($1, $2)
+             ON CONFLICT (report_id, user_id) DO NOTHING`,
+            [input.post_id, current_user.id]
+          );
+        }
+        
+        // Commit the transaction after all inserts are successful
+        await pool.commit();
+        return {
+            status: true,
+            isBookmark,
+            executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
+        };
+      } catch (error: any) {
+        await pool.rollback();
+
+        throw new AppError(constants.Status.ERROR, error)
+      } finally {
       }
     }
   },

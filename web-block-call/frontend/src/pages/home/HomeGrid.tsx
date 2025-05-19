@@ -2,10 +2,11 @@ import React from 'react';
 import { Card, Button, Image, Typography, Dropdown, Menu } from 'antd';
 import { LikeOutlined, DislikeOutlined, MoreOutlined } from '@ant-design/icons';
 import moment from 'moment';
-import _ from "lodash"
-import { reportItem } from "@/utils/Interface" 
+import _ from "lodash";
+import { reportItem } from "@/utils/Interface";
 
-import HomeDropdown from "@/pages/home/HomeDropdown"
+import HomeDropdown from "@/pages/home/HomeDropdown";
+import HomeActions from "@/pages/home/HomeActions";
 
 const { Paragraph, Text } = Typography;
 
@@ -13,11 +14,12 @@ const { Paragraph, Text } = Typography;
 interface HomeGridProps {
   report: reportItem;
   onClick?: () => void;
-  onMenuItemClick: (id: string | number, action: string) => void;
+  onDropdownItemClick: (id: string | number, action: string) => void;
+  onActionItemClick: (id: string | number, action: string) => void;
 }
 
 const { REACT_APP_HOST_GRAPHAL } = process.env;
-const HomeGrid: React.FC<HomeGridProps> = ({ report, onClick, onMenuItemClick }) => { 
+const HomeGrid: React.FC<HomeGridProps> = ({ report, onClick, onDropdownItemClick, onActionItemClick }) => { 
    
   const items = _.map(report.images, v=> `http://${REACT_APP_HOST_GRAPHAL}/${v.url}`);
   const telNumbersView = () =>(
@@ -56,7 +58,7 @@ const HomeGrid: React.FC<HomeGridProps> = ({ report, onClick, onMenuItemClick })
               position: 'absolute',
               bottom: '5px',
               right: '5px',
-              backgroundColor: 'gray',
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
               color: 'white',
               borderRadius: '3px',
               padding: '2px 6px',
@@ -67,7 +69,7 @@ const HomeGrid: React.FC<HomeGridProps> = ({ report, onClick, onMenuItemClick })
           </div>
         </div>
       }>
-      <HomeDropdown item={report} onItemClick={onMenuItemClick}/>
+      <HomeDropdown item={report} onItemClick={onDropdownItemClick}/>
       <div style={{ marginTop: '5px', minWidth: '150px' }}>
         <p onClick={onClick} style={{ fontSize: '12px', color: "rgba(0, 0, 0, 0.45)", display: 'inline' }} >
           <Text>ชื่อ:</Text>{" "} 
@@ -84,14 +86,25 @@ const HomeGrid: React.FC<HomeGridProps> = ({ report, onClick, onMenuItemClick })
         </p>
         <p onClick={onClick} style={{ fontSize: '12px', color:"rgba(0, 0, 0, 0.45)" }}><Text>ยอดเงิน: {new Intl.NumberFormat('th-TH').format(report.transfer_amount)}</Text></p>
         <p onClick={onClick} style={{ fontSize: '12px', color:"rgba(0, 0, 0, 0.45)" }}><Text>วันลงข้อมูล: { moment(report.updated_at).format('MM/DD, YY hh:mm') }</Text></p>
-        <div style={{ 
+        {/* <div style={{ 
           display: 'flex', 
           justifyContent: 'flex-end', // Align buttons to the end of the flex container
           gap: '8px' // Space between buttons
         }}>
           <Button className='ant-btn-like' type="primary" icon={<LikeOutlined />} onClick={()=>{}} />
           <Button className='ant-btn-dislike' type="primary"  style={{backgroundColor:'red'}} icon={<DislikeOutlined />} onClick={()=>{}} />
-        </div>
+        </div> */}
+        <HomeActions 
+          item={report} 
+          onActionItemClick={(id, action)=>{ 
+            console.log("[Grid] : ActionItemClick >>", id, action) 
+            onActionItemClick(id, action);
+          }} 
+          style={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end', // Align buttons to the end of the flex container
+            gap: '8px' // Space between buttons
+          }}/>
       </div>
     </Card>
   );

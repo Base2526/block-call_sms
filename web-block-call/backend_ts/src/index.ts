@@ -41,6 +41,9 @@ import { createTable } from './sql';
 
 import pool from './db';
 
+import { dbNotificationListener } from './dbNotify';
+dbNotificationListener();
+
 // const {
 //   DB_HOST,
 //   DB_PORT,
