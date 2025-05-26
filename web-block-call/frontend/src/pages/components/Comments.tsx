@@ -4,13 +4,13 @@ import '../report/scss/InputField.scss'
 import '../report/scss/LoginSection.scss'
 
 import React, { useEffect } from 'react'
-// import { CommentSection } from 'react-comments-section'
+import { CommentSection } from 'react-comments-section-ts'
 import { useState } from 'react'
-import { useQuery } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client";
 import { useDispatch, useSelector } from 'react-redux';
 import { DefaultRootState } from "@/interface/DefaultRootState"
 import { getHeaders } from "@/utils";
-import { query_comment } from '@/apollo/gqlQuery';
+import { query_comment, mutation_comment } from '@/apollo/gqlQuery';
 import handlerError from "@/utils/handlerError";
 
 interface CommentsProps { id: number; }
@@ -19,9 +19,11 @@ const Comments: React.FC<CommentsProps> = (props) => {
   const { profile } = useSelector((state: DefaultRootState) => state.user);
   const { id }      = props;
   
-  console.log("Comments :", profile);
+  console.log("Comments  :: >> ",  id);
 
+  let date = new Date()
   const [data] = useState([
+    /*
     {
       userId: '01a',
       comId: '012',
@@ -29,6 +31,7 @@ const Comments: React.FC<CommentsProps> = (props) => {
       avatarUrl: 'https://ui-avatars.com/api/name=Riya&background=random',
       userProfile: 'https://www.linkedin.com/in/riya-negi-8879631a9/',
       text: `<p>Hey <strong>loved</strong> your blog! Can you show me some other ways to <del><em>fix</em></del>  solve this?🤔<br>Here's my <a href="https://www.linkedin.com/in/riya-negi-8879631a9/" target="_blank">Linkedin Profile</a> to reach out.</p>`,
+      timestamp: `${new Date( date.getTime() - 5 * 60 * 60 * 1000 ).toISOString()}`,
       replies: [
         {
           userId: '02a',
@@ -39,8 +42,8 @@ const Comments: React.FC<CommentsProps> = (props) => {
           text: `<p>Yeah sure try adding this line to your code. You need to pass <span style="color: rgb(147,101,184);">event</span><span style="color: rgb(26,188,156);"> </span><span style="color: rgb(0,0,0);">as a param. </span></p>
           <pre>event.preventDefault()</pre>
           <p>Best of luck with your project! <br></p>
-          <img src="https://c.tenor.com/4cR1jMpsrEgAAAAC/snoopy-cheerleader.gif" alt="undefined" style="height: auto;width: auto"/>
-          <p></p>`
+          <p></p>`,
+          timestamp: `${new Date( date.getTime() - 30 * 60 * 1000 ).toISOString()}`
         },
         {
           userId: '01a',
@@ -48,7 +51,8 @@ const Comments: React.FC<CommentsProps> = (props) => {
           userProfile: 'https://www.linkedin.com/in/riya-negi-8879631a9/',
           fullName: 'Riya Negi',
           avatarUrl: 'https://ui-avatars.com/api/name=Riya&background=random',
-          text: '<p><strong>OMG!</strong> it worked! <span style="color: rgb(209,72,65);">DO NOT stop this blog series!!!!</span> 💃</p>'
+          text: '<p><strong>OMG!</strong> it worked! <span style="color: rgb(209,72,65);">DO NOT stop this blog series!!!!</span> 💃</p>',
+          timestamp: `${new Date()}`
         }
       ]
     },
@@ -65,9 +69,34 @@ const Comments: React.FC<CommentsProps> = (props) => {
       <li>Yoursef</li>
       </ol>`,
       avatarUrl: 'https://ui-avatars.com/api/name=Lily&background=random',
+      timestamp: `${new Date( date.getTime() - 3 * 60 * 60 * 1000 ).toISOString()}`,
       replies: []
-    }
+    }*/
   ])
+
+  const [mutationComment] = useMutation(mutation_comment, {
+    context: { headers: getHeaders(location) },
+    update: (cache, { data: { comment } }) => {
+      console.log("comment: ", comment);
+    },
+    onCompleted: (data, clientOptions) => {
+      // setLoading(false);  
+      // let { variables: { input } } : any = clientOptions;
+      // if(input?.mode === 'added'){
+      //   message.success('Added successfully!');
+      //   navigate(-1);
+      // }else if(input?.mode === 'edited'){
+      //   message.success('Edited successfully!');
+      //   navigate(-1);
+      // }
+    },
+    onError: (error) => {
+      console.log("error :", error);
+
+      // setLoading(false);
+      // handlerError(props, error);
+    }
+  });
 
   const { loading: loadingComment, 
           data: dataComment, 
@@ -87,23 +116,21 @@ const Comments: React.FC<CommentsProps> = (props) => {
 
   useEffect(() => {
     if (!loadingComment && dataComment?.comment) {
-        if (dataComment.comment.status) {
-
-            console.log("DataComment :", dataComment)
-            // setData(dataProduct.product.data);
-        }
+      console.log("useEffect DataComment() :", dataComment)
+        // if (dataComment.comment.status) {
+        //     console.log("DataComment :", dataComment)
+        //     // setData(dataProduct.product.data);
+        // }
     }
   }, [dataComment, loadingComment]);
 
   return (
     <div style={{ width: '100%' }}>
-      {/* <CommentSection
+      <CommentSection
         currentUser={{
           currentUserId: profile.id ?? "" ,
-          currentUserImg:
-            'https://ui-avatars.com/api/name=Riya&background=random',
-          currentUserProfile:
-            'https://www.linkedin.com/in/riya-negi-8879631a9/',
+          currentUserImg: 'https://ui-avatars.com/api/name=Riya&background=random',
+          currentUserProfile: '',
           currentUserFullName: profile.display_name ?? ""
         }}
         // currentUser={null}
@@ -111,6 +138,23 @@ const Comments: React.FC<CommentsProps> = (props) => {
         commentData={data}
         currentData={(data: any) => {
           console.log('curent data', data)
+        }}
+        currentDataItem={(v: any) => {
+          switch(v.mode){
+            case "new": {
+              const newValue = { ...v, data: { ...v.data, postId: id } };
+              console.log('curent data item', v, newValue);
+              mutationComment({ variables: { input: newValue } });
+              break;
+            }
+            case "edit": {
+              break;
+            }
+    
+            case "delete": {
+              break;
+            }
+          }
         }}
         logIn={{
             // loginLink: 'http://localhost:3001/',
@@ -136,7 +180,7 @@ const Comments: React.FC<CommentsProps> = (props) => {
         }}
         advancedInput={true}
         replyInputStyle={{ borderBottom: '1px solid black', color: 'black' }}
-      /> */}
+      /> 
     </div>
   )
 }

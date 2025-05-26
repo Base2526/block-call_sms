@@ -512,13 +512,10 @@ const resolvers: IResolvers = {
       let { req } = context
       let { _id } = args
 
-      console.log("comment :", _id)
-      let { current_user } =  await utils.checkAuth(req);
+      console.log("function comment :", _id)
+      // let { current_user } =  await utils.checkAuth(req);
       // let role = Utils.checkRole(current_user)
-   
-      // const existingComment = await model.models.Comment.findOne({ reportId: input?.id });
-         
-                                                    
+      // const existingComment = await model.models.Comment.findOne({ reportId: input?.id });                               
       // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
       return {
         status:true,
@@ -746,7 +743,7 @@ const resolvers: IResolvers = {
       console.log("Mutation >> report : ", input)
 
       const pool = await PgClient.create(current_user.id);
-      
+
       switch(input.mode){
         case 'added':{
           try {
@@ -1340,7 +1337,7 @@ const resolvers: IResolvers = {
           session.endSession();
       }
     },
-    comment_by_id: async(parent, args, context): Promise<any> => {
+    comment: async(parent, args, context): Promise<any> => {
       let start = Date.now();
       let { input } = args;
       let { req } = context;
@@ -1351,67 +1348,109 @@ const resolvers: IResolvers = {
       if (role !== constants.Role.ADMINISTRATOR && role !== constants.Role.AUTHENTICATED) {
           throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user);
       }
-  
-      // Start a transaction
-      const session = await mongoose.startSession();
-      session.startTransaction();
 
-      // console.log("input :", input)
-      
-      try {
-        let newComment =  {...input.comment, status: 'SENT'}
+      const pool = await PgClient.create(current_user.id);
 
-        if(input.commentId === undefined){
-          // Check if the Comment with the given reportId exists
-          const existingComment = await model.models.Comment.findOne({ reportId: input.reportId }).session(session);
-
-          if (existingComment) {
-            // If it exists, push the new comment into the data array
-            existingComment.data.push(newComment);
-            await existingComment.save({ session });
-          } else {
-            // If it does not exist, create a new Comment document
-            const newCommentDocument = new model.models.Comment({
-                reportId: input.reportId,
-                data: [newComment]
+      try {     
+        switch(input.mode){
+          case "new": {
+            let { data } = input
+           
+            const INSERT_COMMENT_SQL = `INSERT INTO comment (id, post_id, user_id, parent_comment_id, content) VALUES ($1, $2, $3, $4, $5) RETURNING id;`;
+            console.log('Running SQL:', {
+              text: INSERT_COMMENT_SQL,
+              values: [data.comId, data.postId, current_user.id, data.parentId === "" ? null : data.parentId, data.text]
             });
-            await newCommentDocument.save({ session });
-          }
-        }else{
-          // Update subComments if commentId is provided
-          const existingComment = await model.models.Comment.findOne({ reportId: input.reportId }).session(session);
+            const comment_query = await pool.query(INSERT_COMMENT_SQL, [data.comId, data.postId, current_user.id, data.parentId === "" ? null : data.parentId, data.text ]);
           
-          if (existingComment) {
-            const commentToUpdate = existingComment.data.find(data => data._id.toString() === input.commentId);
-            
-            if (commentToUpdate) {
-              // Add the new comment to subComments
-              commentToUpdate.subComments.push(newComment);
-              await existingComment.save({ session });
-            } else {
-              throw new AppError(constants.Status.NOT_FOUND, 'Comment not found');
+            if (comment_query.rowCount == 1) {
+              await pool.commit();
+              return {
+                status: true,
+                input,
+                executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
+              };
             }
-          } else {
-            throw new AppError(constants.Status.NOT_FOUND, 'Comment document not found');
+  
+            break;
+          }
+  
+          case "edit": {
+  
+          }
+  
+          case "delete": {
+            
           }
         }
-
-        // Commit the transaction
-        await session.commitTransaction();
-        console.log('Transaction committed successfully');
-
-        return {
-            status: true,
-            // data: { reportId: input?._id, userId: current_user._id },
-            // likedIndex,
-            executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
-        };
       } catch (error: any) {
-          await session.abortTransaction();
-          throw new AppError(constants.Status.ERROR, error);
+        console.log("error @@@@@@@1 :", error)
+        await pool.rollback();
+    
+        throw new AppError(constants.Status.ERROR, error)
       } finally {
-          session.endSession();
       }
+  
+      // // Start a transaction
+      // const session = await mongoose.startSession();
+      // session.startTransaction();
+
+      // // console.log("input :", input)
+      
+      // try {
+      //   let newComment =  {...input.comment, status: 'SENT'}
+
+      //   if(input.commentId === undefined){
+      //     // Check if the Comment with the given reportId exists
+      //     const existingComment = await model.models.Comment.findOne({ reportId: input.reportId }).session(session);
+
+      //     if (existingComment) {
+      //       // If it exists, push the new comment into the data array
+      //       existingComment.data.push(newComment);
+      //       await existingComment.save({ session });
+      //     } else {
+      //       // If it does not exist, create a new Comment document
+      //       const newCommentDocument = new model.models.Comment({
+      //           reportId: input.reportId,
+      //           data: [newComment]
+      //       });
+      //       await newCommentDocument.save({ session });
+      //     }
+      //   }else{
+      //     // Update subComments if commentId is provided
+      //     const existingComment = await model.models.Comment.findOne({ reportId: input.reportId }).session(session);
+          
+      //     if (existingComment) {
+      //       const commentToUpdate = existingComment.data.find(data => data._id.toString() === input.commentId);
+            
+      //       if (commentToUpdate) {
+      //         // Add the new comment to subComments
+      //         commentToUpdate.subComments.push(newComment);
+      //         await existingComment.save({ session });
+      //       } else {
+      //         throw new AppError(constants.Status.NOT_FOUND, 'Comment not found');
+      //       }
+      //     } else {
+      //       throw new AppError(constants.Status.NOT_FOUND, 'Comment document not found');
+      //     }
+      //   }
+
+      //   // Commit the transaction
+      //   await session.commitTransaction();
+      //   console.log('Transaction committed successfully');
+
+      //   return {
+      //       status: true,
+      //       // data: { reportId: input?._id, userId: current_user._id },
+      //       // likedIndex,
+      //       executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
+      //   };
+      // } catch (error: any) {
+      //     await session.abortTransaction();
+      //     throw new AppError(constants.Status.ERROR, error);
+      // } finally {
+      //     session.endSession();
+      // }
     },
     bookmark: async(parent, args, context): Promise<any> => {
       let start = Date.now();

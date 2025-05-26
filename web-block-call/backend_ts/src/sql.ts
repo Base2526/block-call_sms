@@ -250,50 +250,62 @@ export const createTable = async (client: any) => {
 
   const sql_table_comment = `
 -- Create an ENUM type (if it doesn't exist)
-DO $$ 
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_enum') THEN
-        CREATE TYPE status_enum AS ENUM ('SENDING', 'SENT', 'FAILED');
-    END IF;
-END $$;
+-- DO $$ 
+-- BEGIN
+--    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_enum') THEN
+--        CREATE TYPE status_enum AS ENUM ('SENDING', 'SENT', 'FAILED');
+--    END IF;
+-- END $$;
 
-CREATE TABLE IF NOT EXISTS user_comment (
-    id SERIAL PRIMARY KEY,
-    user_id VARCHAR NOT NULL,
-    username VARCHAR NOT NULL,
-    url VARCHAR DEFAULT ''
-);
+-- CREATE TABLE IF NOT EXISTS user_comment (
+--    id SERIAL PRIMARY KEY,
+--    user_id VARCHAR NOT NULL,
+--    username VARCHAR NOT NULL,
+--    url VARCHAR DEFAULT ''
+-- );
 
-CREATE TABLE IF NOT EXISTS comment (
-    id SERIAL PRIMARY KEY,
-    report_id UUID NOT NULL,
+--CREATE TABLE IF NOT EXISTS comment (
+--    id SERIAL PRIMARY KEY,
+--    report_id UUID NOT NULL,
+--    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+--);
+
+-- CREATE TABLE IF NOT EXISTS sub_comment (
+--    id SERIAL PRIMARY KEY,
+--    text TEXT NOT NULL,
+--    user_id INT NOT NULL,
+--    status status_enum NOT NULL DEFAULT 'SENDING',
+--    created_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+--    updated_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+--    Foreign Key Reference
+--    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES user_comment(id) ON DELETE CASCADE
+--);
+
+-- CREATE TABLE IF NOT EXISTS comment_data (
+--    id SERIAL PRIMARY KEY,
+--    comment_id INT NOT NULL,
+--    text TEXT NOT NULL,
+--    user_id INT NOT NULL,
+    -- status status_enum NOT NULL DEFAULT 'SENDING',
+    -- created BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+    -- updated BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+--    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Automatically set when a row is created
+--    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- Automatically set when a row is updated
+    -- Foreign Key References
+    -- CONSTRAINT fk_comment_id FOREIGN KEY (comment_id) REFERENCES comment(id) ON DELETE CASCADE,
+    -- CONSTRAINT fk_user_comment_id FOREIGN KEY (user_id) REFERENCES user_comment(id) ON DELETE CASCADE
+--);
+
+  CREATE TABLE IF NOT EXISTS comment (
+    id UUID PRIMARY KEY NOT NULL,
+    post_id INTEGER NOT NULL REFERENCES report(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES "user"(id) ON DELETE SET NULL,
+    parent_comment_id UUID NULL REFERENCES comment(id) ON DELETE CASCADE,
+    content TEXT NOT NULL, -- HTML or rich text
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS sub_comment (
-    id SERIAL PRIMARY KEY,
-    text TEXT NOT NULL,
-    user_id INT NOT NULL,
-    status status_enum NOT NULL DEFAULT 'SENDING',
-    created_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
-    updated_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
-    -- Foreign Key Reference
-    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES user_comment(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS comment_data (
-    id SERIAL PRIMARY KEY,
-    comment_id INT NOT NULL,
-    text TEXT NOT NULL,
-    user_id INT NOT NULL,
-    status status_enum NOT NULL DEFAULT 'SENDING',
-    created BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
-    updated BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
-    -- Foreign Key References
-    CONSTRAINT fk_comment_id FOREIGN KEY (comment_id) REFERENCES comment(id) ON DELETE CASCADE,
-    CONSTRAINT fk_user_comment_id FOREIGN KEY (user_id) REFERENCES user_comment(id) ON DELETE CASCADE
-);
+  );
 `;
 
     const sql_table_dblog = `
@@ -355,6 +367,8 @@ CREATE TABLE IF NOT EXISTS comment_data (
   );
   `;
 
+
+  
     const sql_table_report = `
   CREATE TABLE IF NOT EXISTS report (
       id SERIAL PRIMARY KEY,

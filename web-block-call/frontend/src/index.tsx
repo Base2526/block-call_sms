@@ -1,9 +1,7 @@
 import '@/styles/index.less';
 import '@/mock';
 
-// import 'react-comments-section/dist/index.css'
-
-// import 'react-comments-section/dist/index.css'
+import 'react-comments-section-ts/dist/index.css'
 
 import React from 'react';
 import { createRoot } from 'react-dom/client'; // Import createRoot
