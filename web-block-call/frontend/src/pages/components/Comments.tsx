@@ -148,10 +148,14 @@ const Comments: React.FC<CommentsProps> = (props) => {
               break;
             }
             case "edit": {
+               const newValue = { ...v,  postId: id };
+               mutationComment({ variables: { input: newValue } });
               break;
             }
     
             case "delete": {
+               const newValue = { ...v,  postId: id };
+               mutationComment({ variables: { input: newValue } });
               break;
             }
           }
