@@ -7,20 +7,25 @@ import { reportItem } from '@/utils/Interface';
 const { Text, Paragraph } = Typography;
 
 interface HomeActionsProps {
+    current_user: any;
     item: reportItem; 
     onActionItemClick: (id: string | number, action: string) => void;  // Handles menu clicks
     style: React.CSSProperties;  // Add style prop
 }
 
-const HomeActions: React.FC<HomeActionsProps> = ({ item, onActionItemClick, style }) => {
+const HomeActions: React.FC<HomeActionsProps> = ({ current_user, item, onActionItemClick, style }) => {
   return (
     <div style={{ gap: 10, ...style }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             {/* <Paragraph style={{ margin: 0 }}>{10}</Paragraph> */}
+
+            {/* const hasUserId1 = ; */}
+
+            {/* danger */}
             <Button
                 className="ant-btn-bookmark"
                 type="primary"
-                color="default" 
+                color={ item.bookmarks.some(item => item.user_id === current_user.id) ? "danger" : "default" }
                 variant="filled"
                 style={{
                     width: 25,
@@ -33,7 +38,7 @@ const HomeActions: React.FC<HomeActionsProps> = ({ item, onActionItemClick, styl
             />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <Paragraph style={{ margin: 0 }}>{10}</Paragraph>
+            <Paragraph style={{ margin: 0 }}>{parseInt(item.total_comments, 10) === 0 ? "" : item.total_comments }</Paragraph>
             <Button
                 className="ant-btn-comment"
                 type="primary"

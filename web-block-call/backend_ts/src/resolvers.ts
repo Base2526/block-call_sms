@@ -167,6 +167,12 @@ const resolvers: IResolvers = {
                                 r.created_at,
                                 r.updated_at,
 
+                                (
+                                  SELECT COUNT(*) 
+                                  FROM comment c 
+                                  WHERE c.post_id = r.id
+                                ) AS total_comments,
+
                                 -- bookmark 
                                 COALESCE(
                                   JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('user_id', bm.user_id)) 
@@ -512,14 +518,44 @@ const resolvers: IResolvers = {
       let { req } = context
       let { _id } = args
 
-      console.log("function comment :", _id)
-      // let { current_user } =  await utils.checkAuth(req);
-      // let role = Utils.checkRole(current_user)
-      // const existingComment = await model.models.Comment.findOne({ reportId: input?.id });                               
-      // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
+      const commentQuery = `SELECT
+                              c.id AS "comId",
+                              -- c.post_id,
+                              c.user_id AS "userId",
+                              u.display_name AS "fullName",
+                              u.avatar_id AS "avatarUrl",
+                              c.content as text,
+                              c.created_at as timestamp,
+                              COALESCE(
+                                json_agg(
+                                  json_build_object(
+                                    'comId', r.id,
+                                    'userId', r.user_id,
+                                    'fullName', ru.display_name,
+                                    'avatarUrl', ru.avatar_id,
+                                    'text', r.content,
+                                    'timestamp', r.created_at
+                                  )
+                                ) FILTER (WHERE r.id IS NOT NULL),
+                                '[]'
+                              ) AS replies
+                            FROM comment c
+                            LEFT JOIN "user" u ON c.user_id = u.id
+                            LEFT JOIN comment r ON r.parent_comment_id = c.id
+                            LEFT JOIN "user" ru ON r.user_id = ru.id
+                            WHERE c.post_id = $1
+                              AND c.parent_comment_id IS NULL
+                            GROUP BY c.id, c.post_id, c.user_id, u.display_name, u.email, u.avatar_id, c.content, c.created_at, c.updated_at
+                            ORDER BY c.created_at ASC; `;
+
+      const query = await PgClient.selectQuery(commentQuery, [_id]);
+      if( query.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
+
+      console.log("comment :", query);
+      
       return {
-        status:true,
-        // data: existingComment?.data !== undefined ? existingComment?.data : [],
+        status: true,
+        data: query.rows,
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     }
@@ -1352,6 +1388,8 @@ const resolvers: IResolvers = {
       const pool = await PgClient.create(current_user.id);
 
       try {     
+
+        console.log("comment :", input);
         switch(input.mode){
           case "new": {
             let { data } = input;
@@ -1375,7 +1413,6 @@ const resolvers: IResolvers = {
           }
   
           case "edit": {
-            let { data } = input;
             const UPDATE_COMMENT_SQL = `
                                         UPDATE comment
                                         SET
@@ -1385,7 +1422,7 @@ const resolvers: IResolvers = {
                                         RETURNING id;
                                       `;
             
-            const values = [ data.comId, data.text ];
+            const values = [ input.comId, input.text ];
             console.log('Running SQL:', { text: UPDATE_COMMENT_SQL, values: values });
             const comment_query = await pool.query(UPDATE_COMMENT_SQL, values);
             if (comment_query.rowCount == 1) {
@@ -1400,12 +1437,11 @@ const resolvers: IResolvers = {
           }
   
           case "delete": {
-            let { data } = input;
             const DELETE_COMMENT_SQL = `DELETE FROM comment WHERE id = $1 RETURNING *;`;
 
-            console.log('Running SQL:', { text: DELETE_COMMENT_SQL, values: [data.comId] });
+            console.log('Running SQL:', { text: DELETE_COMMENT_SQL, values: [input.comId] });
             
-            const comment_query = await pool.query(DELETE_COMMENT_SQL, [data.comId]);
+            const comment_query = await pool.query(DELETE_COMMENT_SQL, [input.comId]);
             if (comment_query.rowCount == 1) {
               await pool.commit();
               return {

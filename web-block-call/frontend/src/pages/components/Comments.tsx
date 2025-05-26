@@ -22,7 +22,7 @@ const Comments: React.FC<CommentsProps> = (props) => {
   console.log("Comments  :: >> ",  id);
 
   let date = new Date()
-  const [data] = useState([
+  const [data, setData] = useState([
     /*
     {
       userId: '01a',
@@ -111,7 +111,7 @@ const Comments: React.FC<CommentsProps> = (props) => {
           });
 
   if (errorComment) {
-    handlerError(props, errorComment);
+    // handlerError(props, errorComment);
   }
 
   useEffect(() => {
@@ -121,6 +121,8 @@ const Comments: React.FC<CommentsProps> = (props) => {
         //     console.log("DataComment :", dataComment)
         //     // setData(dataProduct.product.data);
         // }
+
+        setData(dataComment.comment.data);
     }
   }, [dataComment, loadingComment]);
 

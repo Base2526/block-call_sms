@@ -12,6 +12,7 @@ const { Paragraph, Text } = Typography;
 
 // Define a TypeScript interface for card props
 interface HomeGridProps {
+  current_user: any;
   report: reportItem;
   onClick?: () => void;
   onDropdownItemClick: (id: string | number, action: string) => void;
@@ -19,7 +20,7 @@ interface HomeGridProps {
 }
 
 const { REACT_APP_HOST_GRAPHAL } = process.env;
-const HomeGrid: React.FC<HomeGridProps> = ({ report, onClick, onDropdownItemClick, onActionItemClick }) => { 
+const HomeGrid: React.FC<HomeGridProps> = ({ current_user, report, onClick, onDropdownItemClick, onActionItemClick }) => { 
    
   const items = _.map(report.images, v=> `http://${REACT_APP_HOST_GRAPHAL}/${v.url}`);
   const telNumbersView = () =>(
@@ -95,6 +96,7 @@ const HomeGrid: React.FC<HomeGridProps> = ({ report, onClick, onDropdownItemClic
           <Button className='ant-btn-dislike' type="primary"  style={{backgroundColor:'red'}} icon={<DislikeOutlined />} onClick={()=>{}} />
         </div> */}
         <HomeActions 
+          current_user= {current_user}
           item={report} 
           onActionItemClick={(id, action)=>{ 
             console.log("[Grid] : ActionItemClick >>", id, action) 

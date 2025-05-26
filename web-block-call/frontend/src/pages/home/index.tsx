@@ -18,6 +18,8 @@ import SearchComponent from "@/pages/home/SearchComponent";
 import HomeModalComment from "@/pages/home/HomeModalComment";
 import ComfirmDelete from "@/pages/home/ComfirmDelete";
 
+import  { DefaultRootState } from '@/interface/DefaultRootState';
+
 // const { Search } = Input;
 
 const CustomEmpty = () => (
@@ -31,6 +33,8 @@ const CustomEmpty = () => (
 const ProductList: React.FC = (props) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { logged, device, profile } = useSelector((state: DefaultRootState) => state.user);
+
   const [reports, setReports] = useState<reportItem[]>([]);
   const [filteredReports, setFilteredReports] = useState<reportItem[]>([]);
   const [pageSizeOptions, setPageSizeOptions] = useState([20, 50, 100, 500, 1000]);
@@ -43,79 +47,59 @@ const ProductList: React.FC = (props) => {
   const [isModalCommentOpen, setIsModalCommentOpen] = useState(false);
   const [isComfirmDeleteOpen, setIsComfirmDeleteOpen] = useState(false);
 
+  const _variables = {
+    input: {
+      searchText,
+      page: pagination.current, 
+      pageSize: pagination.pageSize
+    }
+  };
+
   const [onBookmark] = useMutation(mutation_bookmark, {
     context: { headers: getHeaders({}) },
     // Optimistic UI updates could be re-enabled with minimal state for quick feedback
-    update: (cache, { data: { bookmark } }, params) => {
+    update: (cache, { data: { bookmark } }, { variables }) => {
       const { status, isBookmark } = bookmark;
-      const input = (params?.variables as { input?: any })?.input;
+      const input = (variables as { input?: any })?.input;
 
       console.log("bookmark :", bookmark, input);
       
-  
-      // if (status) {
-      //   const existingComment = cache.readQuery({
-      //     query: query_comment,
-      //     variables: { input: { id: input.reportId } }, // Ensure variables are correct
-      //   });
-  
-      //   // Create a deep clone of the comment input and set status to 'SENT'
-      //   let comment = { ...input.comment, status: 'SENT' };
-  
-      //   if (existingComment) {
-      //     // Handle adding new comments
-      //     if (input.commentId === undefined) {
-      //       // Create a deep copy of the existing data to prevent direct mutations
-      //       const updatedData = _.cloneDeep(existingComment?.comment_by_id.data);
-  
-      //       cache.writeQuery({
-      //         query: query_comment,
-      //         variables: { input: { id: input.reportId } },
-      //         data: {
-      //           comment_by_id: {
-      //             ...existingComment.comment_by_id,
-      //             data: [...updatedData, comment], // Add the new comment to the end
-      //           },
-      //         },
-      //       });
-      //     } else {
-      //       // Handle updating sub-comments in an existing comment
-      //       const updatedData = _.map(existingComment?.comment_by_id.data, (v) => {
-      //         if (v._id === input.commentId) {
-      //           return {
-      //             ...v,
-      //             exposed: true, // Optimistically expose comment
-      //             subComments: [...v.subComments, comment], // Add the new subComment
-      //           };
-      //         }
-      //         return v;
-      //       });
-  
-      //       // Write updated data back to the cache
-      //       cache.writeQuery({
-      //         query: query_comment,
-      //         variables: { input: { id: input.reportId } },
-      //         data: {
-      //           comment_by_id: {
-      //             ...existingComment.comment_by_id,
-      //             data: updatedData, // Replace with the updated data array
-      //           },
-      //         },
-      //       });
-      //     }
-      //   }
-      // }
+      const existingReports = cache.readQuery<any>({
+        query: query_reports,
+        variables: _variables,
+      });
+
+      if (!existingReports) return;
+
+      cache.writeQuery({
+        query: query_reports,
+        variables: _variables,
+        data: {
+          reports: {
+            ...existingReports.reports,
+            data: existingReports.reports.data.map((report: any) => {
+              if (report.report_id === input.post_id) {
+                const alreadyBookmarked = report.bookmarks.some(
+                  (bm: any) => bm.user_id === profile.id
+                );
+      
+                return {
+                  ...report,
+                  bookmarks: alreadyBookmarked
+                    ? report.bookmarks.filter((bm: any) => bm.user_id !== profile.id)
+                    : [...report.bookmarks, { user_id: profile.id }]
+                };
+              }
+      
+              return report;
+            })
+          }
+        }
+      });
     },
-    // Memoize error handler to prevent unnecessary recalculations
-    // onError: React.useCallback((error: ApolloError) => {
-    //   // handlerError(props, toast, error);
-    // }, [props, toast]),
-    // Completion handler (if needed)
     onCompleted: (data, clientOptions) => {
-      // Use clientOptions if needed for further optimizations
-      console.log("[ onBookmark ] : onCompleted :", data, clientOptions);
       const { status, isBookmark }  = data?.bookmark;
-      if(status) isBookmark ? message.success('BookmarkClick @1', 2.5) : message.error('BookmarkClick @1', 2.5)
+      if(status) isBookmark ? message.success('Bookmark', 2.5) : message.error('Unbookmark', 2.5)
     },
   });
 
@@ -124,12 +108,7 @@ const ProductList: React.FC = (props) => {
           error: errorReports, 
           refetch: refetchReports } = useQuery(query_reports, {
                                                 context: { headers: getHeaders(location) },
-                                                variables: { input: {
-                                                    searchText,
-                                                    page: pagination.current, 
-                                                    pageSize: pagination.pageSize
-                                                  }
-                                                },
+                                                variables: _variables,
                                                 fetchPolicy: 'cache-first', 
                                                 nextFetchPolicy: 'network-only',
                                                 notifyOnNetworkStatusChange: false
@@ -277,6 +256,7 @@ const ProductList: React.FC = (props) => {
             renderItem={(item) => (
               <List.Item className="item-product-list">
                 <HomeList
+                  current_user={profile}
                   report={item}
                   onClick={() => {
                     navigate(`/view?v=${item.report_id}`, { state: { _id: item.report_id } });
@@ -292,7 +272,7 @@ const ProductList: React.FC = (props) => {
                       }
 
                       case "comment":{
-                        showModalComment();
+                        // showModalComment();
                         break;
                       }
                     }
@@ -308,6 +288,7 @@ const ProductList: React.FC = (props) => {
             renderItem={item => (
               <List.Item  className={`item-product-card`}>
                 <HomeGrid
+                  current_user={profile}
                   report= {item}
                   onClick={()=>{
                     navigate(`/view?v=${item.report_id}`, { state: { _id: item.report_id } });
@@ -323,7 +304,7 @@ const ProductList: React.FC = (props) => {
                       }
 
                       case "comment":{
-                        showModalComment();
+                        // showModalComment();
                         break;
                       }
                     }

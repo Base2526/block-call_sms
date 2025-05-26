@@ -10,6 +10,7 @@ import HomeActions from "@/pages/home/HomeActions";
 const { Paragraph, Text } = Typography;
 
 interface HomeListProps {
+  current_user: any;
   report: reportItem;
   onClick?: () => void;
   onDropdownItemClick: (id: string | number, action: string | number) => void;
@@ -17,7 +18,7 @@ interface HomeListProps {
 }
 const { REACT_APP_HOST_GRAPHAL } = process.env;
 
-const HomeList: React.FC<HomeListProps> = ({ report, onClick, onDropdownItemClick, onActionItemClick }) => {
+const HomeList: React.FC<HomeListProps> = ({ current_user, report, onClick, onDropdownItemClick, onActionItemClick }) => {
 
   const items = _.map(report.images, v => `http://${REACT_APP_HOST_GRAPHAL}/${v.url}`);
   const telNumbersView = () => (
@@ -78,6 +79,7 @@ const HomeList: React.FC<HomeListProps> = ({ report, onClick, onDropdownItemClic
         </div> */}
 
         <HomeActions 
+          current_user= {current_user}
           item={report} 
           onActionItemClick={(id, action)=>{ 
             console.log("[List] : ActionItemClick >>", id, action) 

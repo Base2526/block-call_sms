@@ -14,6 +14,8 @@ export interface reportItem {
   province: string; // Province ID
   additional_info?: string;
   images: any[]; // URLs or file paths
+  bookmarks: any[];
+  total_comments: string;
   created_at: string;
   updated_at: string;
 }
