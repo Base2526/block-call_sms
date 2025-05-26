@@ -1354,7 +1354,7 @@ const resolvers: IResolvers = {
       try {     
         switch(input.mode){
           case "new": {
-            let { data } = input
+            let { data } = input;
            
             const INSERT_COMMENT_SQL = `INSERT INTO comment (id, post_id, user_id, parent_comment_id, content) VALUES ($1, $2, $3, $4, $5) RETURNING id;`;
             console.log('Running SQL:', {
@@ -1367,7 +1367,6 @@ const resolvers: IResolvers = {
               await pool.commit();
               return {
                 status: true,
-                input,
                 executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
               };
             }
@@ -1376,11 +1375,45 @@ const resolvers: IResolvers = {
           }
   
           case "edit": {
+            let { data } = input;
+            const UPDATE_COMMENT_SQL = `
+                                        UPDATE comment
+                                        SET
+                                          content = $2,
+                                          updated_at = CURRENT_TIMESTAMP
+                                        WHERE id = $1
+                                        RETURNING id;
+                                      `;
+            
+            const values = [ data.comId, data.text ];
+            console.log('Running SQL:', { text: UPDATE_COMMENT_SQL, values: values });
+            const comment_query = await pool.query(UPDATE_COMMENT_SQL, values);
+            if (comment_query.rowCount == 1) {
+              await pool.commit();
+              return {
+                status: true,
+                executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
+              };
+            }
   
+            break;
           }
   
           case "delete": {
+            let { data } = input;
+            const DELETE_COMMENT_SQL = `DELETE FROM comment WHERE id = $1 RETURNING *;`;
+
+            console.log('Running SQL:', { text: DELETE_COMMENT_SQL, values: [data.comId] });
             
+            const comment_query = await pool.query(DELETE_COMMENT_SQL, [data.comId]);
+            if (comment_query.rowCount == 1) {
+              await pool.commit();
+              return {
+                status: true,
+                executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
+              };
+            }
+            break;
           }
         }
       } catch (error: any) {
