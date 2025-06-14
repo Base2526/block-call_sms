@@ -23,6 +23,8 @@ import { heart_beat } from "./apollo/gqlQuery"
 
 import { getCookie } from "@/utils" 
 
+import { AppProvider } from '@/context/AppContext';
+
 // const { logged, device, profile } = useSelector((state: DefaultRootState) => state.user);
 const App: FC = () => {
   const { profile, locale } = useSelector((state : DefaultRootState) => state.user);
@@ -103,6 +105,7 @@ const App: FC = () => {
   };
 
   return (
+    <AppProvider>
     <ConfigProvider
       locale={getAntdLocale()}
       componentSize="middle"
@@ -127,6 +130,7 @@ const App: FC = () => {
         </HistoryRouter>
       </IntlProvider>
     </ConfigProvider>
+    </AppProvider>
   );
 };
 

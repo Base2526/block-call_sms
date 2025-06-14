@@ -1,12 +1,14 @@
 import '../report/scss/index.scss'
-import '../report/scss/CommentStructure.scss'
+// import '../report/scss/CommentStructure.scss'
 import '../report/scss/InputField.scss'
 import '../report/scss/LoginSection.scss'
 
+import 'react-comments-section-ts/dist/index.css'
+
 import React, { useEffect } from 'react'
-import { CommentSection } from 'react-comments-section-ts'
+import { CommentSection, CommentStatus } from 'react-comments-section-ts'
 import { useState } from 'react'
-import { useQuery, useMutation } from "@apollo/client";
+import { useQuery, useMutation, ApolloCache } from "@apollo/client";
 import { useDispatch, useSelector } from 'react-redux';
 import { DefaultRootState } from "@/interface/DefaultRootState"
 import { getHeaders } from "@/utils";
@@ -19,91 +21,109 @@ const Comments: React.FC<CommentsProps> = (props) => {
   const { profile } = useSelector((state: DefaultRootState) => state.user);
   const { id }      = props;
   
-  console.log("Comments  :: >> ",  id);
+  console.log("Comments  :: >> ",  id, profile);
+
+  const variable = { id };
 
   let date = new Date()
-  const [data, setData] = useState([
-    /*
-    {
-      userId: '01a',
-      comId: '012',
-      fullName: 'Riya Negi',
-      avatarUrl: 'https://ui-avatars.com/api/name=Riya&background=random',
-      userProfile: 'https://www.linkedin.com/in/riya-negi-8879631a9/',
-      text: `<p>Hey <strong>loved</strong> your blog! Can you show me some other ways to <del><em>fix</em></del>  solve this?🤔<br>Here's my <a href="https://www.linkedin.com/in/riya-negi-8879631a9/" target="_blank">Linkedin Profile</a> to reach out.</p>`,
-      timestamp: `${new Date( date.getTime() - 5 * 60 * 60 * 1000 ).toISOString()}`,
-      replies: [
-        {
-          userId: '02a',
-          comId: '013',
-          userProfile: 'https://www.linkedin.com/in/riya-negi-8879631a9/',
-          fullName: 'Adam Scott',
-          avatarUrl: 'https://ui-avatars.com/api/name=Adam&background=random',
-          text: `<p>Yeah sure try adding this line to your code. You need to pass <span style="color: rgb(147,101,184);">event</span><span style="color: rgb(26,188,156);"> </span><span style="color: rgb(0,0,0);">as a param. </span></p>
-          <pre>event.preventDefault()</pre>
-          <p>Best of luck with your project! <br></p>
-          <p></p>`,
-          timestamp: `${new Date( date.getTime() - 30 * 60 * 1000 ).toISOString()}`
-        },
-        {
-          userId: '01a',
-          comId: '014',
-          userProfile: 'https://www.linkedin.com/in/riya-negi-8879631a9/',
-          fullName: 'Riya Negi',
-          avatarUrl: 'https://ui-avatars.com/api/name=Riya&background=random',
-          text: '<p><strong>OMG!</strong> it worked! <span style="color: rgb(209,72,65);">DO NOT stop this blog series!!!!</span> 💃</p>',
-          timestamp: `${new Date()}`
-        }
-      ]
-    },
-    {
-      userId: '02b',
-      comId: '017',
-      fullName: 'Lily',
-      userProfile: 'https://www.linkedin.com/in/riya-negi-8879631a9/',
-      text: `<blockquote><strong>DRY </strong>- is the right of passage to good coding</blockquote>
-      <p>True story brother!! <em>Amen to that!  </em>For anyone wondering DRY is&nbsp;</p>
-      <ol>
-      <li>Don't</li>
-      <li>Repeat</li>
-      <li>Yoursef</li>
-      </ol>`,
-      avatarUrl: 'https://ui-avatars.com/api/name=Lily&background=random',
-      timestamp: `${new Date( date.getTime() - 3 * 60 * 60 * 1000 ).toISOString()}`,
-      replies: []
-    }*/
-  ])
+  const [data, setData] = useState([])
 
   const [mutationComment] = useMutation(mutation_comment, {
     context: { headers: getHeaders(location) },
-    update: (cache, { data: { comment } }) => {
-      console.log("comment: ", comment);
+    update: (cache, { data: { comment } }, { variables }) => {
+      const existing = cache.readQuery<any>({
+        query: query_comment,
+        variables: variable,
+      });
+      console.log("mutationComment [update]: ", id, comment, variables, existing);
+      if (!existing) return;
+
+      let updatedData = [...existing.comment.data]; // clone original comments
+      const newData = variables?.input?.data;
+      const mode = variables?.input?.mode || variables?.mode;
+
+      console.log("[updatedData] @1 :", updatedData);
+      
+      switch(mode){
+        case "new":{
+          if (!newData?.parentId) {
+            // Add new root comment
+            updatedData.unshift(newData);
+          } else {
+            // Add reply to a comment
+            updatedData = updatedData.map(comment => {
+              if (comment.comId === newData.parentId) {
+                return {
+                  ...comment,
+                  replies: [...(comment.replies || []), newData],
+                };
+              }
+              return comment;
+            });
+          }
+          break;
+        }
+
+        case "edit":{
+          updatedData = updatedData.map(comment => {
+            if (comment.comId === variables?.input?.comId) {
+              return {
+                ...comment,
+                text: variables?.input?.text,
+              };
+            }
+            return {
+              ...comment,
+              replies: comment.replies?.map((reply :any) =>
+                reply.comId === variables?.input?.comId ? { ...reply, text: variables?.input?.text } : reply
+              ),
+            };
+          });
+          break;
+        }
+
+        case "delete":{
+          updatedData = updatedData
+          .map(comment => {
+            if (comment.comId === variables?.input.comId) {
+              return null; // mark for removal
+            }
+            return {
+              ...comment,
+              replies: comment.replies?.filter((reply :any) => reply.comId !== variables?.input.comId),
+            };
+          })
+          .filter(Boolean); // remove null entries
+          break;
+        }
+      }
+
+      let newComment = {
+                          comment: {
+                            ...existing.comment,
+                            data: updatedData,
+                          },
+                        }
+      console.log("[updatedData] @2 :", existing, newComment);
+      // Write the updated cache
+      cache.writeQuery({
+        query: query_comment,
+        variables: variable,
+        data: newComment,
+      });
     },
     onCompleted: (data, clientOptions) => {
-      // setLoading(false);  
-      // let { variables: { input } } : any = clientOptions;
-      // if(input?.mode === 'added'){
-      //   message.success('Added successfully!');
-      //   navigate(-1);
-      // }else if(input?.mode === 'edited'){
-      //   message.success('Edited successfully!');
-      //   navigate(-1);
-      // }
     },
     onError: (error) => {
       console.log("error :", error);
-
-      // setLoading(false);
-      // handlerError(props, error);
     }
   });
 
   const { loading: loadingComment, 
           data: dataComment, 
-          error: errorComment,
-          refetch: refetchComment } = useQuery(query_comment, {
+          error: errorComment} = useQuery(query_comment, {
               context: { headers: getHeaders(location) },
-              variables: { id },
+              variables: variable,
               fetchPolicy: 'cache-first',
               nextFetchPolicy: 'network-only',
               notifyOnNetworkStatusChange: false,
@@ -115,14 +135,10 @@ const Comments: React.FC<CommentsProps> = (props) => {
   }
 
   useEffect(() => {
+    console.log("useEffect @1 :", dataComment)
     if (!loadingComment && dataComment?.comment) {
-      console.log("useEffect DataComment() :", dataComment)
-        // if (dataComment.comment.status) {
-        //     console.log("DataComment :", dataComment)
-        //     // setData(dataProduct.product.data);
-        // }
-
-        setData(dataComment.comment.data);
+      console.log("useEffect @2 :", dataComment)
+      if (dataComment.comment.status) setData(dataComment.comment.data);
     }
   }, [dataComment, loadingComment]);
 
@@ -145,18 +161,20 @@ const Comments: React.FC<CommentsProps> = (props) => {
           switch(v.mode){
             case "new": {
               const newValue = { ...v, data: { ...v.data, postId: id } };
-              console.log('curent data item', v, newValue);
+              console.log('comment : ', v, newValue);
               mutationComment({ variables: { input: newValue } });
               break;
             }
             case "edit": {
                const newValue = { ...v,  postId: id };
+               console.log('comment : ', v, newValue);
                mutationComment({ variables: { input: newValue } });
               break;
             }
     
             case "delete": {
                const newValue = { ...v,  postId: id };
+               console.log('comment : ', v, newValue);
                mutationComment({ variables: { input: newValue } });
               break;
             }

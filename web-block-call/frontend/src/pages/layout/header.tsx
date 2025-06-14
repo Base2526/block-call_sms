@@ -83,8 +83,17 @@ const HeaderComponent: FC<HeaderProps> = ({ collapsed, toggle }) => {
   return (
     <Header className="layout-page-header bg-2" style={{ backgroundColor: token.token.colorBgContainer }}>       
       {device !== 'MOBILE' && (
-        <div className="logo" style={{ width: collapsed ? 80 : 100 }} onClick={()=>navigate('/')}>
-          <InsuranceLogo color= { theme === 'dark' ? "#FFFFFF" : "#333333" } />
+        <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={()=>navigate('/')}>
+          <div className="logo" style={{ width: collapsed ? 80 : 100 }} >
+            <InsuranceLogo color= { theme === 'dark' ? "#FFFFFF" : "#333333" } /> 
+          </div>
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 600,
+              color: theme === 'dark' ? '#FFFFFF' : '#333333',
+              whiteSpace: 'nowrap',
+            }}>REPORT</span>
         </div>
       )}
       <div className="layout-page-header-main">

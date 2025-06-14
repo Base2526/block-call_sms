@@ -297,12 +297,21 @@ export const createTable = async (client: any) => {
     -- CONSTRAINT fk_user_comment_id FOREIGN KEY (user_id) REFERENCES user_comment(id) ON DELETE CASCADE
 --);
 
+  DO $$
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'comment_status') THEN
+      CREATE TYPE comment_status AS ENUM ('idle', 'posting', 'success', 'error');
+    END IF;
+  END
+  $$;
+
   CREATE TABLE IF NOT EXISTS comment (
     id UUID PRIMARY KEY NOT NULL,
     post_id INTEGER NOT NULL REFERENCES report(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES "user"(id) ON DELETE SET NULL,
     parent_comment_id UUID NULL REFERENCES comment(id) ON DELETE CASCADE,
     content TEXT NOT NULL, -- HTML or rich text
+    status comment_status DEFAULT 'idle',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
@@ -399,12 +408,19 @@ export const createTable = async (client: any) => {
 
   CREATE OR REPLACE FUNCTION log_report_update()
   RETURNS TRIGGER AS $$
+  DECLARE
+    user_id INTEGER;
   BEGIN
+    user_id := COALESCE(
+      NULLIF(current_setting('app.current_user_id', true), '')::INTEGER,
+      0
+    );
+
     INSERT INTO report_revisions (report_id, data, updated_by, revision_at)
     VALUES (
       OLD.id,
       to_jsonb(OLD),      -- snapshot of old row
-      current_setting('app.current_user_id')::INTEGER,               -- optionally set via application or session variable
+      user_id,            -- optionally set via application or session variable
       NOW()
     );
     RETURN NEW;

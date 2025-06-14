@@ -17,18 +17,10 @@ import { reportItem } from "@/utils/Interface";
 import SearchComponent from "@/pages/home/SearchComponent";
 import HomeModalComment from "@/pages/home/HomeModalComment";
 import ComfirmDelete from "@/pages/home/ComfirmDelete";
-
 import  { DefaultRootState } from '@/interface/DefaultRootState';
+import CustomEmpty from "@/pages/home/CustomEmpty"
 
-// const { Search } = Input;
-
-const CustomEmpty = () => (
-  <Empty
-  image="https://cdn-icons-png.flaticon.com/512/4076/4076549.png"
-  imageStyle={{ height: 100 }}
-  description={<span>No items found</span>}
-  />
-  );
+import { useAppContext } from '@/context/AppContext';
 
 const ProductList: React.FC = (props) => {
   const navigate = useNavigate();
@@ -40,14 +32,16 @@ const ProductList: React.FC = (props) => {
   const [pageSizeOptions, setPageSizeOptions] = useState([20, 50, 100, 500, 1000]);
   const [pagination, setPagination] = useState({ current: 1, pageSize: pageSizeOptions[0] });
   const [totalCount, setTotalCount] = useState(0);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  // const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+
+  const { viewMode, setViewMode } = useAppContext();
   const [searchText, setSearchText] = useState('');
   const [loadingDatas, setloadingDatas] = useState(true);
 
   const [isModalCommentOpen, setIsModalCommentOpen] = useState(false);
   const [isComfirmDeleteOpen, setIsComfirmDeleteOpen] = useState(false);
 
-  const _variables = {
+  const variable = {
     input: {
       searchText,
       page: pagination.current, 
@@ -66,14 +60,14 @@ const ProductList: React.FC = (props) => {
       
       const existingReports = cache.readQuery<any>({
         query: query_reports,
-        variables: _variables,
+        variables: variable,
       });
 
       if (!existingReports) return;
 
       cache.writeQuery({
         query: query_reports,
-        variables: _variables,
+        variables: variable,
         data: {
           reports: {
             ...existingReports.reports,
@@ -108,7 +102,7 @@ const ProductList: React.FC = (props) => {
           error: errorReports, 
           refetch: refetchReports } = useQuery(query_reports, {
                                                 context: { headers: getHeaders(location) },
-                                                variables: _variables,
+                                                variables: variable,
                                                 fetchPolicy: 'cache-first', 
                                                 nextFetchPolicy: 'network-only',
                                                 notifyOnNetworkStatusChange: false

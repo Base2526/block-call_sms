@@ -1408,7 +1408,6 @@ const resolvers: IResolvers = {
                 executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
               };
             }
-  
             break;
           }
   
@@ -1432,7 +1431,6 @@ const resolvers: IResolvers = {
                 executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
               };
             }
-  
             break;
           }
   

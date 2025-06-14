@@ -34,7 +34,7 @@ const HomeList: React.FC<HomeListProps> = ({ current_user, report, onClick, onDr
   );
 
   return (
-    <List.Item className="list-card-item" style={{ position: 'relative' }}>
+    <List.Item className="list-card-item" style={{ position: 'relative', cursor: 'pointer'  }}>
       <HomeDropdown item={report} onItemClick={onDropdownItemClick}/>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ position: 'relative', display: 'inline-block' }}>
