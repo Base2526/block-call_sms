@@ -1,6 +1,6 @@
 export const enUS_title = {
   'title.login': 'Login',
-  'title.home': "Home",
+  'title.home': "Home - EN",
   'title.dashboard': 'Dashboard',
   'title.documentation': 'Documentation',
   'title.guide': 'Guide',

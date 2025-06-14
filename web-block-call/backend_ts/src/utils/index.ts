@@ -13,7 +13,8 @@ import * as model from "../model"
 import * as constants from "../constants"
 import * as cache from "../cache"
 
-import pool from '../db';
+// import pool from '../db';
+import { PgClient } from '../dbClient';
 
 // import logger from "./logger";
 
@@ -84,8 +85,20 @@ export const getSession = async( userId: number ) => {
 
   const insertQuery = `INSERT INTO session (user_id, token) VALUES ($1, $2) RETURNING id;`;
   let payload = `${ userId }_${ Date.now() }`;
-  let query = await pool.query(insertQuery, [userId, jwt.sign(payload, REACT_APP_JWT_SECRET)]);
-  return cryptojs.AES.encrypt(query.rows[0].id.toString(), REACT_APP_JWT_SECRET).toString() 
+
+  const pool = await PgClient.create(userId);
+  try {
+    let query  = await pool.query(insertQuery, [userId, jwt.sign(payload, REACT_APP_JWT_SECRET)]);
+    await pool.commit();
+
+    return cryptojs.AES.encrypt(query.rows[0].id.toString(), REACT_APP_JWT_SECRET).toString() 
+  } catch (error: any) {
+    // Rollback the transaction in case of an error
+    await pool.rollback();
+
+    console.error('Error during transaction:', error);
+    throw new AppError(constants.Status.ERROR, error)
+  }
 }
 
 export const checkRole = (user: any) =>{
@@ -109,7 +122,7 @@ export const checkRole = (user: any) =>{
 export const getUser = async(id: any) =>{
     // return  await model.models.User.findOne( query  )
 
-    let query = await pool.query(`SELECT * FROM "user" WHERE "user".id = ${ id }`);
+    let query = await PgClient.selectQuery(`SELECT * FROM "user" WHERE "user".id = ${ id }`);
     return query.rows[0]      
 }
 
@@ -126,7 +139,7 @@ export const checkAuth = async(req: any) => {
         if (bearer === "Bearer") {
           // let session = await model.models.Session.findOne({_id: sessionId});
 
-          let sessions = await pool.query(`SELECT * FROM session WHERE id = ${ sessionId }`);
+          let sessions = await PgClient.selectQuery(`SELECT * FROM session WHERE id = ${ sessionId }`);
           if (sessions?.rowCount !== null && sessions.rowCount >= 0) {
             let session = sessions.rows[0]
             if(!_.isEmpty(session)){

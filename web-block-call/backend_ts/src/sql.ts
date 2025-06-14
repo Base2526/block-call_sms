@@ -250,50 +250,71 @@ export const createTable = async (client: any) => {
 
   const sql_table_comment = `
 -- Create an ENUM type (if it doesn't exist)
-DO $$ 
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_enum') THEN
-        CREATE TYPE status_enum AS ENUM ('SENDING', 'SENT', 'FAILED');
+-- DO $$ 
+-- BEGIN
+--    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_enum') THEN
+--        CREATE TYPE status_enum AS ENUM ('SENDING', 'SENT', 'FAILED');
+--    END IF;
+-- END $$;
+
+-- CREATE TABLE IF NOT EXISTS user_comment (
+--    id SERIAL PRIMARY KEY,
+--    user_id VARCHAR NOT NULL,
+--    username VARCHAR NOT NULL,
+--    url VARCHAR DEFAULT ''
+-- );
+
+--CREATE TABLE IF NOT EXISTS comment (
+--    id SERIAL PRIMARY KEY,
+--    report_id UUID NOT NULL,
+--    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+--);
+
+-- CREATE TABLE IF NOT EXISTS sub_comment (
+--    id SERIAL PRIMARY KEY,
+--    text TEXT NOT NULL,
+--    user_id INT NOT NULL,
+--    status status_enum NOT NULL DEFAULT 'SENDING',
+--    created_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+--    updated_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+--    Foreign Key Reference
+--    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES user_comment(id) ON DELETE CASCADE
+--);
+
+-- CREATE TABLE IF NOT EXISTS comment_data (
+--    id SERIAL PRIMARY KEY,
+--    comment_id INT NOT NULL,
+--    text TEXT NOT NULL,
+--    user_id INT NOT NULL,
+    -- status status_enum NOT NULL DEFAULT 'SENDING',
+    -- created BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+    -- updated BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+--    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Automatically set when a row is created
+--    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- Automatically set when a row is updated
+    -- Foreign Key References
+    -- CONSTRAINT fk_comment_id FOREIGN KEY (comment_id) REFERENCES comment(id) ON DELETE CASCADE,
+    -- CONSTRAINT fk_user_comment_id FOREIGN KEY (user_id) REFERENCES user_comment(id) ON DELETE CASCADE
+--);
+
+  DO $$
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'comment_status') THEN
+      CREATE TYPE comment_status AS ENUM ('idle', 'posting', 'success', 'error');
     END IF;
-END $$;
+  END
+  $$;
 
-CREATE TABLE IF NOT EXISTS user_comment (
-    id SERIAL PRIMARY KEY,
-    user_id VARCHAR NOT NULL,
-    username VARCHAR NOT NULL,
-    url VARCHAR DEFAULT ''
-);
-
-CREATE TABLE IF NOT EXISTS comment (
-    id SERIAL PRIMARY KEY,
-    report_id UUID NOT NULL,
+  CREATE TABLE IF NOT EXISTS comment (
+    id UUID PRIMARY KEY NOT NULL,
+    post_id INTEGER NOT NULL REFERENCES report(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES "user"(id) ON DELETE SET NULL,
+    parent_comment_id UUID NULL REFERENCES comment(id) ON DELETE CASCADE,
+    content TEXT NOT NULL, -- HTML or rich text
+    status comment_status DEFAULT 'idle',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS sub_comment (
-    id SERIAL PRIMARY KEY,
-    text TEXT NOT NULL,
-    user_id INT NOT NULL,
-    status status_enum NOT NULL DEFAULT 'SENDING',
-    created_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
-    updated_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
-    -- Foreign Key Reference
-    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES user_comment(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS comment_data (
-    id SERIAL PRIMARY KEY,
-    comment_id INT NOT NULL,
-    text TEXT NOT NULL,
-    user_id INT NOT NULL,
-    status status_enum NOT NULL DEFAULT 'SENDING',
-    created BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
-    updated BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
-    -- Foreign Key References
-    CONSTRAINT fk_comment_id FOREIGN KEY (comment_id) REFERENCES comment(id) ON DELETE CASCADE,
-    CONSTRAINT fk_user_comment_id FOREIGN KEY (user_id) REFERENCES user_comment(id) ON DELETE CASCADE
-);
+  );
 `;
 
     const sql_table_dblog = `
@@ -355,6 +376,8 @@ CREATE TABLE IF NOT EXISTS comment_data (
   );
   `;
 
+
+  
     const sql_table_report = `
   CREATE TABLE IF NOT EXISTS report (
       id SERIAL PRIMARY KEY,
@@ -371,6 +394,44 @@ CREATE TABLE IF NOT EXISTS comment_data (
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
   );
+    `;
+
+        const sql_table_report_revisions = `
+  CREATE TABLE IF NOT EXISTS report_revisions (
+    id SERIAL PRIMARY KEY,
+    report_id INT NOT NULL,
+    data JSONB,          -- store entire document snapshot here
+    updated_by INT,
+    revision_at TIMESTAMP DEFAULT NOW()
+  );
+
+
+  CREATE OR REPLACE FUNCTION log_report_update()
+  RETURNS TRIGGER AS $$
+  DECLARE
+    user_id INTEGER;
+  BEGIN
+    user_id := COALESCE(
+      NULLIF(current_setting('app.current_user_id', true), '')::INTEGER,
+      0
+    );
+
+    INSERT INTO report_revisions (report_id, data, updated_by, revision_at)
+    VALUES (
+      OLD.id,
+      to_jsonb(OLD),      -- snapshot of old row
+      user_id,            -- optionally set via application or session variable
+      NOW()
+    );
+    RETURN NEW;
+  END;
+  $$ LANGUAGE plpgsql;
+
+  CREATE TRIGGER trigger_report_update
+  BEFORE UPDATE ON report
+  FOR EACH ROW
+  EXECUTE FUNCTION log_report_update();
+
     `;
 
     const sql_table_seller_account = `
@@ -432,6 +493,17 @@ CREATE TABLE IF NOT EXISTS comment_data (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
   `;
+  
+  const sql_table_logs = `
+  CREATE TABLE IF NOT EXISTS logs (
+    id SERIAL PRIMARY KEY,
+    level VARCHAR(50) NOT NULL,
+    message TEXT NOT NULL,
+    stack JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+  `;
 
     const sql_table_schema_version = `
   -- Create table for schema version tracking
@@ -439,7 +511,34 @@ CREATE TABLE IF NOT EXISTS comment_data (
     "id" SERIAL PRIMARY KEY,
     "table_name" VARCHAR(255) NOT NULL UNIQUE,
     "version" INTEGER DEFAULT 0
-  );`
+  );`  
+
+  const sql_table_bookmark = `
+  CREATE TABLE IF NOT EXISTS bookmark (
+      report_id INT NOT NULL,
+      user_id INT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, report_id),
+      FOREIGN KEY (report_id) REFERENCES report (id)
+  );
+     `
+
+    //  Trigger Function in PostgreSQL
+    const notify_table = `
+    CREATE OR REPLACE FUNCTION notify_table_update()
+    RETURNS trigger AS $$
+    BEGIN
+      PERFORM pg_notify('table_update_channel', 'updated');
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    CREATE TRIGGER document_update_notify
+    AFTER UPDATE ON report
+    FOR EACH ROW
+    EXECUTE FUNCTION notify_table_update();
+       `
 
   try {
     //   await client.query(initialTableQuery);
@@ -451,19 +550,24 @@ CREATE TABLE IF NOT EXISTS comment_data (
     await client.query(sql_table_follow);
     await client.query(sql_table_bank);
     await client.query(sql_table_comment);
-    await client.query(sql_table_dblog);
+    // await client.query(sql_table_dblog);
     await client.query(sql_table_file);
     await client.query(sql_table_log_user_access);
     await client.query(sql_table_position);
     await client.query(sql_table_province);
     await client.query(sql_table_report);
+    await client.query(sql_table_report_revisions);
     await client.query(sql_table_seller_account);
     await client.query(sql_table_tel_numbers);
     await client.query(sql_table_likes);
     await client.query(sql_table_report_images);
     await client.query(sql_table_session);
     await client.query(sql_table_socket);
+    await client.query(sql_table_logs);
     await client.query(sql_table_schema_version);
+    await client.query(sql_table_bookmark);
+    
+    await client.query(notify_table);
 
     console.log('Tables created (or already exist)');
     // Check the schema version

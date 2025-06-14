@@ -14,7 +14,10 @@ import * as constants from "./constants"
 import * as model from "./model"
 import pubsub from './pubsub'
 import { IUser, ILike, IFile } from "./utils/Interface"
-import pool from './db';
+// import pool from './db';
+import logger from "./utils/logger";
+
+import { PgClient } from './dbClient';
 
 const REACT_APP_JWT_SECRET = process.env.REACT_APP_JWT_SECRET as string;
 
@@ -53,8 +56,8 @@ const resolvers: IResolvers = {
       // if( role !== constants.Role.ADMINISTRATOR  &&
       //     role !== constants.Role.AUTHENTICATED 
       //     ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied')
-
-      const query = await pool.query('SELECT * FROM province');
+      
+      const query = await PgClient.selectQuery('SELECT * FROM province');
       if( query.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
 
       return {
@@ -64,341 +67,151 @@ const resolvers: IResolvers = {
       }
     },
     reports: async(parent, args, context): Promise<any> => {
-      let start = Date.now()
-      let { req } = context
-      
-      console.log("call function reports()");
-      let { current_user } =  await utils.checkAuth(req);
-      let role = utils.checkRole(current_user)
-      console.log("reports : current_user :", current_user, role, req)
+      try{
+        let start = Date.now()
+        let { req } = context
+        
+        console.log("call function reports()");
+        let { current_user } =  await utils.checkAuth(req);
+        let role = utils.checkRole(current_user)
+        console.log("reports : current_user :", current_user, role, req)
 
-      console.log(`reports :`)
-      console.log(args)
+        console.log(`reports :`)
+        console.log(args)
+        
+  
+        // logger.info(`Call >> reports: ${current_user}`, { current_user });
 
-      // if( role !== constants.Role.ADMINISTRATOR  && 
-      //     role !== constants.Role.AUTHENTICATED  ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
+        // logger.info('Hello World');
 
-      /*
-      let limitSize = 10;  // Number of documents to return
-      let page = 1;  // For pagination, which page to retrieve
-      let skipSize = (page - 1) * limitSize;  // Number of documents to skip
+        // if( role !== constants.Role.ADMINISTRATOR  && 
+        //     role !== constants.Role.AUTHENTICATED  ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
 
-      let reports = await model.models.Report.aggregate([
-        {
-          $addFields: {
-            ownerId: "$current.ownerId",
-            provinceId: "$current.provinceId",  // Bring the nested field to the top level
-          }
-        },
-        {
-          $lookup: {
-            localField: "ownerId",
-            from: "user",
-            foreignField: "_id",
-            as: "owner"
-          }
-        },
-        {
-          $unwind: {
-            path: "$owner",
-            preserveNullAndEmptyArrays: true
-          }
-        },
-        {
-          $lookup: {
-            localField: "provinceId",
-            from: "province",
-            foreignField: "_id",
-            as: "province"
-          }
-        },
-        {
-          $unwind: {
-            path: "$province",
-            preserveNullAndEmptyArrays: true
-          }
-        },
-        {
-          $lookup: {
-            localField: "_id",
-            from: "comment",
-            foreignField: "reportId",
-            as: "comment"
-          }
-        },
-        {
-          $unwind: {
-            path: "$province",
-            preserveNullAndEmptyArrays: true
-          }
-        },
-        // Add the $skip stage to skip documents for pagination
-        { 
-          $skip: skipSize 
-        },
-        // Add the $limit stage to limit the number of returned documents
-        { 
-          $limit: limitSize 
-        }
-      ]);
-      */
+        /*
+        let limitSize = 10;  // Number of documents to return
+        let page = 1;  // For pagination, which page to retrieve
+        let skipSize = (page - 1) * limitSize;  // Number of documents to skip
 
-      let { searchText, page, pageSize} = args.input
-      const reportsQuery = `SELECT 
-                              r.id AS report_id,
-                              r.user_id,
-                              r.seller_first_name,
-                              r.seller_last_name,
-                              r.id_card,
-                              r.product,
-                              r.transfer_amount,
-                              r.transfer_date,
-                              r.selling_website,
-                              r.additional_info,
-                              r.created_at,
-                              r.updated_at,
+        let reports = await model.models.Report.aggregate([
+          {
+            $addFields: {
+              ownerId: "$current.ownerId",
+              provinceId: "$current.provinceId",  // Bring the nested field to the top level
+            }
+          },
+          {
+            $lookup: {
+              localField: "ownerId",
+              from: "user",
+              foreignField: "_id",
+              as: "owner"
+            }
+          },
+          {
+            $unwind: {
+              path: "$owner",
+              preserveNullAndEmptyArrays: true
+            }
+          },
+          {
+            $lookup: {
+              localField: "provinceId",
+              from: "province",
+              foreignField: "_id",
+              as: "province"
+            }
+          },
+          {
+            $unwind: {
+              path: "$province",
+              preserveNullAndEmptyArrays: true
+            }
+          },
+          {
+            $lookup: {
+              localField: "_id",
+              from: "comment",
+              foreignField: "reportId",
+              as: "comment"
+            }
+          },
+          {
+            $unwind: {
+              path: "$province",
+              preserveNullAndEmptyArrays: true
+            }
+          },
+          // Add the $skip stage to skip documents for pagination
+          { 
+            $skip: skipSize 
+          },
+          // Add the $limit stage to limit the number of returned documents
+          { 
+            $limit: limitSize 
+          }
+        ]);
+        */
 
-                              -- Province (Unique by p.id)
-                              COALESCE(
-                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th)) 
-                                  FILTER (WHERE p.id IS NOT NULL), 
+        let { searchText, page, pageSize} = args.input
+        const reportsQuery = `SELECT 
+                                r.id AS report_id,
+                                r.user_id,
+                                r.seller_first_name,
+                                r.seller_last_name,
+                                r.id_card,
+                                r.product,
+                                r.transfer_amount,
+                                r.transfer_date,
+                                r.selling_website,
+                                r.additional_info,
+                                r.created_at,
+                                r.updated_at,
+
+                                (
+                                  SELECT COUNT(*) 
+                                  FROM comment c 
+                                  WHERE c.post_id = r.id
+                                ) AS total_comments,
+
+                                -- bookmark 
+                                COALESCE(
+                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('user_id', bm.user_id)) 
+                                  FILTER (WHERE bm.user_id IS NOT NULL), 
                                   '[]'::JSONB
-                              ) AS province,
+                                ) AS bookmarks,
 
-                              -- Tel Numbers (Unique by tn.id)
-                              COALESCE(
-                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', tn.id, 'tel', tn.tel)) 
-                                  FILTER (WHERE tn.id IS NOT NULL), 
-                                  '[]'::JSONB
-                              ) AS tel_numbers,
+                                -- Province (Unique by p.id)
+                                COALESCE(
+                                    JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th)) 
+                                    FILTER (WHERE p.id IS NOT NULL), 
+                                    '[]'::JSONB
+                                ) AS province,
 
-                              -- Seller Accounts (Unique by sa.id)
-                              COALESCE(
-                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT(
-                                      'id', sa.id, 
-                                      'seller_account', sa.seller_account, 
-                                      'bank_id', sa.bank_id, 
-                                      'bank_name', COALESCE(b.name_en, b.name_th)
-                                  )) FILTER (WHERE sa.id IS NOT NULL), 
-                                  '[]'::JSONB
-                              ) AS seller_accounts,
+                                -- Tel Numbers (Unique by tn.id)
+                                COALESCE(
+                                    JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', tn.id, 'tel', tn.tel)) 
+                                    FILTER (WHERE tn.id IS NOT NULL), 
+                                    '[]'::JSONB
+                                ) AS tel_numbers,
 
-                              -- Images (Unique by f.id)
-                              COALESCE(
-                                  JSONB_AGG(
-                                      DISTINCT JSONB_BUILD_OBJECT('id', f.id, 'filename', f.filename, 'url', f.url)
-                                  ) FILTER (WHERE f.id IS NOT NULL AND f.filename IS NOT NULL AND f.url IS NOT NULL), 
-                                  '[]'::JSONB
-                              ) AS images
+                                -- Seller Accounts (Unique by sa.id)
+                                COALESCE(
+                                    JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT(
+                                        'id', sa.id, 
+                                        'seller_account', sa.seller_account, 
+                                        'bank_id', sa.bank_id, 
+                                        'bank_name', COALESCE(b.name_en, b.name_th)
+                                    )) FILTER (WHERE sa.id IS NOT NULL), 
+                                    '[]'::JSONB
+                                ) AS seller_accounts,
 
-                          FROM report r
-                          LEFT JOIN tel_numbers tn ON r.id = tn.report_id
-                          LEFT JOIN seller_account sa ON r.id = sa.report_id
-                          LEFT JOIN bank b ON sa.bank_id = b.id -- Join with the bank table to get the bank name
-                          LEFT JOIN report_images ri ON r.id = ri.report_id
-                          LEFT JOIN province p ON p.id = r.province_id 
-                          LEFT JOIN file f ON ri.file_id = f.id
-
-                          WHERE (
-                            COALESCE(CAST($3 AS TEXT), '') = '' OR 
-                            r.seller_first_name ILIKE '%' || CAST($3 AS TEXT) || '%' OR
-                            r.seller_last_name ILIKE '%' || CAST($3 AS TEXT) || '%' OR
-                            r.id_card ILIKE '%' || CAST($3 AS TEXT) || '%' OR
-                            r.product ILIKE '%' || CAST($3 AS TEXT) || '%' OR
-                            r.selling_website ILIKE '%' || CAST($3 AS TEXT) || '%' OR
-                            r.additional_info ILIKE '%' || CAST($3 AS TEXT) || '%' OR
-                            p.name_th ILIKE '%' || CAST($3 AS TEXT) || '%'
-                          )
-
-                          GROUP BY r.id 
-                          ORDER BY r.created_at DESC
-                          LIMIT $1 OFFSET $2;
-                          `;
-
-      const totalCountQuery = `
-                          SELECT COUNT(*) AS totalCount
-                          FROM report r
-                          LEFT JOIN province p ON p.id = r.province_id
-                          WHERE (
-                            COALESCE(CAST($1 AS TEXT), '') = '' OR 
-                            (r.seller_first_name || ' ' || r.seller_last_name) ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            r.seller_first_name ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            r.seller_last_name ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            r.id_card ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            r.product ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            r.selling_website ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            r.additional_info ILIKE '%' || CAST($1 AS TEXT) || '%' OR
-                            p.name_th ILIKE '%' || CAST($1 AS TEXT) || '%'
-                          );
-                        `;
-
-      // const searchWords = searchText.trim().split(/\s+/);
-      const reportsPromise = pool.query(reportsQuery, [pageSize, (page - 1) * pageSize, searchText]);
-      const totalCountPromise = pool.query(totalCountQuery, [searchText]);
-      const [reportsResult, totalCountResult] = await Promise.all([reportsPromise, totalCountPromise]);
-                                
-      if( reportsResult.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
-      console.log( "rowCount :", reportsResult.rowCount )
-      console.log( "rows :", reportsResult.rows )
-
-      return {
-        status: true,
-        data: reportsResult.rows,
-        totalCount: parseInt(totalCountResult.rows[0].totalcount, 10),
-        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
-      }
-    },
-    report: async(parent, args, context): Promise<any> => {
-      let start = Date.now()
-      let { req } = context
-      let { _id } = args
-
-      let { current_user } =  await utils.checkAuth(req);
-      console.log("current_user :", current_user)
-      /*
-      let report = await model.models.Report.aggregate([
-                                                      { 
-                                                        $match: { _id: mongoose.Types.ObjectId(_id) } 
-                                                      },
-                                                      {
-                                                        $addFields: {
-                                                          ownerId: "$current.ownerId",
-                                                          provinceId: "$current.provinceId",  // Bring the nested field to the top level
-                                                        }
-                                                      },
-                                                      {
-                                                        $lookup: {
-                                                          from: "province",
-                                                          localField: "provinceId",
-                                                          foreignField: "_id",
-                                                          as: "province"
-                                                        }
-                                                      },
-                                                      {
-                                                        $unwind: {
-                                                          path: "$province",
-                                                          preserveNullAndEmptyArrays: true
-                                                        }
-                                                      },
-
-                                                      {
-                                                        $lookup: {
-                                                          from: "user",
-                                                          localField: "ownerId",
-                                                          foreignField: "_id",
-                                                          as: "owner"
-                                                        }
-                                                      },
-                                                      {
-                                                        $unwind: {
-                                                          path: "$province",
-                                                          preserveNullAndEmptyArrays: true
-                                                        }
-                                                      },
-                                                      // Unwind sellerAccounts to perform a lookup for each account
-                                                      {
-                                                        $unwind: {
-                                                          path: "$current.sellerAccounts",
-                                                          preserveNullAndEmptyArrays: true
-                                                        }
-                                                      },
-                                                      // Lookup bank details for each bankId in sellerAccounts
-                                                      {
-                                                        $lookup: {
-                                                          from: "bank",  // the collection for banks
-                                                          localField: "current.sellerAccounts.bankId",
-                                                          foreignField: "_id",
-                                                          as: "bank"
-                                                        }
-                                                      },
-                                                      // Unwind the bank lookup results to get individual bank details
-                                                      {
-                                                        $unwind: {
-                                                          path: "$bank",
-                                                          preserveNullAndEmptyArrays: false
-                                                        }
-                                                      },
-                                                      // Add the bank name_th field into sellerAccounts
-                                                      {
-                                                        $addFields: {
-                                                          "current.sellerAccounts.bankName_th": "$bank.name_th"
-                                                        }
-                                                      },
-                                                      // Group sellerAccounts back into an array after the unwind
-                                                      {
-                                                        $group: {
-                                                          _id: "$_id",
-                                                          reportData: { $first: "$$ROOT" },
-                                                          sellerAccounts: { $push: "$current.sellerAccounts" }
-                                                        }
-                                                      },
-                                                      // Reconstruct the report with sellerAccounts containing bankName_th
-                                                      {
-                                                        $addFields: {
-                                                          "reportData.current.sellerAccounts": "$sellerAccounts"
-                                                        }
-                                                      },
-                                                      {
-                                                        $replaceRoot: { newRoot: "$reportData" }
-                                                      },
-                                                      {
-                                                        $lookup: {
-                                                          localField: "_id",
-                                                          from: "comment",
-                                                          foreignField: "reportId",
-                                                          as: "comment"
-                                                        }
-                                                      },
-                                                    ]);
-                                                    */
-
-      const reportsQuery = `SELECT 
-                              r.id AS report_id,
-                              r.user_id,
-                              r.seller_first_name,
-                              r.seller_last_name,
-                              r.id_card,
-                              r.product,
-                              r.transfer_amount,
-                              r.transfer_date,
-                              r.selling_website,
-                              -- r.province_id,
-                              r.additional_info,
-                              r.created_at,
-                              r.updated_at,
-                            
-                              -- Province (Unique by p.id)
-                              COALESCE(
-                                JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th)) 
-                                FILTER (WHERE p.id IS NOT NULL), 
-                                '[]'::JSONB
-                              ) AS province,
-
-                              -- Tel Numbers (Unique by tn.id)
-                              COALESCE(
-                                JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', tn.id, 'tel', tn.tel)) 
-                                FILTER (WHERE tn.id IS NOT NULL), 
-                                '[]'::JSONB
-                              ) AS tel_numbers,
-
-                              -- Seller Accounts (Unique by sa.id)
-                              COALESCE(
-                                JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT(
-                                  'id', sa.id, 
-                                  'seller_account', sa.seller_account, 
-                                  'bank_id', sa.bank_id, 
-                                  'bank_name', COALESCE(b.name_en, b.name_th)
-                                )) FILTER (WHERE sa.id IS NOT NULL), 
-                                '[]'::JSONB
-                              ) AS seller_accounts,
-
-                              -- Images (Unique by f.id)
-                              COALESCE(
-                                JSONB_AGG(
-                                  DISTINCT JSONB_BUILD_OBJECT('id', f.id, 'filename', f.filename, 'url', f.url)
-                                ) FILTER (WHERE f.id IS NOT NULL AND f.filename IS NOT NULL AND f.url IS NOT NULL), 
-                                '[]'::JSONB
-                              ) AS images
+                                -- Images (Unique by f.id)
+                                COALESCE(
+                                    JSONB_AGG(
+                                        DISTINCT JSONB_BUILD_OBJECT('id', f.id, 'filename', f.filename, 'url', f.url)
+                                    ) FILTER (WHERE f.id IS NOT NULL AND f.filename IS NOT NULL AND f.url IS NOT NULL), 
+                                    '[]'::JSONB
+                                ) AS images
 
                             FROM report r
                             LEFT JOIN tel_numbers tn ON r.id = tn.report_id
@@ -407,19 +220,147 @@ const resolvers: IResolvers = {
                             LEFT JOIN report_images ri ON r.id = ri.report_id
                             LEFT JOIN province p ON p.id = r.province_id 
                             LEFT JOIN file f ON ri.file_id = f.id
-                            WHERE r.id = $1
-                            GROUP BY r.id, p.id;`;
-                            
-      const reportsResult = await pool.query(reportsQuery, [ _id ]);                                
-      // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
+                            LEFT JOIN bookmark bm ON r.id = bm.report_id
 
-      console.log("call function report()");
-      console.log( reportsResult.rows )
-      return {
-        status:true,
-        data: reportsResult.rows.length > 0 ? reportsResult.rows[0] : undefined,
-        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
-      }
+                            WHERE (
+                              COALESCE(CAST($3 AS TEXT), '') = '' OR 
+                              r.seller_first_name ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                              r.seller_last_name ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                              r.id_card ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                              r.product ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                              r.selling_website ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                              r.additional_info ILIKE '%' || CAST($3 AS TEXT) || '%' OR
+                              p.name_th ILIKE '%' || CAST($3 AS TEXT) || '%'
+                            )
+
+                            GROUP BY r.id 
+                            ORDER BY r.created_at DESC
+                            LIMIT $1 OFFSET $2;
+                            `;
+
+        const totalCountQuery = `
+                            SELECT COUNT(*) AS totalCount
+                            FROM report r
+                            LEFT JOIN province p ON p.id = r.province_id
+                            WHERE (
+                              COALESCE(CAST($1 AS TEXT), '') = '' OR 
+                              (r.seller_first_name || ' ' || r.seller_last_name) ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              r.seller_first_name ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              r.seller_last_name ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              r.id_card ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              r.product ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              r.selling_website ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              r.additional_info ILIKE '%' || CAST($1 AS TEXT) || '%' OR
+                              p.name_th ILIKE '%' || CAST($1 AS TEXT) || '%'
+                            );
+                          `;
+
+        // const searchWords = searchText.trim().split(/\s+/);
+
+        const reportsPromise = PgClient.selectQuery(reportsQuery, [pageSize, (page - 1) * pageSize, searchText]);
+        const totalCountPromise = PgClient.selectQuery(totalCountQuery, [searchText]);
+        const [reportsResult, totalCountResult] = await Promise.all([reportsPromise, totalCountPromise]);
+                                  
+        // if( reportsResult.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
+        console.log( "rowCount :", reportsResult.rowCount )
+        console.log( "rows :", reportsResult.rows )
+
+        return {
+          status: true,
+          data: reportsResult.rows,
+          totalCount: parseInt(totalCountResult.rows[0].totalcount, 10),
+          executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+        }
+      }catch(error: any){
+        logger.error('[reports] An error occurred', { stack: error });
+
+        throw new AppError(constants.Status.ERROR, error)
+      }finally {
+      }  
+    },
+    report: async(parent, args, context): Promise<any> => {
+      try{
+        let start = Date.now()
+        let { req } = context
+        let { _id } = args
+
+        let { current_user } =  await utils.checkAuth(req);
+        console.log("current_user :", current_user)
+
+        const reportsQuery = `SELECT 
+                                r.id AS report_id,
+                                r.user_id,
+                                r.seller_first_name,
+                                r.seller_last_name,
+                                r.id_card,
+                                r.product,
+                                r.transfer_amount,
+                                r.transfer_date,
+                                r.selling_website,
+                                -- r.province_id,
+                                r.additional_info,
+                                r.created_at,
+                                r.updated_at,
+                              
+                                -- Province (Unique by p.id)
+                                COALESCE(
+                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', p.id, 'name_th', p.name_th, 'name_en', p.name_en)) 
+                                  FILTER (WHERE p.id IS NOT NULL), 
+                                  '[]'::JSONB
+                                ) AS province,
+
+                                -- Tel Numbers (Unique by tn.id)
+                                COALESCE(
+                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('id', tn.id, 'tel', tn.tel)) 
+                                  FILTER (WHERE tn.id IS NOT NULL), 
+                                  '[]'::JSONB
+                                ) AS tel_numbers,
+
+                                -- Seller Accounts (Unique by sa.id)
+                                COALESCE(
+                                  JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT(
+                                    'id', sa.id, 
+                                    'seller_account', sa.seller_account, 
+                                    'bank_id', sa.bank_id, 
+                                    'bank_name', COALESCE(b.name_en, b.name_th)
+                                  )) FILTER (WHERE sa.id IS NOT NULL), 
+                                  '[]'::JSONB
+                                ) AS seller_accounts,
+
+                                -- Images (Unique by f.id)
+                                COALESCE(
+                                  JSONB_AGG(
+                                    DISTINCT JSONB_BUILD_OBJECT('id', f.id, 'filename', f.filename, 'url', f.url)
+                                  ) FILTER (WHERE f.id IS NOT NULL AND f.filename IS NOT NULL AND f.url IS NOT NULL), 
+                                  '[]'::JSONB
+                                ) AS images
+
+                              FROM report r
+                              LEFT JOIN tel_numbers tn ON r.id = tn.report_id
+                              LEFT JOIN seller_account sa ON r.id = sa.report_id
+                              LEFT JOIN bank b ON sa.bank_id = b.id -- Join with the bank table to get the bank name
+                              LEFT JOIN report_images ri ON r.id = ri.report_id
+                              LEFT JOIN province p ON p.id = r.province_id 
+                              LEFT JOIN file f ON ri.file_id = f.id
+                              WHERE r.id = $1
+                              GROUP BY r.id, p.id;`;
+                              
+        const reportsResult = await PgClient.selectQuery(reportsQuery, [ _id ]);                                
+        // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
+
+        console.log("call function report()");
+        console.log( reportsResult.rows )
+        return {
+          status:true,
+          data: reportsResult.rows.length > 0 ? reportsResult.rows[0] : undefined,
+          executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+        }
+      }catch(error: any){
+        logger.error('[report] An error occurred', { stack: error });
+
+        throw new AppError(constants.Status.ERROR, error)
+      }finally {
+      }  
     },
     my_reports: async(parent, args, context): Promise<any> => {
       let start = Date.now()
@@ -503,7 +444,7 @@ const resolvers: IResolvers = {
       //                                           }
       //                                         }]);
       
-      const query = await pool.query(`SELECT 
+      const query = await PgClient.selectQuery(`SELECT 
                                             "user".id AS id,
                                             "user".username,
                                             "user".email,
@@ -534,7 +475,7 @@ const resolvers: IResolvers = {
       // let role = utils.checkRole(current_user)
       // if( role !== Constants.ADMINISTRATOR ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied', current_user)
       
-      const query = await pool.query(`SELECT "user".*,
+      const query = await PgClient.selectQuery(`SELECT "user".*,
                                              file.id AS file_id,
                                              file.url,
                                              file.filename
@@ -563,7 +504,7 @@ const resolvers: IResolvers = {
 
       // let banks = await model.models.Bank.find({});
  
-      const query = await pool.query(`SELECT * FROM bank;`);
+      const query = await PgClient.selectQuery(`SELECT * FROM bank;`);
       if( query.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
 
       return {
@@ -577,17 +518,44 @@ const resolvers: IResolvers = {
       let { req } = context
       let { _id } = args
 
-      console.log("comment :", _id)
-      let { current_user } =  await utils.checkAuth(req);
-      // let role = Utils.checkRole(current_user)
-   
-      // const existingComment = await model.models.Comment.findOne({ reportId: input?.id });
-         
-                                                    
-      // console.log("report @@@2 ", report, report.length > 0 ? report[0] : undefined)
+      const commentQuery = `SELECT
+                              c.id AS "comId",
+                              -- c.post_id,
+                              c.user_id AS "userId",
+                              u.display_name AS "fullName",
+                              u.avatar_id AS "avatarUrl",
+                              c.content as text,
+                              c.created_at as timestamp,
+                              COALESCE(
+                                json_agg(
+                                  json_build_object(
+                                    'comId', r.id,
+                                    'userId', r.user_id,
+                                    'fullName', ru.display_name,
+                                    'avatarUrl', ru.avatar_id,
+                                    'text', r.content,
+                                    'timestamp', r.created_at
+                                  )
+                                ) FILTER (WHERE r.id IS NOT NULL),
+                                '[]'
+                              ) AS replies
+                            FROM comment c
+                            LEFT JOIN "user" u ON c.user_id = u.id
+                            LEFT JOIN comment r ON r.parent_comment_id = c.id
+                            LEFT JOIN "user" ru ON r.user_id = ru.id
+                            WHERE c.post_id = $1
+                              AND c.parent_comment_id IS NULL
+                            GROUP BY c.id, c.post_id, c.user_id, u.display_name, u.email, u.avatar_id, c.content, c.created_at, c.updated_at
+                            ORDER BY c.created_at ASC; `;
+
+      const query = await PgClient.selectQuery(commentQuery, [_id]);
+      if( query.rowCount == 0 ) throw new AppError(constants.Status.DATA_NOT_FOUND, 'data not found.')
+
+      console.log("comment :", query);
+      
       return {
-        status:true,
-        // data: existingComment?.data !== undefined ? existingComment?.data : [],
+        status: true,
+        data: query.rows,
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     }
@@ -626,7 +594,7 @@ const resolvers: IResolvers = {
       const queryField = isEmail ? 'email' : 'username';
     
       // Query user based on username or email
-      const query = await pool.query(
+      const query = await PgClient.selectQuery(
         `SELECT * FROM "user" WHERE "user".${queryField} = $1`,
         [username]
       );
@@ -644,7 +612,7 @@ const resolvers: IResolvers = {
       }
     
       // Update last access timestamp
-      await pool.query(
+      await PgClient.selectQuery(
         `UPDATE "user" SET last_access = CURRENT_TIMESTAMP WHERE id = $1`,
         [user.id]
       );
@@ -665,7 +633,7 @@ const resolvers: IResolvers = {
       let { input } = args
 
       // Combine the checks for username and email existence into one query
-      let query = await pool.query(
+      let query = await PgClient.selectQuery(
         `SELECT * FROM "user" WHERE username = $1 OR email = $2`, 
         [input.username, input.email]
       );
@@ -702,7 +670,7 @@ const resolvers: IResolvers = {
         new Date()  // updatedAt
       ];
                       
-      await pool.query(query_user, values_user);
+      await PgClient.selectQuery(query_user, values_user);
       return {
         status: true,
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
@@ -808,14 +776,13 @@ const resolvers: IResolvers = {
       if( role !==constants.Role.ADMINISTRATOR &&
           role !==constants.Role.AUTHENTICATED ) throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user)
           
-      console.log("report : ", input)
-      
+      console.log("Mutation >> report : ", input)
+
+      const pool = await PgClient.create(current_user.id);
+
       switch(input.mode){
         case 'added':{
           try {
-            // Start a transaction
-            await pool.query('BEGIN');
-            
             const insertQueryReport = `
               INSERT INTO report (user_id, seller_first_name, seller_last_name, id_card, product, transfer_amount, transfer_date, selling_website, province_id, additional_info)
               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -900,7 +867,7 @@ const resolvers: IResolvers = {
               console.log("All files processed: ", images);
           
               // Commit the transaction after all inserts are successful
-              await pool.query('COMMIT');
+              await pool.commit();
           
               return {
                 status: true,
@@ -909,81 +876,12 @@ const resolvers: IResolvers = {
             }
           } catch (error: any) {
             // Rollback the transaction in case of an error
-            await pool.query('ROLLBACK');
+            await pool.rollback();
+
             console.error('Error during transaction:', error);
             throw new AppError(constants.Status.ERROR, error)
           }
           
-          // const session = await mongoose.startSession();
-          // session.startTransaction();
-          /*
-          try {
-            let promises = []; 
-            if(!_.isEmpty(input.images)){
-              for (let i = 0; i < input.images.length; i++) {
-                const { createReadStream, filename, encoding, mimetype } = (await input.images[i]).file //await input.files[i];
-      
-                const stream = createReadStream();
-                const assetUniqName = utils.fileRenamer(filename);
-                let pathName = `/app/uploads/${assetUniqName}`;
-      
-                const output = fs.createWriteStream(pathName)
-                stream.pipe(output);
-      
-                const promise = await new Promise(function (resolve, reject) {
-                  // output.on('close', () => {
-                  //   resolve("close");
-                  // });
-
-                  output.on('finish', async () => {
-                    try {
-                        // Save data to MongoDB after the stream has finished writing
-                        // await saveDataToMongoDB(data, dbUrl, dbName, collectionName);
-                        // console.log("finish : ", { url: `images/${assetUniqName}`, filename, encoding, mimetype })
-                        
-                        // let newInput ={current: { parentId: input?.parentId, childs: [{childId: current_user?._id}]}}  
-                        let file = await model.models.File.insertMany([{userId:current_user?.id, url: `images/${assetUniqName}`, filename, encoding, mimetype }], {session});
-                        // console.log("file ", file)
-                        resolve(file !== null ? file[0] : undefined );
-                    } catch (error: any) {
-                        reject(`Failed to save data to MongoDB: ${error.message}`);
-                    }
-                  });
-            
-                  output.on('error', async(err) => {
-                    await utils.loggerError(req, err.toString());
-      
-                    reject(err);
-                  });
-                });
-                promises.push(promise);
-              }
-            }
-
-            let images = await Promise.all(promises);
-            console.log("All files processed: ", images );
-
-            const newInput = _.omit(input, ['mode']);
-            // let current  = {...newInput, images, user_id: current_user?._id }
-            
-            console.log("@@@2 Report current : ", newInput)
-            
-            // await model.models.Report.insertMany([{ current }], { session });
-            // // Commit the transaction
-            // await session.commitTransaction();
-
-            // await session.abortTransaction();
-          }catch(error: any){
-              console.log("error @@@@@@@1 :", error)
-              // await session.abortTransaction();
-          
-              throw new AppError(constants.Status.ERROR, error)
-          }finally {
-              // session.endSession();
-              console.log("finally @@@@@@@1 :")
-          }  
-          */
-
           break;
         }
 
@@ -1083,30 +981,184 @@ const resolvers: IResolvers = {
       //     break;
       //   }
 
+        case 'edited':{
+          try{
+            const updateQueryReport = `
+                                        UPDATE report
+                                        SET 
+                                          seller_first_name = $1,
+                                          seller_last_name = $2,
+                                          id_card = $3,
+                                          product = $4,
+                                          transfer_amount = $5,
+                                          transfer_date = $6,
+                                          selling_website = $7,
+                                          province_id = $8,
+                                          additional_info = $9
+                                        WHERE id = $10 
+                                      `;
+
+            await pool.query(updateQueryReport, [
+              input.seller_first_name,
+              input.seller_last_name,
+              input.id_card,
+              input.product,
+              input.transfer_amount,
+              input.transfer_date,
+              input.selling_website,
+              input.province_id,
+              input.additional_info,
+              input._id,
+            ]);
+
+            const INSERT_TEL_SQL = `INSERT INTO tel_numbers (report_id, tel) VALUES ($1, $2) RETURNING id;`;
+            const UPDATE_TEL_SQL = `UPDATE tel_numbers SET tel = $1 WHERE id = $2 AND report_id = $3;`;
+            const DELETE_TEL_SQL = `DELETE FROM tel_numbers WHERE id = $1 AND report_id = $2;`;
+            for (const tel_number of input.tel_numbers) {
+              const { id, tel, mode } = tel_number;
+              if (mode === 'new') {
+                await pool.query(INSERT_TEL_SQL, [input._id, tel]);
+              } else if (mode === 'edited') {
+                await pool.query(UPDATE_TEL_SQL, [tel, id, input._id]);
+              } else if (mode === 'deleted') {
+                await pool.query(DELETE_TEL_SQL, [id, input._id]);
+              }
+            }
+
+            // prepare your SQL templates
+            const INSERT_ACCT_SQL = `INSERT INTO seller_account (report_id, seller_account, bank_id, bank_name) VALUES ($1, $2, $3, $4) RETURNING id;`;
+            const UPDATE_ACCT_SQL = `UPDATE seller_account SET seller_account = $1, bank_id = $2, bank_name = $3 WHERE id = $4; `;
+            const DELETE_ACCT_SQL = `DELETE FROM seller_account WHERE id = $1; `;
+            for (const acct of input.seller_accounts) {
+              switch (acct.mode) {
+                case 'new':
+                  // INSERT
+                  await pool.query(INSERT_ACCT_SQL, [ input._id, acct.seller_account, acct.bank_id, acct.bank_name ]);
+                  break;
+
+                case 'edited':
+                  // UPDATE — we assume acct.id is valid
+                  await pool.query(UPDATE_ACCT_SQL, [ acct.seller_account, acct.bank_id, acct.bank_name, acct.id ]);
+                  break;
+
+                case 'deleted':
+                  // DELETE — we assume acct.id is valid
+                  await pool.query(DELETE_ACCT_SQL, [acct.id]);
+                  break;
+              }
+            }
+
+            const DELETE_FILE_SQL = `DELETE FROM file WHERE id = $1; `;
+            // Process images
+            let promises = [];
+            if (!_.isEmpty(input.images)) {
+              // for (let i = 0; i < input.images.length; i++) {
+              for (const image of input.images) {
+                if ('file' in image && 'promise' in image) {
+                  // This is likely a new Upload
+                  console.log('New uploaded image:', image);
+
+                  const { createReadStream, filename, encoding, mimetype } = (await image).file;
+                  const stream = createReadStream();
+                  const assetUniqName = utils.fileRenamer(filename);
+                  let pathName = `/app/uploads/${assetUniqName}`;
+
+                  const output = fs.createWriteStream(pathName);
+                  stream.pipe(output);
+
+                  const promise = new Promise(async (resolve, reject) => {
+
+                    const reportId = input._id;
+                    
+                    output.on('finish', async () => {
+                      try {
+                        const INSERT_FILE_SQL = `
+                          INSERT INTO file (user_id, url, filename, mimetype, encoding)
+                          VALUES ($1, $2, $3, $4, $5)
+                          RETURNING id;
+                        `;
+                        const file_query = await pool.query(INSERT_FILE_SQL, [current_user?.id, `images/${assetUniqName}`, filename, encoding, mimetype]);
+
+                        if (file_query.rowCount == 1) {
+                          const file_id = file_query.rows[0].id;
+                          // Ensure the report_id exists before inserting into report_images
+                          // const checkReportExistsQuery = `SELECT id FROM report WHERE id = $1;`;
+                          // const reportExists = await pool.query(checkReportExistsQuery, [currentReportId]);
+
+                          // console.log(`>>>>>>>>>>   ${currentReportId} `);
+                          // if (reportExists.rowCount === 0) {
+                          //   throw new Error(`Report with id ${report_id} does not exist.`);
+                          // }
+
+                          // Now insert into report_images without checking the report again
+                          const INSERT_IMAGE_SQL = `INSERT INTO report_images (report_id, file_id) VALUES ($1, $2) RETURNING id;`;
+                          await pool.query(INSERT_IMAGE_SQL, [reportId, file_id]);
+
+                          resolve(file_id);
+                        }
+                      } catch (error) {
+                        reject(`Failed to save data to MongoDB: ${error}`);
+                      }
+                    });
+
+                    output.on('error', (err) => {
+                      reject(err);
+                    });
+                  });
+
+                  promises.push(promise);
+                } else if ('id' in image) {
+                  // This is an existing image
+                  if (image.deleted) {
+                    console.log('Image marked for deletion:', image);
+                    await pool.query(DELETE_FILE_SQL, [image.id]);
+                  } else {
+                    console.log('Existing image:', image);
+                  }
+                } else {
+                  console.warn('Unknown image type:', image);
+                }
+              }
+            }
+
+            // Wait for all image files to be processed
+            let images = await Promise.all(promises);
+            console.log("All files processed: ", images);
+
+            await pool.commit();
+            return {
+              status: true,
+              executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`,
+            };
+          
+          }catch(error: any){
+            console.log("error @@@@@@@1 :", error)
+            await pool.rollback();
+        
+            throw new AppError(constants.Status.ERROR, error)
+          }finally {
+          }  
+
+          break;
+        }
+
         case 'deleted':{
           try {
-            // Start a transaction
-            await pool.query('BEGIN');
             let { reportIds } = input
-            if (reportIds.length === 0) throw new AppError(constants.Status.DATA_NOT_FOUND, "DATA_NOT_FOUND");
+            if (!reportIds || reportIds.length === 0) {
+              throw new AppError(constants.Status.DATA_NOT_FOUND, 'DATA_NOT_FOUND');
+            }
 
             // Delete from related tables first
-            await pool.query(`
-              DELETE FROM tel_numbers WHERE report_id = ANY($1);
-            `, [reportIds]);
-            await pool.query(`
-              DELETE FROM seller_account WHERE report_id = ANY($1);
-            `, [reportIds]);
-            await pool.query(`
-              DELETE FROM report_images WHERE report_id = ANY($1);
-            `, [reportIds]);
+            await pool.query(`DELETE FROM tel_numbers WHERE report_id = ANY($1);`, [reportIds]);
+            await pool.query(`DELETE FROM seller_account WHERE report_id = ANY($1);`, [reportIds]);
+            await pool.query(`DELETE FROM report_images WHERE report_id = ANY($1);`, [reportIds]);
+
             // Finally, delete from report table
-            await pool.query(`
-              DELETE FROM report WHERE id = ANY($1);
-            `, [reportIds]);
+            await pool.query(`DELETE FROM report WHERE id = ANY($1);`, [reportIds]);
 
             // Commit the transaction
-            await pool.query('COMMIT');
+            await pool.commit();
 
             return {
               status: true,
@@ -1114,7 +1166,7 @@ const resolvers: IResolvers = {
             }
           } catch (error: any) {
             // Rollback the transaction in case of an error
-            await pool.query('ROLLBACK');
+            await pool.rollback();
         
             console.error('Error checking or inserting data:', error);
 
@@ -1122,7 +1174,6 @@ const resolvers: IResolvers = {
           } 
         }
       }
-      
     },
     like_report: async(parent, args, context): Promise<any> => {
       let start = Date.now();
@@ -1322,7 +1373,7 @@ const resolvers: IResolvers = {
           session.endSession();
       }
     },
-    comment_by_id: async(parent, args, context): Promise<any> => {
+    comment: async(parent, args, context): Promise<any> => {
       let start = Date.now();
       let { input } = args;
       let { req } = context;
@@ -1333,66 +1384,188 @@ const resolvers: IResolvers = {
       if (role !== constants.Role.ADMINISTRATOR && role !== constants.Role.AUTHENTICATED) {
           throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user);
       }
-  
-      // Start a transaction
-      const session = await mongoose.startSession();
-      session.startTransaction();
 
-      // console.log("input :", input)
-      
-      try {
-        let newComment =  {...input.comment, status: 'SENT'}
+      const pool = await PgClient.create(current_user.id);
 
-        if(input.commentId === undefined){
-          // Check if the Comment with the given reportId exists
-          const existingComment = await model.models.Comment.findOne({ reportId: input.reportId }).session(session);
+      try {     
 
-          if (existingComment) {
-            // If it exists, push the new comment into the data array
-            existingComment.data.push(newComment);
-            await existingComment.save({ session });
-          } else {
-            // If it does not exist, create a new Comment document
-            const newCommentDocument = new model.models.Comment({
-                reportId: input.reportId,
-                data: [newComment]
+        console.log("comment :", input);
+        switch(input.mode){
+          case "new": {
+            let { data } = input;
+           
+            const INSERT_COMMENT_SQL = `INSERT INTO comment (id, post_id, user_id, parent_comment_id, content) VALUES ($1, $2, $3, $4, $5) RETURNING id;`;
+            console.log('Running SQL:', {
+              text: INSERT_COMMENT_SQL,
+              values: [data.comId, data.postId, current_user.id, data.parentId === "" ? null : data.parentId, data.text]
             });
-            await newCommentDocument.save({ session });
-          }
-        }else{
-          // Update subComments if commentId is provided
-          const existingComment = await model.models.Comment.findOne({ reportId: input.reportId }).session(session);
+            const comment_query = await pool.query(INSERT_COMMENT_SQL, [data.comId, data.postId, current_user.id, data.parentId === "" ? null : data.parentId, data.text ]);
           
-          if (existingComment) {
-            const commentToUpdate = existingComment.data.find(data => data._id.toString() === input.commentId);
-            
-            if (commentToUpdate) {
-              // Add the new comment to subComments
-              commentToUpdate.subComments.push(newComment);
-              await existingComment.save({ session });
-            } else {
-              throw new AppError(constants.Status.NOT_FOUND, 'Comment not found');
+            if (comment_query.rowCount == 1) {
+              await pool.commit();
+              return {
+                status: true,
+                executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
+              };
             }
-          } else {
-            throw new AppError(constants.Status.NOT_FOUND, 'Comment document not found');
+            break;
+          }
+  
+          case "edit": {
+            const UPDATE_COMMENT_SQL = `
+                                        UPDATE comment
+                                        SET
+                                          content = $2,
+                                          updated_at = CURRENT_TIMESTAMP
+                                        WHERE id = $1
+                                        RETURNING id;
+                                      `;
+            
+            const values = [ input.comId, input.text ];
+            console.log('Running SQL:', { text: UPDATE_COMMENT_SQL, values: values });
+            const comment_query = await pool.query(UPDATE_COMMENT_SQL, values);
+            if (comment_query.rowCount == 1) {
+              await pool.commit();
+              return {
+                status: true,
+                executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
+              };
+            }
+            break;
+          }
+  
+          case "delete": {
+            const DELETE_COMMENT_SQL = `DELETE FROM comment WHERE id = $1 RETURNING *;`;
+
+            console.log('Running SQL:', { text: DELETE_COMMENT_SQL, values: [input.comId] });
+            
+            const comment_query = await pool.query(DELETE_COMMENT_SQL, [input.comId]);
+            if (comment_query.rowCount == 1) {
+              await pool.commit();
+              return {
+                status: true,
+                executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
+              };
+            }
+            break;
           }
         }
+      } catch (error: any) {
+        console.log("error @@@@@@@1 :", error)
+        await pool.rollback();
+    
+        throw new AppError(constants.Status.ERROR, error)
+      } finally {
+      }
+  
+      // // Start a transaction
+      // const session = await mongoose.startSession();
+      // session.startTransaction();
 
-        // Commit the transaction
-        await session.commitTransaction();
-        console.log('Transaction committed successfully');
+      // // console.log("input :", input)
+      
+      // try {
+      //   let newComment =  {...input.comment, status: 'SENT'}
 
+      //   if(input.commentId === undefined){
+      //     // Check if the Comment with the given reportId exists
+      //     const existingComment = await model.models.Comment.findOne({ reportId: input.reportId }).session(session);
+
+      //     if (existingComment) {
+      //       // If it exists, push the new comment into the data array
+      //       existingComment.data.push(newComment);
+      //       await existingComment.save({ session });
+      //     } else {
+      //       // If it does not exist, create a new Comment document
+      //       const newCommentDocument = new model.models.Comment({
+      //           reportId: input.reportId,
+      //           data: [newComment]
+      //       });
+      //       await newCommentDocument.save({ session });
+      //     }
+      //   }else{
+      //     // Update subComments if commentId is provided
+      //     const existingComment = await model.models.Comment.findOne({ reportId: input.reportId }).session(session);
+          
+      //     if (existingComment) {
+      //       const commentToUpdate = existingComment.data.find(data => data._id.toString() === input.commentId);
+            
+      //       if (commentToUpdate) {
+      //         // Add the new comment to subComments
+      //         commentToUpdate.subComments.push(newComment);
+      //         await existingComment.save({ session });
+      //       } else {
+      //         throw new AppError(constants.Status.NOT_FOUND, 'Comment not found');
+      //       }
+      //     } else {
+      //       throw new AppError(constants.Status.NOT_FOUND, 'Comment document not found');
+      //     }
+      //   }
+
+      //   // Commit the transaction
+      //   await session.commitTransaction();
+      //   console.log('Transaction committed successfully');
+
+      //   return {
+      //       status: true,
+      //       // data: { reportId: input?._id, userId: current_user._id },
+      //       // likedIndex,
+      //       executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
+      //   };
+      // } catch (error: any) {
+      //     await session.abortTransaction();
+      //     throw new AppError(constants.Status.ERROR, error);
+      // } finally {
+      //     session.endSession();
+      // }
+    },
+    bookmark: async(parent, args, context): Promise<any> => {
+      let start = Date.now();
+      let { input } = args;
+      let { req } = context;
+  
+      let { current_user } = await utils.checkAuth(req);
+      let role = utils.checkRole(current_user);
+      
+      if (role !== constants.Role.ADMINISTRATOR && role !== constants.Role.AUTHENTICATED) {
+          throw new AppError(constants.Status.UNAUTHENTICATED, 'permission denied', current_user);
+      }
+
+      const pool = await PgClient.create(current_user.id);
+      try {
+        
+        await pool.query(
+          `SELECT 1 FROM bookmark WHERE report_id = $1 AND user_id = $2`,
+          [input.post_id, current_user.id]
+        );
+    
+        const result = await pool.query(
+          `DELETE FROM bookmark WHERE report_id = $1 AND user_id = $2 RETURNING *`,
+          [input.post_id, current_user.id]
+        );
+        
+        const isBookmark = result.rowCount === 0;
+        if (isBookmark) {
+          await pool.query(
+            `INSERT INTO bookmark (report_id, user_id)
+             VALUES ($1, $2)
+             ON CONFLICT (report_id, user_id) DO NOTHING`,
+            [input.post_id, current_user.id]
+          );
+        }
+        
+        // Commit the transaction after all inserts are successful
+        await pool.commit();
         return {
             status: true,
-            // data: { reportId: input?._id, userId: current_user._id },
-            // likedIndex,
+            isBookmark,
             executionTime: `Time to execute = ${(Date.now() - start) / 1000} seconds`
         };
       } catch (error: any) {
-          await session.abortTransaction();
-          throw new AppError(constants.Status.ERROR, error);
+        await pool.rollback();
+
+        throw new AppError(constants.Status.ERROR, error)
       } finally {
-          session.endSession();
       }
     }
   },

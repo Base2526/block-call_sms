@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Descriptions, Image, Carousel, Row, Col, Skeleton, Tag, Typography } from 'antd';
+import { Layout, Descriptions, Image, Carousel, Row, Col, Skeleton, Button, Typography } from 'antd';
 import { useQuery } from '@apollo/client';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import moment from 'moment';
 import _ from "lodash"
+import { MoreOutlined, BookOutlined } from '@ant-design/icons'
 
 import Comments from "@/pages/components/Comments"
 import { query_report } from '@/apollo/gqlQuery';
@@ -133,9 +134,42 @@ const ReportView: React.FC = (props) => {
             ) : (
               <p>ไม่มีรูปภาพแนบ</p>
             )}
-            <HomeDropdown style={{ top: 10, right: 20 }}  id={3} onItemClick={(id, key)=> console.log(">>: ", id, key)}/>
+            {/* <HomeDropdown 
+              style={{ top: 10, right: 20 }}  
+              id={3} 
+              onItemClick={(id, key)=>{
+                // console.log(">>: ", id, key)
+              }}
+              /> */}
             <Descriptions
-              title="รายละเอียดการขาย"
+              title={
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: "15px" }}>
+                  <span>รายละเอียดการขาย</span>
+
+                  <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                    <Button
+                      className="ant-btn-bookmark"
+                      type="primary"
+                      style={{
+                        width: 25,
+                        height: 25,
+                        fontSize: 16,
+                      }}
+                      icon={<BookOutlined />}
+                      onClick={() => {}}
+                    />
+                    <Button
+                      icon={<MoreOutlined />}
+                      type="text"
+                      style={{
+                        width: 25,
+                        height: 25,
+                        fontSize: 16,
+                      }}
+                    />
+                  </div>
+                </div>
+              }
               bordered
               layout="horizontal"
               column={1}>

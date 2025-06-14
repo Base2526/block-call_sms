@@ -1,5 +1,6 @@
 export interface reportItem {
   report_id: string;
+  user_id: string;
   seller_first_name: string;
   seller_last_name: string;
   id_card: string;
@@ -13,6 +14,8 @@ export interface reportItem {
   province: string; // Province ID
   additional_info?: string;
   images: any[]; // URLs or file paths
+  bookmarks: any[];
+  total_comments: string;
   created_at: string;
   updated_at: string;
 }

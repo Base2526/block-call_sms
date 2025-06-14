@@ -60,7 +60,7 @@ export const mutationBank = gql`mutation bank($input: BankInput) { bank(input: $
 export const mutationFollow = gql`mutation follow($id: ID!) { follow(_id: $id) }`;
 export const mutationDatesLottery = gql`mutation datesLottery($input: [Date]) { datesLottery(input: $input) }`;
 export const mutationNotification = gql`mutation notification($id: ID!) { notification(_id: $id) }`;
-export const mutationComment = gql`mutation comment($input: JSON) { comment(input: $input) }`;
+export const mutation_comment = gql`mutation comment($input: JSON) { comment(input: $input) }`;
 export const mutationContactUs = gql`mutation contactUs($input: ContactUsInput) { contactUs(input: $input) }`;
 export const mutationSubscribe = gql`mutation subscribe($id: ID!) { subscribe(_id: $id) }`;
 export const mutationSearch = gql`mutation search($input: SearchInput) { search(input: $input) }`;
@@ -71,6 +71,7 @@ export const mutationForceLogout = gql`mutation forceLogout($input: JSON) { forc
 export const mutationExpireLottery = gql`mutation expireLottery($input: JSON) { expireLottery(input: $input) }`;
 export const mutationCalculateLottery = gql`mutation calculateLottery($input: JSON) { calculateLottery(input: $input) }`;
 export const mutationContent = gql`mutation content($input: JSON) { content(input: $input) }`;
+
 
 
 
@@ -148,3 +149,5 @@ export const query_provinces  = gql`query provinces { provinces }`;
 export const mutation_report  = gql`mutation report($input: JSON) { report(input: $input) }`;
 
 export const mutation_uploadFile  = gql`mutation uploadFile($input: JSON) { uploadFile(input: $input) }`;
+
+export const mutation_bookmark  = gql`mutation bookmark($input: JSON) { bookmark(input: $input) }`;

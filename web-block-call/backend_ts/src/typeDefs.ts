@@ -33,7 +33,9 @@ export const typeDefs = gql`
     like_report(input: JSON): JSON
     like_comment(input: JSON): JSON
     follow(input: JSON): JSON
-    comment_by_id(input: JSON): JSON
+    comment(input: JSON): JSON
+
+    bookmark(input: JSON): JSON
   }
 
   type Subscription {

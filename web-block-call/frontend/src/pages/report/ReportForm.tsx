@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, DatePicker, Select, InputNumber, message, Typography } from 'antd';
+import { Form, Input, Button, DatePicker, Select, InputNumber, message, Typography, Skeleton } from 'antd';
 import { useQuery, useMutation } from '@apollo/client';
 import _ from "lodash";
 import moment from 'moment';
@@ -14,13 +14,13 @@ import handlerError from '@/utils/handlerError';
 const { Title } = Typography;
 
 interface ProvinceItem {
-  _id: string;
+  id: string;
   name_th: string;
   name_en: string;
 }
 
 interface BankItem{
-  _id: string;
+  id: string;
   name_th: string;
   name_en: string;
   description: string;
@@ -32,6 +32,31 @@ interface SellerAccountsItem{
   sellerAccount: string;
 }
 
+enum TelNumberMode {
+  New = 'new',
+  Edited = 'edited',
+  Deleted = 'deleted',
+}
+
+enum SellerAccountMode {
+  New = 'new',
+  Edited = 'edited',
+  Deleted = 'deleted',
+}
+
+type ISellerAccount = {
+  id: number;
+  bank_id: string;
+  bank_name: string;
+  mode: SellerAccountMode; 
+};
+
+type ITelNumber = {
+  id: number;
+  tel: string;
+  mode: TelNumberMode; 
+};
+
 const { Option } = Select;
 const ReportForm: React.FC = (props) => {
   const navigate = useNavigate();
@@ -39,36 +64,33 @@ const ReportForm: React.FC = (props) => {
 
   const { mode, _id } = location.state || {};
 
+  const [loadingSkeleton, setLoadingSkeleton] = useState(mode === 'edited' ? true : false); 
+
   const [form] = Form.useForm();
   const [images, setImages] = useState<File[]>([]);
   const [provinces, setProvinces] = useState<ProvinceItem[]>([]);
   const [banks, setBanks] = useState<BankItem[]>([]);
   const [loading, setLoading] = useState(false); 
-  const [sellerAccounts, setSellerAccounts] = useState([{ _id: 0, bankId: "", sellerAccount: "" }]);
-  const [telNumbers, setTelNumbers] = useState([{ _id: 0, tel: '' }]); // Dynamic telephone numbers
+  const [sellerAccounts, setSellerAccounts] = useState<ISellerAccount[]>([{ id: Date.now(), bank_id: "", bank_name: "", mode: SellerAccountMode.New }]);
+  const [telNumbers, setTelNumbers] = useState<ITelNumber[]>([{ id: Date.now(), tel: '', mode: TelNumberMode.New }]);
 
-  const [initialValues, setInitialValues] = useState<any>(null); // To track initial form values
-  const [isFormChanged, setIsFormChanged] = useState(false); // To track if the form has changed
-
+  const [initialValues, setInitialValues] = useState<any>(null); 
+  const [isFormChanged, setIsFormChanged] = useState(false); 
 
   const addSellerAccount = () => {
-    setSellerAccounts([...sellerAccounts, { _id: sellerAccounts.length,  bankId: "", sellerAccount: "" }]);
+    setSellerAccounts([...sellerAccounts, { id: Date.now(),  bank_id: "", bank_name: "", mode: SellerAccountMode.New }]);
   };
 
   const removeSellerAccount = (index: number) => {
-    const newAccounts = sellerAccounts.filter((_, idx) => idx !== index);
-    setSellerAccounts(newAccounts);
+    setSellerAccounts(prev => prev.map((item, i) => i === index ? { ...item, mode: SellerAccountMode.Deleted } : item ) );
   };
 
-  // Add new telephone field
   const addTelNumber = () => {
-    setTelNumbers([...telNumbers, { _id: telNumbers.length, tel: '' }]);
+    setTelNumbers([...telNumbers, { id: Date.now(), tel: '', mode: TelNumberMode.New }]);
   };
 
-  // Remove telephone field
   const removeTelNumber = (index: number) => {
-    const newTels = telNumbers.filter((_, idx) => idx !== index);
-    setTelNumbers(newTels);
+    setTelNumbers(prev => prev.map((item, i) => i === index ? { ...item, mode: TelNumberMode.Deleted } : item ) );
   };
 
   const [onReport] = useMutation(mutation_report, {
@@ -145,8 +167,9 @@ const ReportForm: React.FC = (props) => {
         fetchPolicy: 'cache-first',
         nextFetchPolicy: 'network-only',
         notifyOnNetworkStatusChange: false,
-        skip: _.isEmpty(_id)
-    });
+        skip: mode === 'added'
+    }
+  );
 
   if (errorReport) {
     handlerError(props, errorReport);
@@ -158,26 +181,27 @@ const ReportForm: React.FC = (props) => {
         if (dataReport.report.status) {
           let report = dataReport.report.data;
 
-          console.log("ReportForm  @@1 :", report);
           const initialData = {
-            sellerFirstName: report.current.sellerFirstName,
-            sellerLastName: report.current.sellerLastName,
-            idCard: report.current.idCard,
-            telNumbers: report.current.telNumbers,
-            sellerAccounts: report.current.sellerAccounts,
-            product: report.current.product,
-            transferAmount: report.current.transferAmount,
-            transferDate: moment(report.current.transferDate),
-            sellingWebsite: report.current.sellingWebsite,
-            provinceId: report.current.provinceId,
-            additionalInfo: report.current.additionalInfo,
+            seller_first_name: report.seller_first_name,
+            seller_last_name: report.seller_last_name,
+            id_card: report.id_card,
+            tel_numbers: report.tel_numbers,
+            seller_accounts: report.seller_accounts,
+            product: report.product,
+            transfer_amount: report.transfer_amount,
+            transfer_date: moment(report.transfer_date),
+            selling_website: report.selling_website,
+            province_id: report.province?.[0]?.id,
+            additional_info: report.additional_info,
           };
 
-          form.setFieldsValue(initialData);
+          console.log("ReportForm  @@1 :", report, report.province?.[0]?.id, initialData);
+
+          // form.setFieldsValue(initialData);
           setInitialValues(initialData); // Set initial values
-          setSellerAccounts(report.current.sellerAccounts);
-          setTelNumbers(report.current.telNumbers);
-          setImages(report.current.images);
+          setSellerAccounts(report.seller_accounts);
+          setTelNumbers(report.tel_numbers);
+          setImages(report.images);
         }
       }
     }
@@ -190,8 +214,16 @@ const ReportForm: React.FC = (props) => {
   }, [mode, refetchReport]);
 
   // useEffect(()=>{
-  //   console.log("form @@@ :", form)
-  // }, [form])
+  //   console.log("images @@@ :", images)
+  // }, [images])
+
+  useEffect(() => {
+    if (initialValues && provinces.length > 0 && banks.length > 0) {
+      form.setFieldsValue(initialValues);
+
+      setLoadingSkeleton(false);
+    }
+  }, [initialValues, provinces, banks]);
 
   // Handle form value changes
   const handleValuesChange = (changedValues: any) => {
@@ -199,33 +231,101 @@ const ReportForm: React.FC = (props) => {
     console.log("handleValuesChange :", currentValues, initialValues)
 
     setIsFormChanged(!_.isEqual(currentValues, initialValues));
+
+    // if ('tel_numbers' in changedValues) {
+    //   const telChanged = changedValues.tel_numbers;
+    //   console.log('Changed tel number:', telChanged);
+    // }
   };
 
-  const handleSubmit = (input: any) => {
+  const handleTelChange = (index: number, value: string) => {
+    // Get current tel_numbers from form
+    const currentValues = form.getFieldValue('tel_numbers') || [];
+  
+    // Clone form array and ensure index is initialized
+    const updatedFormValues = [...currentValues];
+    updatedFormValues[index] = {
+      ...(updatedFormValues[index] || {}),
+      tel: value,
+    };
+  
+    // Update Ant Design Form state
+    form.setFieldsValue({ tel_numbers: updatedFormValues });
+  
+    // Update local telNumbers state
+    setTelNumbers(prev => {
+      const updated = [...prev];
+  
+      if (!updated[index]) return prev; // index out of bounds
+  
+      const clone = { ...updated[index], tel: value };
+  
+      if (clone.mode !== TelNumberMode.New) {
+        clone.mode = TelNumberMode.Edited;
+      }
+  
+      updated[index] = clone;
+      return updated;
+    });
+  };
 
-    console.log("handleSubmit :", input)
+  const handleSellerAccountChange = (
+    index: number,
+    field: 'bank_name' | 'seller_account' | 'bank_id',
+    value: string
+  ) => {
+    // Update Form state
+    const currentValues = form.getFieldValue('seller_accounts') || [];
+    const updatedFormValues = [...currentValues];
+    updatedFormValues[index] = {
+      ...(updatedFormValues[index] || {}),
+      [field]: value,
+    };
+    form.setFieldsValue({ seller_accounts: updatedFormValues });
+  
+    // Update your local state (e.g., to track mode)
+    setSellerAccounts(prev => {
+      const updated = [...prev];
+      if (!updated[index]) return prev;
+  
+      const clone = { ...updated[index], [field]: value };
+      if (clone.mode !== SellerAccountMode.New) {
+        clone.mode = SellerAccountMode.Edited;
+      }
+      updated[index] = clone;
+      return updated;
+    });
+  };
+  
+  const handleSubmit = (input: any) => {
+    console.log("handleSubmit :", input, sellerAccounts);
 
     if (mode === 'added') {
       setLoading(true);
       onReport({ variables: { input: { ...input, mode, images } } });
     } else {
       setLoading(true);
-      onReport({ variables: { input: { ...input, _id, mode, images } } });
+      onReport({ variables: { input: { ...input, _id, mode, images, tel_numbers: telNumbers, seller_accounts: sellerAccounts } } });
     }
   };
 
   return (
+          <Skeleton loading={loadingSkeleton} active paragraph={{ rows: 12 }}>
+            { !loadingSkeleton &&  (
             <Form
               form={form}
               layout="vertical"
               onFinish={handleSubmit}
               onValuesChange={handleValuesChange} // Track value changes
+              onFinishFailed={(errorInfo) => {
+                console.warn('Validation Failed:', errorInfo);
+              }}
               initialValues={{}}>
               <Title level={3}>  { mode === 'edited' ? 'แก้ใข ข้อมูลรายงาน' : 'เพิ่ม รายงานใหม่' }</Title>
               {/* ชื่อคนขาย (ภาษาไทย) */}
               <Form.Item
                 label="ชื่อคนขาย"
-                name="sellerFirstName"
+                name="seller_first_name"
                 rules={[{ required: true, message: 'กรุณากรอกชื่อคนขาย' }]}
               >
                 <Input placeholder="กรุณากรอกชื่อคนขาย" />
@@ -234,7 +334,7 @@ const ReportForm: React.FC = (props) => {
               {/* นามสกุล(ภาษาไทย) */}
               <Form.Item
                 label="นามสกุลคนขาย"
-                name="sellerLastName"
+                name="seller_last_name"
                 rules={[{ required: true, message: 'กรุณากรอกนามสกุลคนขาย' }]}
               >
                 <Input placeholder="กรุณากรอกนามสกุลคนขาย" />
@@ -243,7 +343,7 @@ const ReportForm: React.FC = (props) => {
               {/* เลขบัตรประชาชนคนขาย */}
               <Form.Item
                 label="เลขบัตรประชาชนคนขาย (13 หลัก) หรือ พาสปอร์ต (passport)"
-                name="idCard"
+                name="id_card"
                 rules={[{ required: true, message: 'กรุณากรอกเลขบัตรประชาชน หรือ พาสปอร์ต (passport)' }]}
               >
                 <Input placeholder="กรุณากรอกเลขบัตรประชาชน หรือ พาสปอร์ต (passport)" maxLength={13} />
@@ -251,14 +351,16 @@ const ReportForm: React.FC = (props) => {
 
               {/* Add Telephone Numbers */}
               <div style={{ borderColor: '#d9d9d9', padding: '10px', borderStyle: 'dashed', marginTop: '10px', marginBottom: '10px' }}>
-                {telNumbers.map((tel, index) => (
-                  <div key={tel._id} style={{ marginBottom: 20 }}>
+                {telNumbers.map((number, index) => (
+                  <div key={number.id} style={{ marginBottom: 20, borderColor: '#d9d9d9', padding: '10px', borderStyle: 'dashed', marginTop: '10px' }}>
                     <Form.Item
                       label={`เบอร์โทรศัพท์ หรือ ไอดีไลน์ ${index + 1}`}
-                      name={['telNumbers', index, 'tel']}
+                      name={['tel_numbers', index, 'tel']}
                       rules={[{ required: true, message: 'กรุณากรอกเบอร์โทรศัพท์ หรือ ไอดีไลน์' }]}
                     >
-                      <Input placeholder="กรุณากรอกเบอร์โทรศัพท์ หรือ ไอดีไลน์" />
+                      <Input 
+                        placeholder="กรุณากรอกเบอร์โทรศัพท์ หรือ ไอดีไลน์" 
+                        onChange={(e) => handleTelChange(index, e.target.value)}/>
                     </Form.Item>
 
                     {telNumbers.length > 1 && (
@@ -280,23 +382,37 @@ const ReportForm: React.FC = (props) => {
               <div style={{ borderColor: '#d9d9d9', padding: '10px', borderStyle: 'dashed', marginTop: '10px', marginBottom: '10px' }}>
                 {/* Loop through seller accounts */}
                 {sellerAccounts.map((account, index) => {
-                  return  <div key={account._id} style={{ marginBottom: 20 }}>
+                  return  <div key={account.id} style={{ marginBottom: 20, borderColor: '#d9d9d9', padding: '10px', borderStyle: 'dashed', marginTop: '10px' }}>
                             <Form.Item
-                              label={`บัญชีคนขาย ${index + 1}`}
-                              name={['sellerAccounts', index, 'sellerAccount']}
+                              label={`ชื่อบัญชีคนขาย ${index + 1}`}
+                              name={['seller_accounts', index, 'bank_name']}
                               rules={[{ required: true, message: 'กรุณากรอกบัญชีคนขาย' }]}
                             >
-                              <Input placeholder="กรุณากรอกบัญชีคนขาย" />
+                              <Input 
+                                placeholder="กรุณากรอกบัญชีคนขาย" 
+                                onChange={(e) => handleSellerAccountChange(index, 'bank_name', e.target.value)}/>
+                            </Form.Item>
+
+                            <Form.Item
+                              label={`เลขที่บัญชีคนขาย ${index + 1}`}
+                              name={['seller_accounts', index, 'seller_account']}
+                              rules={[{ required: true, message: 'กรุณากรอกบัญชีคนขาย' }]}
+                            >
+                              <Input 
+                                placeholder="กรุณากรอกบัญชีคนขาย" 
+                                onChange={(e) => handleSellerAccountChange(index, 'seller_account', e.target.value)}/>
                             </Form.Item>
 
                             <Form.Item
                               label="เลือกธนาคาร"
-                              name={['sellerAccounts', index, 'bankId']}
+                              name={['seller_accounts', index, 'bank_id']}
                               rules={[{ required: true, message: 'กรุณาเลือกธนาคาร' }]}>
-                              <Select placeholder="กรุณาเลือกธนาคาร">
+                              <Select 
+                                placeholder="กรุณาเลือกธนาคาร"
+                                onChange={(value) => handleSellerAccountChange(index, 'bank_id', value)}>
                                 {
                                   _.map(banks, (bank, index)=>{
-                                    return <Option key={ index } value={ bank._id }>{bank.name_th}</Option>
+                                    return <Option key={bank.id} value={ bank.id }>{bank.name_th}</Option>
                                   })
                                 }
                               </Select>
@@ -332,7 +448,7 @@ const ReportForm: React.FC = (props) => {
               {/* ยอดโอน */}
               <Form.Item
                 label="ยอดโอน"
-                name="transferAmount"
+                name="transfer_amount"
                 rules={[{ required: true, message: 'กรุณากรอกยอดโอน' }]}
               >
                 <InputNumber placeholder="กรุณากรอกยอดโอน" style={{ width: '100%' }} />
@@ -341,7 +457,7 @@ const ReportForm: React.FC = (props) => {
               {/* วันโอนเงิน */}
               <Form.Item
                 label="วันโอนเงิน"
-                name="transferDate"
+                name="transfer_date"
                 rules={[{ required: true, message: 'กรุณาเลือกวันโอนเงิน' }]}
               >
                 <DatePicker placeholder="กรุณาเลือกวันโอนเงิน" style={{ width: '100%' }} />
@@ -350,7 +466,7 @@ const ReportForm: React.FC = (props) => {
               {/* เว็บประกาศขายของ */}
               <Form.Item
                 label="เว็บประกาศขายของ"
-                name="sellingWebsite"
+                name="selling_website"
                 rules={[{ required: true, message: 'กรุณากรอกเว็บประกาศขายของ' }]}
               >
                 <Input placeholder="กรุณากรอกเว็บประกาศขายของ" />
@@ -359,12 +475,12 @@ const ReportForm: React.FC = (props) => {
               {/* จังหวัดของคนสร้างรายงาน */}
               <Form.Item
                 label="จังหวัดของคนสร้างรายงาน"
-                name="provinceId"
+                name="province_id"
                 rules={[{ required: true, message: 'กรุณาเลือกจังหวัด' }]}>
                 <Select placeholder="กรุณาเลือกจังหวัด">
                   {
                     _.map(provinces, (province, index)=>{
-                      return <Option key={ index } value={ province._id }>{province.name_th}</Option>
+                      return <Option key={ index } value={ province.id }>{province.name_th}</Option>
                     })
                   }
                 </Select>
@@ -373,7 +489,7 @@ const ReportForm: React.FC = (props) => {
               {/* รายละเอียดเพิ่มเติม */}
               <Form.Item
                 label="รายละเอียดเพิ่มเติม"
-                name="additionalInfo"
+                name="additional_info"
               >
                 <Input.TextArea rows={4} placeholder="กรุณากรอกรายละเอียดเพิ่มเติม" />
               </Form.Item>
@@ -389,15 +505,21 @@ const ReportForm: React.FC = (props) => {
                   multiple={true}
                   required={true}
                   onSnackbar={(evt)=>console.log("onSnackbar :", evt)}
-                  onChange={(values) => setImages(values)}/>
+                  onChange={(values) =>{
+                    setImages(values)
+                    const filtered = values.filter((image: any) => image?.deleted !== true );
+                    form.setFieldsValue({ images: filtered });
+                  }}/>
               </Form.Item>
 
               <Form.Item>
                 <Button type="primary" htmlType="submit" disabled={!isFormChanged} loading={loading}>
-                  { mode === 'edited' ? 'แก้ใขข้อมูล' : 'ส่งข้อมูล' }
+                  { mode === 'edited' ? 'แก้ใขข้อมูล' : 'บันทึกข้อมูล' }
                 </Button>
               </Form.Item>
             </Form>
+            )}
+          </Skeleton>
           );
 };
 

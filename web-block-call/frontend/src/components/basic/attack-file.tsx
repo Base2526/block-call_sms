@@ -63,7 +63,7 @@ const AttackFileField: FC<AttackFileFieldProps> = ({
         />
       </label>
       <Space direction="horizontal" size={2}>
-        {_.map( _.filter(values, (v) => !v?.delete), (file, index) => {
+        {_.map( _.filter(values, (v) => !v?.deleted), (file, index) => {
             const isOldFile = file?.url;
             return (
               <Space style={{ position: "relative" }} key={index}>
@@ -91,12 +91,12 @@ const AttackFileField: FC<AttackFileFieldProps> = ({
                   }}
                   onClick={() => {
                     const newInputList = [...values];
-                    const i = _.findIndex(newInputList, (v) => v._id === file._id);
+                    const i = _.findIndex(newInputList, (v) => v.id === file.id);
                     if (isOldFile) {
                       if (i !== -1) {
                         newInputList[i] = {
                           ...newInputList[i],
-                          delete: true,
+                          deleted: true,
                         };
                       }
                     } else {

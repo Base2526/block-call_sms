@@ -170,3 +170,8 @@ db.getCollection("supplier").aggregate([
     __v: 0
 }
 
+
+# build local compoment
+- npm install 
+- npm run build
+- npm install .....

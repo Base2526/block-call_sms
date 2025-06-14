@@ -1,21 +1,24 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { List, Button, Image, Typography, Dropdown, Menu } from 'antd';
 import { LikeOutlined, DislikeOutlined, MoreOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import _ from 'lodash';
 import { reportItem } from '@/utils/Interface';
 import HomeDropdown from "@/pages/home/HomeDropdown"
+import HomeActions from "@/pages/home/HomeActions";
 
 const { Paragraph, Text } = Typography;
 
 interface HomeListProps {
+  current_user: any;
   report: reportItem;
   onClick?: () => void;
-  onMenuItemClick: (id: string | number, action: string | number) => void;
+  onDropdownItemClick: (id: string | number, action: string | number) => void;
+  onActionItemClick: (id: string | number, action: string | number) => void;
 }
 const { REACT_APP_HOST_GRAPHAL } = process.env;
 
-const HomeList: React.FC<HomeListProps> = ({ report, onClick, onMenuItemClick }) => {
+const HomeList: React.FC<HomeListProps> = ({ current_user, report, onClick, onDropdownItemClick, onActionItemClick }) => {
 
   const items = _.map(report.images, v => `http://${REACT_APP_HOST_GRAPHAL}/${v.url}`);
   const telNumbersView = () => (
@@ -31,8 +34,8 @@ const HomeList: React.FC<HomeListProps> = ({ report, onClick, onMenuItemClick })
   );
 
   return (
-    <List.Item className="list-card-item" style={{ position: 'relative' }}>
-      <HomeDropdown id={report.report_id} onItemClick={onMenuItemClick}/>
+    <List.Item className="list-card-item" style={{ position: 'relative', cursor: 'pointer'  }}>
+      <HomeDropdown item={report} onItemClick={onDropdownItemClick}/>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ position: 'relative', display: 'inline-block' }}>
           <Image.PreviewGroup items={items}>
@@ -47,18 +50,19 @@ const HomeList: React.FC<HomeListProps> = ({ report, onClick, onMenuItemClick })
               position: 'absolute',
               bottom: '5px',
               right: '5px',
-              backgroundColor: 'gray',
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
               color: 'white',
               borderRadius: '3px',
               padding: '2px 6px',
               fontSize: '12px',
+              // rgba(0,0,0,0.04)
             }}>
             {items.length} {/* Display the number of images */}
           </div>
         </div>
 
         {/* Actions Below Image */}
-        <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+        {/* <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
           <Button
             className="ant-btn-like"
             type="primary"
@@ -72,7 +76,16 @@ const HomeList: React.FC<HomeListProps> = ({ report, onClick, onMenuItemClick })
             icon={<DislikeOutlined />}
             onClick={()=>{}}
           />
-        </div>
+        </div> */}
+
+        <HomeActions 
+          current_user= {current_user}
+          item={report} 
+          onActionItemClick={(id, action)=>{ 
+            console.log("[List] : ActionItemClick >>", id, action) 
+            onActionItemClick(id, action);
+          }} 
+          style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end', width: '100%' }} />
       </div>
 
       {/* Details */}
@@ -84,7 +97,10 @@ const HomeList: React.FC<HomeListProps> = ({ report, onClick, onMenuItemClick })
           </Paragraph>
         </p>
         <p onClick={onClick} style={{ fontSize: '12px', color: "rgba(0, 0, 0, 0.45)", marginBottom: 5 }}>
-          <Text strong>สินค้า:</Text> {report.product}
+          <Text strong>สินค้า:</Text>{" "} 
+          <Paragraph style={{ display: 'inline', margin: 0 }}>
+            {report.product}
+          </Paragraph>
         </p>
         <p onClick={onClick} style={{ fontSize: '12px', color: "rgba(0, 0, 0, 0.45)", marginBottom: 5 }}>
           <Text strong>เบอร์/ไลน์:</Text> {telNumbersView()}
@@ -96,10 +112,12 @@ const HomeList: React.FC<HomeListProps> = ({ report, onClick, onMenuItemClick })
           </a>
         </p>
         <p onClick={onClick} style={{ fontSize: '12px', color: "rgba(0, 0, 0, 0.45)", marginBottom: 5 }}>
-          <Text strong>ยอดเงิน:</Text> {new Intl.NumberFormat('th-TH').format(report.transfer_amount)}
+          <Text strong>ยอดเงิน:</Text>{" "}
+          <Paragraph style={{ display: 'inline', margin: 0 }}>{new Intl.NumberFormat('th-TH').format(report.transfer_amount)}</Paragraph>
         </p>
         <p onClick={onClick} style={{ fontSize: '12px', color: "rgba(0, 0, 0, 0.45)" }}>
-          <Text strong>วันลงข้อมูล:</Text> {moment(report.updated_at).format('MM/DD, YY hh:mm')}
+          <Text strong>วันลงข้อมูล:</Text>{" "}
+          <Paragraph style={{ display: 'inline', margin: 0 }}>{moment(report.updated_at).format('MM/DD, YY hh:mm')}</Paragraph>
         </p>
       </div>      
     </List.Item>
